@@ -75,13 +75,14 @@ instance instTopOrderHom [Preorder β] [OrderTop β] : Top (α →o β) where
 instance orderTop [Preorder β] [OrderTop β] : OrderTop (α →o β) where
   le_top _ _ := le_top
 
-instance [CompleteLattice β] : InfSet (α →o β) where
-  sInf s := ⟨fun x => ⨅ f ∈ s, (f :) x, fun _ _ h => iInf₂_mono fun f _ => f.mono h⟩
+lemma isGLB_mk_iInf [CompleteLattice β] (s : Set (α →o β)) :
+    IsGLB s ⟨fun x ↦ ⨅ f ∈ s, f x, fun _ _ h ↦ iInf₂_mono fun f _ => f.mono h⟩ :=
+  ⟨fun f hf _ ↦ iInf_le_of_le f (iInf_le _ hf), fun _ hf x ↦ le_iInf₂ fun _ hg => hf hg x⟩
 
 @[simp]
 theorem sInf_apply [CompleteLattice β] (s : Set (α →o β)) (x : α) :
-    sInf s x = ⨅ f ∈ s, (f :) x :=
-  rfl
+    sInf s x = ⨅ f ∈ s, f x := by
+  rw [(isGLB_mk_iInf s).sInf_eq]; rfl
 
 theorem iInf_apply {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) (x : α) :
     (⨅ i, f i) x = ⨅ i, f i x :=
@@ -92,13 +93,15 @@ theorem coe_iInf {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) :
     ((⨅ i, f i : α →o β) : α → β) = ⨅ i, (f i : α → β) := by
   funext x; simp [iInf_apply]
 
-instance [CompleteLattice β] : SupSet (α →o β) where
-  sSup s := ⟨fun x => ⨆ f ∈ s, (f :) x, fun _ _ h => iSup₂_mono fun f _ => f.mono h⟩
+lemma isLUB_mk_iSup [CompleteLattice β] (s : Set (α →o β)) :
+    IsLUB s ⟨fun x ↦ ⨆ f ∈ s, f x, fun _ _ h => iSup₂_mono fun f _ => f.mono h⟩ :=
+  -- Porting note: Added `by apply`, was `fun s f hf x => le_iSup_of_le f (le_iSup _ hf)`
+  ⟨fun f hf _ ↦ le_iSup_of_le f (by apply le_iSup _ hf), fun _ hf x ↦ iSup₂_le fun _ hg => hf hg x⟩
 
 @[simp]
 theorem sSup_apply [CompleteLattice β] (s : Set (α →o β)) (x : α) :
-    sSup s x = ⨆ f ∈ s, (f :) x :=
-  rfl
+    sSup s x = ⨆ f ∈ s, f x := by
+  rw [(isLUB_mk_iSup s).sSup_eq]; rfl
 
 theorem iSup_apply {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) (x : α) :
     (⨆ i, f i) x = ⨆ i, f i x :=
@@ -111,11 +114,8 @@ theorem coe_iSup {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) :
 
 instance [CompleteLattice β] : CompleteLattice (α →o β) :=
   { (_ : Lattice (α →o β)), OrderHom.orderTop, OrderHom.orderBot with
-    -- Porting note: Added `by apply`, was `fun s f hf x => le_iSup_of_le f (le_iSup _ hf)`
-    le_sSup := fun s f hf x => le_iSup_of_le f (by apply le_iSup _ hf)
-    sSup_le := fun _ _ hf x => iSup₂_le fun g hg => hf g hg x
-    le_sInf := fun _ _ hf x => le_iInf₂ fun g hg => hf g hg x
-    sInf_le := fun _ f hf _ => iInf_le_of_le f (iInf_le _ hf) }
+    exists_isLUB _ := ⟨_, isLUB_mk_iSup _⟩
+    exists_isGLB _ := ⟨_, isGLB_mk_iInf _⟩ }
 
 theorem iterate_sup_le_sup_iff {α : Type*} [SemilatticeSup α] (f : α →o α) :
     (∀ n₁ n₂ a₁ a₂, f^[n₁ + n₂] (a₁ ⊔ a₂) ≤ f^[n₁] a₁ ⊔ f^[n₂] a₂) ↔

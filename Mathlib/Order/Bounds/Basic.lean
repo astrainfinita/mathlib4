@@ -24,15 +24,29 @@ open Function Set
 
 open OrderDual (toDual ofDual)
 
-variable {α β γ : Type*}
+variable {α β γ ι : Type*}
+
+section
+
+@[to_dual]
+theorem mem_upperBounds [LE α] {s : Set α} {a : α} : a ∈ upperBounds s ↔ ∀ x ∈ s, x ≤ a :=
+  Iff.rfl
+
+@[to_dual]
+theorem mem_upperBounds_image [LE α] {f : ι → α} {s : Set ι} {a : α} :
+    a ∈ upperBounds (f '' s) ↔ ∀ i ∈ s, f i ≤ a :=
+  ⟨fun h i hi ↦ h ⟨i, hi, rfl⟩, fun h _ ⟨i, hi, hb⟩ ↦ hb ▸ h i hi⟩
+
+@[to_dual]
+theorem mem_upperBounds_range [LE α] {f : ι → α} {a : α} :
+    a ∈ upperBounds (Set.range f) ↔ ∀ i, f i ≤ a :=
+  ⟨fun h i ↦ h ⟨i, rfl⟩, fun h _ ⟨i, hb⟩ ↦ hb ▸ h i⟩
+
+end
 
 section
 
 variable [Preorder α] {s t u : Set α} {a b : α}
-
-@[to_dual]
-theorem mem_upperBounds : a ∈ upperBounds s ↔ ∀ x ∈ s, x ≤ a :=
-  Iff.rfl
 
 @[to_dual]
 lemma mem_upperBounds_iff_subset_Iic : a ∈ upperBounds s ↔ s ⊆ Iic a := Iff.rfl

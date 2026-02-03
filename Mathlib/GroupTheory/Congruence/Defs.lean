@@ -317,19 +317,29 @@ theorem le_def {c d : Con M} : c ≤ d ↔ ∀ {x y}, c x y → d x y :=
 /-- The infimum of a set of congruence relations on a given type with a multiplication. -/
 @[to_additive /-- The infimum of a set of additive congruence relations on a given type with
 an addition. -/]
-instance : InfSet (Con M) where
-  sInf S :=
-    { r := fun x y => ∀ c : Con M, c ∈ S → c x y
-      iseqv := ⟨fun x c _ => c.refl x, fun h c hc => c.symm <| h c hc,
-        fun h1 h2 c hc => c.trans (h1 c hc) <| h2 c hc⟩
-      mul' := fun h1 h2 c hc => c.mul (h1 c hc) <| h2 c hc }
+protected def sInf (S : Set (Con M)) : Con M :=
+  { r := fun x y => ∀ c : Con M, c ∈ S → c x y
+    iseqv := ⟨fun x c _ => c.refl x, fun h c hc => c.symm <| h c hc,
+      fun h1 h2 c hc => c.trans (h1 c hc) <| h2 c hc⟩
+    mul' := fun h1 h2 c hc => c.mul (h1 c hc) <| h2 c hc }
+
+@[to_additive isGLB_addConSInf]
+lemma isGLB_conSInf (S : Set (Con M)) : IsGLB S (Con.sInf S) :=
+  ⟨fun r hr x y h => (h : ∀ r ∈ S, r x y) r hr, fun _ hr _ _ h _ hr' => hr hr' h⟩
+
+@[to_additive]
+instance : PartialOrder (Con M) where
+  le_refl _ _ _ := id
+  le_trans _ _ _ h1 h2 _ _ h := h2 <| h1 h
+  le_antisymm _ _ hc hd := ext fun _ _ => ⟨fun h => hc h, fun h => hd h⟩
 
 /-- The infimum of a set of congruence relations is the same as the infimum of the set's image
 under the map to the underlying equivalence relation. -/
 @[to_additive /-- The infimum of a set of additive congruence relations is the same as the infimum
 of the set's image under the map to the underlying equivalence relation. -/]
-theorem sInf_toSetoid (S : Set (Con M)) : (sInf S).toSetoid = sInf (toSetoid '' S) :=
-  Setoid.ext fun x y =>
+theorem sInf_toSetoid (S : Set (Con M)) : (sInf S).toSetoid = sInf (toSetoid '' S) := by
+  rw [(isGLB_conSInf _).sInf_eq, (isGLB_setoidSInf _).sInf_eq]
+  exact Setoid.ext fun x y =>
     ⟨fun h r ⟨c, hS, hr⟩ => by rw [← hr]; exact h c hS, fun h c hS => h c.toSetoid ⟨c, hS, rfl⟩⟩
 
 /-- The infimum of a set of congruence relations is the same as the infimum of the set's image
@@ -340,27 +350,18 @@ under the map to the underlying binary relation. -/
 theorem coe_sInf (S : Set (Con M)) :
     ⇑(sInf S) = sInf ((⇑) '' S) := by
   ext
-  simp only [sInf_image, iInf_apply, iInf_Prop_eq]
+  simp only [(isGLB_conSInf _).sInf_eq, sInf_image, iInf_apply, iInf_Prop_eq]
   rfl
 
 @[to_additive (attr := simp, norm_cast)]
 theorem coe_iInf {ι : Sort*} (f : ι → Con M) : ⇑(iInf f) = ⨅ i, ⇑(f i) := by
   rw [iInf, coe_sInf, ← Set.range_comp, sInf_range, Function.comp_def]
 
-@[to_additive]
-instance : PartialOrder (Con M) where
-  le_refl _ _ _ := id
-  le_trans _ _ _ h1 h2 _ _ h := h2 <| h1 h
-  le_antisymm _ _ hc hd := ext fun _ _ => ⟨fun h => hc h, fun h => hd h⟩
-
 /-- The complete lattice of congruence relations on a given type with a multiplication. -/
 @[to_additive /-- The complete lattice of additive congruence relations on a given type with
 an addition. -/]
 instance : CompleteLattice (Con M) where
-  __ := completeLatticeOfInf (Con M) fun s =>
-      ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : Con M) x y) r hr, fun r hr x y h r' hr' =>
-        hr hr'
-          h⟩
+  __ := completeLatticeOfInf (Con M) _ isGLB_conSInf
   inf c d := ⟨c.toSetoid ⊓ d.toSetoid, fun h1 h2 => ⟨c.mul h1.1 h2.1, d.mul h1.2 h2.2⟩⟩
   inf_le_left _ _ := fun _ _ h => h.1
   inf_le_right _ _ := fun _ _ h => h.2
@@ -442,8 +443,8 @@ the binary relation '`x` is related to `y` by `c` or `d`'. -/
 smallest additive congruence relation containing the binary relation '`x` is related to `y`
 by `c` or `d`'. -/]
 theorem sup_eq_conGen (c d : Con M) : c ⊔ d = conGen fun x y => c x y ∨ d x y := by
-  rw [conGen_eq]
-  apply congr_arg sInf
+  rw [conGen_eq, (isGLB_conSInf _).sInf_eq]
+  apply congr_arg Con.sInf
   simp only [le_def, or_imp, ← forall_and]
 
 /-- The supremum of two congruence relations equals the smallest congruence relation containing
@@ -459,7 +460,7 @@ equals the smallest additive congruence relation containing the binary relation 
 `c ∈ S` such that `x` is related to `y` by `c`'. -/]
 theorem sSup_eq_conGen (S : Set (Con M)) :
     sSup S = conGen fun x y => ∃ c : Con M, c ∈ S ∧ c x y := by
-  rw [conGen_eq]
+  rw [conGen_eq, ← sInf_upperBounds_eq_csSup]
   apply congr_arg sInf
   ext
   exact ⟨fun h _ _ ⟨r, hr⟩ => h hr.1 hr.2, fun h r hS _ _ hr => h _ _ ⟨r, hS, hr⟩⟩

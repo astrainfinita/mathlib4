@@ -48,116 +48,73 @@ open Function OrderDual Set
 
 variable {α β γ : Type*} {ι ι' : Sort*} {κ : ι → Sort*} {κ' : ι' → Sort*}
 
-instance OrderDual.supSet (α) [InfSet α] : SupSet αᵒᵈ :=
-  ⟨(sInf : Set α → α)⟩
-
-instance OrderDual.infSet (α) [SupSet α] : InfSet αᵒᵈ :=
-  ⟨(sSup : Set α → α)⟩
-
 /-- Note that we rarely use `CompleteSemilatticeSup`
 (in fact, any such object is always a `CompleteLattice`, so it's usually best to start there).
 
 Nevertheless it is sometimes a useful intermediate step in constructions.
 -/
-class CompleteSemilatticeSup (α : Type*) extends PartialOrder α, SupSet α where
-  /-- Any element of a set is less than the set supremum. -/
-  le_sSup : ∀ s, ∀ a ∈ s, a ≤ sSup s
-  /-- Any upper bound is more than the set supremum. -/
-  sSup_le : ∀ s a, (∀ b ∈ s, b ≤ a) → sSup s ≤ a
-
-section
-
-variable [CompleteSemilatticeSup α] {s t : Set α} {a b : α}
-
-theorem le_sSup : a ∈ s → a ≤ sSup s :=
-  CompleteSemilatticeSup.le_sSup s a
-
-theorem sSup_le : (∀ b ∈ s, b ≤ a) → sSup s ≤ a :=
-  CompleteSemilatticeSup.sSup_le s a
-
-theorem isLUB_sSup (s : Set α) : IsLUB s (sSup s) :=
-  ⟨fun _ ↦ le_sSup, fun _ ↦ sSup_le⟩
-
-lemma isLUB_iff_sSup_eq : IsLUB s a ↔ sSup s = a :=
-  ⟨(isLUB_sSup s).unique, by rintro rfl; exact isLUB_sSup _⟩
-
-alias ⟨IsLUB.sSup_eq, _⟩ := isLUB_iff_sSup_eq
-
-theorem le_sSup_of_le (hb : b ∈ s) (h : a ≤ b) : a ≤ sSup s :=
-  le_trans h (le_sSup hb)
-
-@[gcongr]
-theorem sSup_le_sSup (h : s ⊆ t) : sSup s ≤ sSup t :=
-  (isLUB_sSup s).mono (isLUB_sSup t) h
-
-@[simp]
-theorem sSup_le_iff : sSup s ≤ a ↔ ∀ b ∈ s, b ≤ a :=
-  isLUB_le_iff (isLUB_sSup s)
-
-theorem le_sSup_iff : a ≤ sSup s ↔ ∀ b ∈ upperBounds s, a ≤ b :=
-  ⟨fun h _ hb => le_trans h (sSup_le hb), fun hb => hb _ fun _ => le_sSup⟩
-
-theorem le_iSup_iff {s : ι → α} : a ≤ iSup s ↔ ∀ b, (∀ i, s i ≤ b) → a ≤ b := by
-  simp [iSup, le_sSup_iff, upperBounds]
-
-end
+class CompleteSemilatticeSup (α : Type*) extends PartialOrder α where
+  /-- Every set has a least upper bound. -/
+  exists_isLUB : ∀ s : Set α, ∃ a, IsLUB s a
 
 /-- Note that we rarely use `CompleteSemilatticeInf`
 (in fact, any such object is always a `CompleteLattice`, so it's usually best to start there).
 
 Nevertheless it is sometimes a useful intermediate step in constructions.
 -/
-class CompleteSemilatticeInf (α : Type*) extends PartialOrder α, InfSet α where
-  /-- Any element of a set is more than the set infimum. -/
-  sInf_le : ∀ s, ∀ a ∈ s, sInf s ≤ a
-  /-- Any lower bound is less than the set infimum. -/
-  le_sInf : ∀ s a, (∀ b ∈ s, a ≤ b) → a ≤ sInf s
+@[to_dual existing]
+class CompleteSemilatticeInf (α : Type*) extends PartialOrder α where
+  /-- Every set has a greatest lower bound. -/
+  exists_isGLB : ∀ s : Set α, ∃ a, IsGLB s a
 
 section
 
-variable [CompleteSemilatticeInf α] {s t : Set α} {a b : α}
+@[to_dual]
+instance [CompleteSemilatticeSup α] : Nonempty α := ⟨(CompleteSemilatticeSup.exists_isLUB ∅).choose⟩
 
-theorem sInf_le : a ∈ s → sInf s ≤ a :=
-  CompleteSemilatticeInf.sInf_le s a
+variable [CompleteSemilatticeSup α] {s t : Set α} {a b : α}
 
-theorem le_sInf : (∀ b ∈ s, a ≤ b) → a ≤ sInf s :=
-  CompleteSemilatticeInf.le_sInf s a
+@[to_dual]
+theorem isLUB_sSup (s : Set α) : IsLUB s (sSup s) :=
+  isLUB_sSup_of_exists_isLUB (CompleteSemilatticeSup.exists_isLUB s)
 
-theorem isGLB_sInf (s : Set α) : IsGLB s (sInf s) :=
-  ⟨fun _ => sInf_le, fun _ => le_sInf⟩
+@[to_dual sInf_le]
+theorem le_sSup (h : a ∈ s) : a ≤ sSup s :=
+  (isLUB_sSup s).1 h
 
-lemma isGLB_iff_sInf_eq : IsGLB s a ↔ sInf s = a :=
-  ⟨(isGLB_sInf s).unique, by rintro rfl; exact isGLB_sInf _⟩
+@[to_dual le_sInf]
+theorem sSup_le (h : ∀ b ∈ s, b ≤ a) : sSup s ≤ a :=
+  (isLUB_sSup s).2 h
 
-alias ⟨IsGLB.sInf_eq, _⟩ := isGLB_iff_sInf_eq
+@[to_dual]
+lemma isLUB_iff_sSup_eq : IsLUB s a ↔ sSup s = a :=
+  ⟨IsLUB.sSup_eq, by rintro rfl; exact isLUB_sSup _⟩
 
-theorem sInf_le_of_le (hb : b ∈ s) (h : b ≤ a) : sInf s ≤ a :=
-  le_trans (sInf_le hb) h
+@[to_dual sInf_le_of_le]
+theorem le_sSup_of_le (hb : b ∈ s) (h : a ≤ b) : a ≤ sSup s :=
+  le_trans h (le_sSup hb)
 
-@[gcongr]
-theorem sInf_le_sInf (h : s ⊆ t) : sInf t ≤ sInf s :=
-  (isGLB_sInf s).mono (isGLB_sInf t) h
+@[to_dual (attr := gcongr)]
+theorem sSup_le_sSup (h : s ⊆ t) : sSup s ≤ sSup t :=
+  (isLUB_sSup s).mono (isLUB_sSup t) h
 
-@[simp]
-theorem le_sInf_iff : a ≤ sInf s ↔ ∀ b ∈ s, a ≤ b :=
-  le_isGLB_iff (isGLB_sInf s)
+@[to_dual (attr := simp) le_sInf_iff]
+theorem sSup_le_iff : sSup s ≤ a ↔ ∀ b ∈ s, b ≤ a :=
+  isLUB_le_iff (isLUB_sSup s)
 
-theorem sInf_le_iff : sInf s ≤ a ↔ ∀ b ∈ lowerBounds s, b ≤ a :=
-  ⟨fun h _ hb => le_trans (le_sInf hb) h, fun hb => hb _ fun _ => sInf_le⟩
+@[to_dual sInf_le_iff]
+theorem le_sSup_iff : a ≤ sSup s ↔ ∀ b ∈ upperBounds s, a ≤ b :=
+  ⟨fun h _ hb => le_trans h (sSup_le hb), fun hb => hb _ fun _ => le_sSup⟩
 
-theorem iInf_le_iff {s : ι → α} : iInf s ≤ a ↔ ∀ b, (∀ i, b ≤ s i) → b ≤ a := by
-  simp [iInf, sInf_le_iff, lowerBounds]
+@[to_dual iInf_le_iff]
+theorem le_iSup_iff {s : ι → α} : a ≤ iSup s ↔ ∀ b, (∀ i, s i ≤ b) → a ≤ b := by
+  simp [iSup, le_sSup_iff, upperBounds]
 
 end
 
+@[to_dual]
 instance {α : Type*} [CompleteSemilatticeInf α] : CompleteSemilatticeSup αᵒᵈ where
-  le_sSup := @CompleteSemilatticeInf.sInf_le α _
-  sSup_le := @CompleteSemilatticeInf.le_sInf α _
-
-instance {α : Type*} [CompleteSemilatticeSup α] : CompleteSemilatticeInf αᵒᵈ where
-  le_sInf := @CompleteSemilatticeSup.sSup_le α _
-  sInf_le := @CompleteSemilatticeSup.le_sSup α _
-
+  exists_isLUB := @CompleteSemilatticeInf.exists_isGLB α _
 
 /-- A complete lattice is a bounded lattice which has suprema and infima for every subset. -/
 class CompleteLattice (α : Type*) extends Lattice α, CompleteSemilatticeSup α,
@@ -170,7 +127,7 @@ class CompleteLattice (α : Type*) extends Lattice α, CompleteSemilatticeSup α
 instance (priority := 100) CompleteLattice.toPartialOrder' [CompleteLattice α] : PartialOrder α :=
   inferInstance
 
-/-- Create a `CompleteLattice` from a `PartialOrder` and `InfSet`
+/-- Create a `CompleteLattice` from a `PartialOrder` and a function `sInf' : Set α → α`
 that returns the greatest lower bound of a set. Usually this constructor provides
 poor definitional equalities.  If other fields are known explicitly, they should be
 provided; for example, if `inf` is known explicitly, construct the `CompleteLattice`
@@ -181,43 +138,42 @@ instance : CompleteLattice my_T where
   le_inf := ...
   inf_le_right := ...
   inf_le_left := ...
-  -- don't care to fix sup, sSup, bot, top
+  -- don't care to fix sup, bot, top
   __ := completeLatticeOfInf my_T _
 ```
 -/
-def completeLatticeOfInf (α : Type*) [H1 : PartialOrder α] [H2 : InfSet α]
-    (isGLB_sInf : ∀ s : Set α, IsGLB s (sInf s)) : CompleteLattice α where
-  __ := H1; __ := H2
-  bot := sInf univ
-  bot_le _ := (isGLB_sInf univ).1 trivial
-  top := sInf ∅
-  le_top a := (isGLB_sInf ∅).2 <| by simp
-  sup a b := sInf { x : α | a ≤ x ∧ b ≤ x }
-  inf a b := sInf {a, b}
+def completeLatticeOfInf (α : Type*) [H1 : PartialOrder α] (sInf' : Set α → α)
+    (isGLB_sInf' : ∀ s : Set α, IsGLB s (sInf' s)) : CompleteLattice α where
+  __ := H1
+  bot := sInf' univ
+  bot_le _ := (isGLB_sInf' univ).1 trivial
+  top := sInf' ∅
+  le_top a := (isGLB_sInf' ∅).2 <| by simp
+  sup a b := sInf' { x : α | a ≤ x ∧ b ≤ x }
+  inf a b := sInf' {a, b}
   le_inf a b c hab hac := by
-    apply (isGLB_sInf _).2
+    apply (isGLB_sInf' _).2
     simp [*]
-  inf_le_right _ _ := (isGLB_sInf _).1 <| mem_insert_of_mem _ <| mem_singleton _
-  inf_le_left _ _ := (isGLB_sInf _).1 <| mem_insert _ _
-  sup_le a b c hac hbc := (isGLB_sInf _).1 <| by simp [*]
-  le_sup_left _ _ := (isGLB_sInf _).2 fun _ => And.left
-  le_sup_right _ _ := (isGLB_sInf _).2 fun _ => And.right
-  le_sInf s _ ha := (isGLB_sInf s).2 ha
-  sInf_le s _ ha := (isGLB_sInf s).1 ha
-  sSup s := sInf (upperBounds s)
-  le_sSup s _ ha := (isGLB_sInf (upperBounds s)).2 fun _ hb => hb ha
-  sSup_le s _ ha := (isGLB_sInf (upperBounds s)).1 ha
+  inf_le_right _ _ := (isGLB_sInf' _).1 <| mem_insert_of_mem _ <| mem_singleton _
+  inf_le_left _ _ := (isGLB_sInf' _).1 <| mem_insert _ _
+  sup_le a b c hac hbc := (isGLB_sInf' _).1 <| by simp [*]
+  le_sup_left _ _ := (isGLB_sInf' _).2 fun _ => And.left
+  le_sup_right _ _ := (isGLB_sInf' _).2 fun _ => And.right
+  exists_isGLB s := ⟨sInf' s, isGLB_sInf' s⟩
+  exists_isLUB s := ⟨sInf' (upperBounds s),
+    @fun _ ha ↦ (isGLB_sInf' (upperBounds s)).2 fun _ hb ↦ hb ha,
+    @fun _ ha ↦ (isGLB_sInf' (upperBounds s)).1 ha⟩
 
 /-- Any `CompleteSemilatticeInf` is in fact a `CompleteLattice`.
 
 Note that this construction has bad definitional properties:
 see the doc-string on `completeLatticeOfInf`.
 -/
-def completeLatticeOfCompleteSemilatticeInf (α : Type*) [CompleteSemilatticeInf α] :
+noncomputable def completeLatticeOfCompleteSemilatticeInf (α : Type*) [CompleteSemilatticeInf α] :
     CompleteLattice α :=
-  completeLatticeOfInf α fun s => isGLB_sInf s
+  completeLatticeOfInf α sInf fun s => isGLB_sInf s
 
-/-- Create a `CompleteLattice` from a `PartialOrder` and `SupSet`
+/-- Create a `CompleteLattice` from a `PartialOrder` and  a function `sSup' : Set α → α`
 that returns the least upper bound of a set. Usually this constructor provides
 poor definitional equalities.  If other fields are known explicitly, they should be
 provided; for example, if `inf` is known explicitly, construct the `CompleteLattice`
@@ -228,39 +184,38 @@ instance : CompleteLattice my_T where
   le_inf := ...
   inf_le_right := ...
   inf_le_left := ...
-  -- don't care to fix sup, sInf, bot, top
+  -- don't care to fix sup, bot, top
   __ := completeLatticeOfSup my_T _
 ```
 -/
-def completeLatticeOfSup (α : Type*) [H1 : PartialOrder α] [H2 : SupSet α]
-    (isLUB_sSup : ∀ s : Set α, IsLUB s (sSup s)) : CompleteLattice α where
-  __ := H1; __ := H2
-  top := sSup univ
-  le_top _ := (isLUB_sSup univ).1 trivial
-  bot := sSup ∅
-  bot_le x := (isLUB_sSup ∅).2 <| by simp
-  sup a b := sSup {a, b}
-  sup_le a b c hac hbc := (isLUB_sSup _).2 (by simp [*])
-  le_sup_left _ _ := (isLUB_sSup _).1 <| mem_insert _ _
-  le_sup_right _ _ := (isLUB_sSup _).1 <| mem_insert_of_mem _ <| mem_singleton _
-  inf a b := sSup { x | x ≤ a ∧ x ≤ b }
-  le_inf a b c hab hac := (isLUB_sSup _).1 <| by simp [*]
-  inf_le_left _ _ := (isLUB_sSup _).2 fun _ => And.left
-  inf_le_right _ _ := (isLUB_sSup _).2 fun _ => And.right
-  sInf s := sSup (lowerBounds s)
-  sSup_le s _ ha := (isLUB_sSup s).2 ha
-  le_sSup s _ ha := (isLUB_sSup s).1 ha
-  sInf_le s _ ha := (isLUB_sSup (lowerBounds s)).2 fun _ hb => hb ha
-  le_sInf s _ ha := (isLUB_sSup (lowerBounds s)).1 ha
+def completeLatticeOfSup (α : Type*) [H1 : PartialOrder α] (sSup' : Set α → α)
+    (isLUB_sSup' : ∀ s : Set α, IsLUB s (sSup' s)) : CompleteLattice α where
+  __ := H1
+  top := sSup' univ
+  le_top _ := (isLUB_sSup' univ).1 trivial
+  bot := sSup' ∅
+  bot_le x := (isLUB_sSup' ∅).2 <| by simp
+  sup a b := sSup' {a, b}
+  sup_le a b c hac hbc := (isLUB_sSup' _).2 (by simp [*])
+  le_sup_left _ _ := (isLUB_sSup' _).1 <| mem_insert _ _
+  le_sup_right _ _ := (isLUB_sSup' _).1 <| mem_insert_of_mem _ <| mem_singleton _
+  inf a b := sSup' { x | x ≤ a ∧ x ≤ b }
+  le_inf a b c hab hac := (isLUB_sSup' _).1 <| by simp [*]
+  inf_le_left _ _ := (isLUB_sSup' _).2 fun _ => And.left
+  inf_le_right _ _ := (isLUB_sSup' _).2 fun _ => And.right
+  exists_isLUB s := ⟨sSup' s, isLUB_sSup' s⟩
+  exists_isGLB s := ⟨sSup' (lowerBounds s),
+    @fun _ ha ↦ (isLUB_sSup' (lowerBounds s)).2 fun _ hb ↦ hb ha,
+    @fun _ ha ↦ (isLUB_sSup' (lowerBounds s)).1 ha⟩
 
 /-- Any `CompleteSemilatticeSup` is in fact a `CompleteLattice`.
 
 Note that this construction has bad definitional properties:
 see the doc-string on `completeLatticeOfSup`.
 -/
-def completeLatticeOfCompleteSemilatticeSup (α : Type*) [CompleteSemilatticeSup α] :
+noncomputable def completeLatticeOfCompleteSemilatticeSup (α : Type*) [CompleteSemilatticeSup α] :
     CompleteLattice α :=
-  completeLatticeOfSup α fun s => isLUB_sSup s
+  completeLatticeOfSup α sSup fun s => isLUB_sSup s
 
 /-- A complete linear order is a linear order whose lattice structure is complete. -/
 -- Note that we do not use `extends LinearOrder α`,
@@ -294,10 +249,6 @@ namespace OrderDual
 
 instance instCompleteLattice [CompleteLattice α] : CompleteLattice αᵒᵈ where
   __ := instBoundedOrder α
-  le_sSup := @CompleteLattice.sInf_le α _
-  sSup_le := @CompleteLattice.le_sInf α _
-  sInf_le := @CompleteLattice.le_sSup α _
-  le_sInf := @CompleteLattice.sSup_le α _
 
 instance instCompleteLinearOrder [CompleteLinearOrder α] : CompleteLinearOrder αᵒᵈ where
   __ := instCompleteLattice
@@ -313,35 +264,35 @@ section
 section OrderDual
 
 @[simp]
-theorem toDual_sSup [SupSet α] (s : Set α) : toDual (sSup s) = sInf (ofDual ⁻¹' s) :=
+theorem toDual_sSup [LE α] [Nonempty α] (s : Set α) : toDual (sSup s) = sInf (ofDual ⁻¹' s) :=
   rfl
 
 @[simp]
-theorem toDual_sInf [InfSet α] (s : Set α) : toDual (sInf s) = sSup (ofDual ⁻¹' s) :=
+theorem toDual_sInf [LE α] [Nonempty α] (s : Set α) : toDual (sInf s) = sSup (ofDual ⁻¹' s) :=
   rfl
 
 @[simp]
-theorem ofDual_sSup [InfSet α] (s : Set αᵒᵈ) : ofDual (sSup s) = sInf (toDual ⁻¹' s) :=
+theorem ofDual_sSup [LE α] [Nonempty α] (s : Set αᵒᵈ) : ofDual (sSup s) = sInf (toDual ⁻¹' s) :=
   rfl
 
 @[simp]
-theorem ofDual_sInf [SupSet α] (s : Set αᵒᵈ) : ofDual (sInf s) = sSup (toDual ⁻¹' s) :=
+theorem ofDual_sInf [LE α] [Nonempty α] (s : Set αᵒᵈ) : ofDual (sInf s) = sSup (toDual ⁻¹' s) :=
   rfl
 
 @[simp]
-theorem toDual_iSup [SupSet α] (f : ι → α) : toDual (⨆ i, f i) = ⨅ i, toDual (f i) :=
+theorem toDual_iSup [LE α] [Nonempty α] (f : ι → α) : toDual (⨆ i, f i) = ⨅ i, toDual (f i) :=
   rfl
 
 @[simp]
-theorem toDual_iInf [InfSet α] (f : ι → α) : toDual (⨅ i, f i) = ⨆ i, toDual (f i) :=
+theorem toDual_iInf [LE α] [Nonempty α] (f : ι → α) : toDual (⨅ i, f i) = ⨆ i, toDual (f i) :=
   rfl
 
 @[simp]
-theorem ofDual_iSup [InfSet α] (f : ι → αᵒᵈ) : ofDual (⨆ i, f i) = ⨅ i, ofDual (f i) :=
+theorem ofDual_iSup [LE α] [Nonempty α] (f : ι → αᵒᵈ) : ofDual (⨆ i, f i) = ⨅ i, ofDual (f i) :=
   rfl
 
 @[simp]
-theorem ofDual_iInf [SupSet α] (f : ι → αᵒᵈ) : ofDual (⨅ i, f i) = ⨆ i, ofDual (f i) :=
+theorem ofDual_iInf [LE α] [Nonempty α] (f : ι → αᵒᵈ) : ofDual (⨅ i, f i) = ⨆ i, ofDual (f i) :=
   rfl
 
 end OrderDual

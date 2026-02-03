@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Bool.Set
 public import Mathlib.Data.Nat.Set
+public import Mathlib.Order.Bounds.OrderIso
 public import Mathlib.Order.CompleteLattice.Basic
 
 /-!
@@ -169,32 +170,44 @@ namespace ULift
 
 universe v
 
-instance supSet [SupSet α] : SupSet (ULift.{v} α) where sSup s := ULift.up (sSup <| ULift.up ⁻¹' s)
+theorem down_sSup [CompleteLattice α] (s : Set (ULift.{v} α)) :
+    (sSup s).down = sSup (ULift.up ⁻¹' s) :=
+  up_injective <| ((ULift.orderIso (α := α)).symm.isLUB_preimage.mp (isLUB_sSup _)).sSup_eq
 
-theorem down_sSup [SupSet α] (s : Set (ULift.{v} α)) : (sSup s).down = sSup (ULift.up ⁻¹' s) := rfl
-theorem up_sSup [SupSet α] (s : Set α) : up (sSup s) = sSup (ULift.down ⁻¹' s) := rfl
+theorem up_sSup [CompleteLattice α] (s : Set α) :
+    up (sSup s) = sSup (ULift.down ⁻¹' s) :=
+  ((ULift.orderIso (α := α)).isLUB_preimage.mpr (isLUB_sSup _)).sSup_eq.symm
 
-instance infSet [InfSet α] : InfSet (ULift.{v} α) where sInf s := ULift.up (sInf <| ULift.up ⁻¹' s)
+theorem down_sInf [CompleteLattice α] (s : Set (ULift.{v} α)) :
+    (sInf s).down = sInf (ULift.up ⁻¹' s) :=
+  up_injective <| ((ULift.orderIso (α := α)).symm.isGLB_preimage.mp (isGLB_sInf _)).sInf_eq
 
-theorem down_sInf [InfSet α] (s : Set (ULift.{v} α)) : (sInf s).down = sInf (ULift.up ⁻¹' s) := rfl
-theorem up_sInf [InfSet α] (s : Set α) : up (sInf s) = sInf (ULift.down ⁻¹' s) := rfl
+theorem up_sInf [CompleteLattice α] (s : Set α) :
+    up (sInf s) = sInf (ULift.down ⁻¹' s) :=
+  ((ULift.orderIso (α := α)).isGLB_preimage.mpr (isGLB_sInf _)).sInf_eq.symm
 
-theorem down_iSup [SupSet α] (f : ι → ULift.{v} α) : (⨆ i, f i).down = ⨆ i, (f i).down :=
-  congr_arg sSup <| (preimage_eq_iff_eq_image ULift.up_bijective).mpr <|
+theorem down_iSup [CompleteLattice α] (f : ι → ULift.{v} α) :
+    (⨆ i, f i).down = ⨆ i, (f i).down :=
+  (down_sSup _).trans <| congr_arg sSup <| (preimage_eq_iff_eq_image ULift.up_bijective).mpr <|
     Eq.symm (range_comp _ _).symm
-theorem up_iSup [SupSet α] (f : ι → α) : up (⨆ i, f i) = ⨆ i, up (f i) :=
+
+theorem up_iSup [CompleteLattice α] (f : ι → α) :
+    up (⨆ i, f i) = ⨆ i, up (f i) :=
   congr_arg ULift.up <| (down_iSup _).symm
 
-theorem down_iInf [InfSet α] (f : ι → ULift.{v} α) : (⨅ i, f i).down = ⨅ i, (f i).down :=
-  congr_arg sInf <| (preimage_eq_iff_eq_image ULift.up_bijective).mpr <|
+theorem down_iInf [CompleteLattice α] (f : ι → ULift.{v} α) :
+    (⨅ i, f i).down = ⨅ i, (f i).down :=
+  (down_sInf _).trans <| congr_arg sInf <| (preimage_eq_iff_eq_image ULift.up_bijective).mpr <|
     Eq.symm (range_comp _ _).symm
-theorem up_iInf [InfSet α] (f : ι → α) : up (⨅ i, f i) = ⨅ i, up (f i) :=
+
+theorem up_iInf [CompleteLattice α] (f : ι → α) :
+    up (⨅ i, f i) = ⨅ i, up (f i) :=
   congr_arg ULift.up <| (down_iInf _).symm
 
 instance instCompleteLattice [CompleteLattice α] : CompleteLattice (ULift.{v} α) :=
-  ULift.down_injective.completeLattice _ down_sup down_inf
-    (fun s => by rw [sSup_eq_iSup', down_iSup, iSup_subtype''])
-    (fun s => by rw [sInf_eq_iInf', down_iInf, iInf_subtype'']) down_top down_bot
+  ULift.down_injective.completeLattice
+    (fun s ↦ up (sSup (up ⁻¹' s))) (fun s ↦ up (sInf (up ⁻¹' s)))
+    _ down_sup down_inf (by simp [sSup_eq_iSup]) (by simp [sInf_eq_iInf]) down_top down_bot
 
 end ULift
 
@@ -203,15 +216,11 @@ namespace PUnit
 instance instCompleteLinearOrder : CompleteLinearOrder PUnit where
   __ := instBooleanAlgebra
   __ := instLinearOrder
-  sSup := fun _ => unit
-  sInf := fun _ => unit
-  le_sSup := by intros; trivial
-  sSup_le := by intros; trivial
-  sInf_le := by intros; trivial
-  le_sInf := by intros; trivial
   le_himp_iff := by intros; trivial
   himp_bot := by intros; trivial
   sdiff_le_iff := by intros; trivial
   top_sdiff := by intros; trivial
+  exists_isLUB _ := ⟨unit, top_mem_upperBounds _, bot_mem_lowerBounds _⟩
+  exists_isGLB _ := ⟨unit, bot_mem_lowerBounds _, top_mem_upperBounds _⟩
 
 end PUnit

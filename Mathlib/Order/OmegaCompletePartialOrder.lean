@@ -6,6 +6,7 @@ Authors: Simon Hudon, Ira Fesefeldt
 module
 
 public import Mathlib.Control.Monad.Basic
+public import Mathlib.Data.Set.Countable
 public import Mathlib.Dynamics.FixedPoints.Basic
 public import Mathlib.Order.CompleteLattice.Basic
 public import Mathlib.Order.Iterate
@@ -63,6 +64,13 @@ assert_not_exists IsOrderedMonoid
 universe u v
 variable {ι : Sort*} {α β γ δ : Type*}
 
+open Lean Environment in
+elab "#count_imports" : command => do
+  let env ← getEnv
+  let transitiveImports := env.importGraph.transitiveClosure
+  logInfo <| f!"{(transitiveImports.filter (fun n _ ↦ n.getRoot == `Mathlib)).size}"
+
+#count_imports -- 318 -- 421
 namespace OmegaCompletePartialOrder
 
 /-- A chain is a monotone sequence.
@@ -92,69 +100,6 @@ variable (g : β →o γ)
 
 instance : LE (Chain α) where le x y := ∀ i, ∃ j, x i ≤ y j
 
-lemma isChain_range : IsChain (· ≤ ·) (Set.range c) := Monotone.isChain_range (OrderHomClass.mono c)
-
-lemma directed : Directed (· ≤ ·) c := directedOn_range.2 c.isChain_range.directedOn
-
-/-- `map` function for `Chain` -/
--- Not `@[simps]`: we need `@[simps!]` to see through the type synonym `Chain β = ℕ →o β`,
--- but then we'd get the `FunLike` instance for `OrderHom` instead.
-def map : Chain β :=
-  f.comp c
-
-@[simp] theorem map_coe : ⇑(map c f) = f ∘ c := rfl
-
-variable {f}
-
-theorem mem_map (x : α) : x ∈ c → f x ∈ Chain.map c f :=
-  fun ⟨i, h⟩ => ⟨i, h.symm ▸ rfl⟩
-
-theorem exists_of_mem_map {b : β} : b ∈ c.map f → ∃ a, a ∈ c ∧ f a = b :=
-  fun ⟨i, h⟩ => ⟨c i, ⟨i, rfl⟩, h.symm⟩
-
-@[simp]
-theorem mem_map_iff {b : β} : b ∈ c.map f ↔ ∃ a, a ∈ c ∧ f a = b :=
-  ⟨exists_of_mem_map _, fun h => by
-    rcases h with ⟨w, h, h'⟩
-    subst b
-    apply mem_map c _ h⟩
-
-@[simp]
-theorem map_id : c.map OrderHom.id = c :=
-  OrderHom.comp_id _
-
-theorem map_comp : (c.map f).map g = c.map (g.comp f) :=
-  rfl
-
-@[mono]
-theorem map_le_map {g : α →o β} (h : f ≤ g) : c.map f ≤ c.map g :=
-  fun i => by simp only [map_coe, Function.comp_apply]; exists i; apply h
-
-/-- `OmegaCompletePartialOrder.Chain.zip` pairs up the elements of two chains
-that have the same index. -/
--- Not `@[simps]`: we need `@[simps!]` to see through the type synonym `Chain β = ℕ →o β`,
--- but then we'd get the `FunLike` instance for `OrderHom` instead.
-def zip (c₀ : Chain α) (c₁ : Chain β) : Chain (α × β) :=
-  OrderHom.prod c₀ c₁
-
-@[simp] theorem zip_coe (c₀ : Chain α) (c₁ : Chain β) (n : ℕ) : c₀.zip c₁ n = (c₀ n, c₁ n) := rfl
-
-/-- An example of a `Chain` constructed from an ordered pair. -/
-def pair (a b : α) (hab : a ≤ b) : Chain α where
-  toFun
-    | 0 => a
-    | _ => b
-  monotone' _ _ _ := by aesop
-
-@[simp] lemma pair_zero (a b : α) (hab) : pair a b hab 0 = a := rfl
-@[simp] lemma pair_succ (a b : α) (hab) (n : ℕ) : pair a b hab (n + 1) = b := rfl
-
-@[simp] lemma range_pair (a b : α) (hab) : Set.range (pair a b hab) = {a, b} := by
-  ext; exact Nat.or_exists_add_one.symm.trans (by aesop)
-
-@[simp] lemma pair_zip_pair (a₁ a₂ : α) (b₁ b₂ : β) (ha hb) :
-    (pair a₁ a₂ ha).zip (pair b₁ b₂ hb) = pair (a₁, b₁) (a₂, b₂) (Prod.le_def.2 ⟨ha, hb⟩) := by
-  unfold Chain; ext n : 2; cases n <;> rfl
 
 end Chain
 
@@ -168,52 +113,77 @@ call `ωSup`). In this sense, it is strictly weaker than join complete
 semi-lattices as only ω-sized totally ordered sets have a supremum.
 
 See the definition on page 114 of [gunter1992]. -/
-class OmegaCompletePartialOrder (α : Type*) extends PartialOrder α where
-  /-- The supremum of an increasing sequence -/
-  ωSup : Chain α → α
-  /-- `ωSup` is an upper bound of the increasing sequence -/
-  le_ωSup : ∀ c : Chain α, ∀ i, c i ≤ ωSup c
-  /-- `ωSup` is a lower bound of the set of upper bounds of the increasing sequence -/
-  ωSup_le : ∀ (c : Chain α) (x), (∀ i, c i ≤ x) → ωSup c ≤ x
+class OmegaCompletePartialOrder (α : Type*) extends PartialOrder α, SupSet α where
+  isLUB_ωSup : ∀ s, IsChain (· ≤ ·) s → s.Countable → IsLUB s (sSup s)
 
 namespace OmegaCompletePartialOrder
 variable [OmegaCompletePartialOrder α]
 
+/-- `ωSup` is an upper bound of the increasing sequence -/
+theorem le_ωSup {s} (hc : IsChain (· ≤ ·) s) (hω : s.Countable) {x : α} (hx : x ∈ s) :
+    x ≤ sSup s :=
+  (isLUB_ωSup s hc hω).1 hx
+
+/-- `ωSup` is a lower bound of the set of upper bounds of the increasing sequence -/
+theorem ωSup_le {s} (hc : IsChain (· ≤ ·) s) (hω : s.Countable) {x : α} (hx : ∀ y ∈ s, y ≤ x) :
+    sSup s ≤ x :=
+  (isLUB_ωSup s hc hω).2 hx
+
+set_option linter.deprecated false in
+@[deprecated sSup (since := "2026-02-02")]
+def ωSup (c : Chain α) : α := sSup (Set.range c)
+
 /-- Transfer an `OmegaCompletePartialOrder` on `β` to an `OmegaCompletePartialOrder` on `α`
 using a strictly monotone function `f : β →o α`, a definition of ωSup and a proof that `f` is
 continuous with regard to the provided `ωSup` and the ωCPO on `α`. -/
-protected abbrev lift [PartialOrder β] (f : β →o α) (ωSup₀ : Chain β → β)
-    (h : ∀ x y, f x ≤ f y → x ≤ y) (h' : ∀ c, f (ωSup₀ c) = ωSup (c.map f)) :
+protected abbrev lift [PartialOrder β] (f : β →o α) (ωSup₀ : Set β → β)
+    (h : ∀ x y, f x ≤ f y → x ≤ y)
+    (h' : ∀ s, IsChain (· ≤ ·) s → s.Countable → f (ωSup₀ s) = sSup (f '' s)) :
     OmegaCompletePartialOrder β where
-  ωSup := ωSup₀
-  ωSup_le c x hx := h _ _ (by rw [h']; apply ωSup_le; intro i; apply f.monotone (hx i))
-  le_ωSup c i := h _ _ (by rw [h']; apply le_ωSup (c.map f))
+  sSup := ωSup₀
+  isLUB_ωSup s hc hω := .of_image ⟨h _ _, f.mono.imp⟩
+    (h' s hc hω ▸ isLUB_ωSup _ (hc.image _) (hω.image _))
 
-theorem le_ωSup_of_le {c : Chain α} {x : α} (i : ℕ) (h : x ≤ c i) : x ≤ ωSup c :=
-  le_trans h (le_ωSup c _)
+theorem le_ωSup_of_le {s} (hc : IsChain (· ≤ ·) s) (hω : s.Countable) {x y : α} (hy : y ∈ s)
+    (h : x ≤ y) : x ≤ sSup s :=
+  le_trans h (le_ωSup hc hω hy)
 
-theorem ωSup_total {c : Chain α} {x : α} (h : ∀ i, c i ≤ x ∨ x ≤ c i) : ωSup c ≤ x ∨ x ≤ ωSup c :=
+theorem ωSup_total {s : Set α} (hc : IsChain (· ≤ ·) s) (hω : s.Countable) {x : α}
+    (h : ∀ y ∈ s, y ≤ x ∨ x ≤ y) : sSup s ≤ x ∨ x ≤ sSup s :=
   by_cases
-    (fun (this : ∀ i, c i ≤ x) => Or.inl (ωSup_le _ _ this))
-    (fun (this : ¬∀ i, c i ≤ x) =>
-      have : ∃ i, ¬c i ≤ x := by simp only [not_forall] at this ⊢; assumption
-      let ⟨i, hx⟩ := this
-      have : x ≤ c i := (h i).resolve_left hx
-      Or.inr <| le_ωSup_of_le _ this)
+    (fun (this : ∀ y ∈ s, y ≤ x) => Or.inl (ωSup_le hc hω this))
+    (fun (this : ¬∀ y ∈ s, y ≤ x) =>
+      have : ∃ y ∈ s, ¬y ≤ x := by simp only [not_forall, exists_prop] at this ⊢; assumption
+      let ⟨y, hy, hx⟩ := this
+      have : x ≤ y := (h y hy).resolve_left hx
+      Or.inr <| le_ωSup_of_le hc hω hy this)
 
+/-
 @[mono]
 theorem ωSup_le_ωSup_of_le {c₀ c₁ : Chain α} (h : c₀ ≤ c₁) : ωSup c₀ ≤ ωSup c₁ :=
   (ωSup_le _ _) fun i => by
     obtain ⟨_, h⟩ := h i
     exact le_trans h (le_ωSup _ _)
+-/
 
-@[simp] theorem ωSup_le_iff {c : Chain α} {x : α} : ωSup c ≤ x ↔ ∀ i, c i ≤ x := by
+/-
+@[mono]
+theorem ωSup_le_ωSup_of_subset {s₀ s₁ : Set α} (hc₀ : IsChain (· ≤ ·) s₀) (hω₀ : s₀.Countable)
+    (hc₁ : IsChain (· ≤ ·) s₁) (hω₁ : s₁.Countable) (h : s₀ ⊆ s₁) : sSup s₀ ≤ sSup s₁ :=
+  (ωSup_le _ _) fun i => by
+    obtain ⟨_, h⟩ := h i
+--     exact le_trans h (le_ωSup _ _
+-/
+
+theorem ωSup_le_iff {s : Set α} (hc : IsChain (· ≤ ·) s) (hω : s.Countable) {x : α} :
+    sSup s ≤ x ↔ ∀ y ∈ s, y ≤ x := by
   constructor <;> intros
-  · trans ωSup c
-    · exact le_ωSup _ _
+  · trans sSup s
+    · exact le_ωSup hc hω ‹_›
     · assumption
-  exact ωSup_le _ _ ‹_›
+  exact ωSup_le hc hω ‹_›
 
+/-
 lemma isLUB_range_ωSup (c : Chain α) : IsLUB (Set.range c) (ωSup c) := by
   constructor
   · simp only [upperBounds, Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff,
@@ -222,24 +192,20 @@ lemma isLUB_range_ωSup (c : Chain α) : IsLUB (Set.range c) (ωSup c) := by
   · simp only [lowerBounds, upperBounds, Set.mem_range, forall_exists_index,
       forall_apply_eq_imp_iff, Set.mem_setOf_eq]
     exact fun ⦃a⦄ a_1 ↦ ωSup_le c a a_1
+-/
 
-lemma ωSup_eq_of_isLUB {c : Chain α} {a : α} (h : IsLUB (Set.range c) a) : a = ωSup c := by
-  rw [le_antisymm_iff]
-  simp only [IsLUB, IsLeast, upperBounds, lowerBounds, Set.mem_range, forall_exists_index,
-    forall_apply_eq_imp_iff, Set.mem_setOf_eq] at h
-  constructor
-  · apply h.2
-    exact fun a ↦ le_ωSup c a
-  · rw [ωSup_le_iff]
-    apply h.1
+lemma ωSup_eq_of_isLUB {s : Set α} (hc : IsChain (· ≤ ·) s) (hω : s.Countable)
+    {a : α} (h : IsLUB s a) : a = sSup s :=
+  h.unique (isLUB_ωSup s hc hω)
 
 /-- A subset `p : α → Prop` of the type closed under `ωSup` induces an
 `OmegaCompletePartialOrder` on the subtype `{a : α // p a}`. -/
 def subtype {α : Type*} [OmegaCompletePartialOrder α] (p : α → Prop)
-    (hp : ∀ c : Chain α, (∀ i ∈ c, p i) → p (ωSup c)) : OmegaCompletePartialOrder (Subtype p) :=
+    (hp : ∀ s : Set α, IsChain (· ≤ ·) s → s.Countable → (∀ x ∈ s, p x) → p (sSup s)) :
+    OmegaCompletePartialOrder (Subtype p) :=
   OmegaCompletePartialOrder.lift (OrderHom.Subtype.val p)
-    (fun c => ⟨ωSup _, hp (c.map (OrderHom.Subtype.val p)) fun _ ⟨n, q⟩ => q.symm ▸ (c n).2⟩)
-    (fun _ _ h => h) (fun _ => rfl)
+    (fun s => ⟨sSup ((↑) '' s), hp _ _ _ _⟩)
+    (fun _ _ h => h) (_)
 
 section Continuity
 

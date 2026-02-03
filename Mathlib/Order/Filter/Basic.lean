@@ -197,15 +197,6 @@ def giGenerate (α : Type*) :
   choice s hs := Filter.mkOfClosure s (le_antisymm hs <| le_generate_iff.1 <| le_rfl)
   choice_eq _ _ := mkOfClosure_sets
 
-theorem mem_inf_iff {f g : Filter α} {s : Set α} : s ∈ f ⊓ g ↔ ∃ t₁ ∈ f, ∃ t₂ ∈ g, s = t₁ ∩ t₂ :=
-  Iff.rfl
-
-theorem mem_inf_of_left {f g : Filter α} {s : Set α} (h : s ∈ f) : s ∈ f ⊓ g :=
-  ⟨s, h, univ, univ_mem, (inter_univ s).symm⟩
-
-theorem mem_inf_of_right {f g : Filter α} {s : Set α} (h : s ∈ g) : s ∈ f ⊓ g :=
-  ⟨univ, univ_mem, s, h, (univ_inter s).symm⟩
-
 theorem inter_mem_inf {α : Type u} {f g : Filter α} {s t : Set α} (hs : s ∈ f) (ht : t ∈ g) :
     s ∩ t ∈ f ⊓ g :=
   ⟨s, hs, t, ht, rfl⟩
@@ -242,8 +233,6 @@ instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
   le_sInf _ _ h₁ _ h₂ := by rw [← Filter.sSup_lowerBounds] at h₂; exact h₂ h₁
   le_top _ _ := univ_mem'
   bot_le _ _ _ := trivial
-
-instance : Inhabited (Filter α) := ⟨⊥⟩
 
 end CompleteLattice
 

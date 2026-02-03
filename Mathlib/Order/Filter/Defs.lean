@@ -5,10 +5,7 @@ Authors: Johannes Hölzl, Jeremy Avigad
 -/
 module
 
-public import Mathlib.Data.Set.Insert
-public import Mathlib.Order.SetNotation
-public import Mathlib.Order.BooleanAlgebra.Set
-public import Mathlib.Order.Bounds.Defs
+public import Mathlib.Order.CompleteLattice.Defs
 public meta import Aesop
 
 /-!
@@ -64,6 +61,8 @@ at the cost of including the assumption `[NeBot f]` in a number of lemmas and de
 -/
 
 @[expose] public section
+
+noncomputable section
 
 assert_not_exists RelIso
 
@@ -187,25 +186,8 @@ instance : PartialOrder (Filter α) where
 theorem le_def : f ≤ g ↔ ∀ x ∈ g, x ∈ f :=
   Iff.rfl
 
-instance instSupSet : SupSet (Filter α) where
-  sSup S := join (𝓟 S)
-
-@[simp] theorem mem_sSup {S : Set (Filter α)} : s ∈ sSup S ↔ ∀ f ∈ S, s ∈ f := .rfl
-
-/-- Infimum of a set of filters.
-This definition is marked as irreducible
-so that Lean doesn't try to unfold it when unifying expressions. -/
-@[irreducible]
-protected def sInf (s : Set (Filter α)) : Filter α := sSup (lowerBounds s)
-
-instance instInfSet : InfSet (Filter α) where
-  sInf := Filter.sInf
-
-protected theorem sSup_lowerBounds (s : Set (Filter α)) : sSup (lowerBounds s) = sInf s := by
-  simp [sInf, Filter.sInf]
-
 instance : Top (Filter α) where
-  top := .copy (sSup (Set.range pure)) {s | ∀ x, x ∈ s} <| by simp
+  top := .copy (𝓟 univ) {s | ∀ x, x ∈ s} <| by simp [Set.eq_univ_iff_forall]
 
 theorem mem_top_iff_forall {s : Set α} : s ∈ (⊤ : Filter α) ↔ ∀ x, x ∈ s :=
   Iff.rfl
@@ -215,7 +197,18 @@ theorem mem_top {s : Set α} : s ∈ (⊤ : Filter α) ↔ s = univ := by
   rw [mem_top_iff_forall, eq_univ_iff_forall]
 
 instance : Bot (Filter α) where
-  bot := .copy (sSup ∅) univ <| by simp
+  bot := .copy (𝓟 ∅) univ <| by simp
+
+instance : Inhabited (Filter α) := ⟨⊥⟩
+
+theorem isLUB_join_principal (S : Set (Filter α)) : IsLUB S (join (𝓟 S)) :=
+  ⟨fun _ hf _ hs ↦ hs hf, fun _ h _ hs _ hg ↦ h hg hs⟩
+
+theorem sSup_eq_join_principal (S : Set (Filter α)) : sSup S = join (𝓟 S) :=
+  (isLUB_join_principal S).sSup_eq
+
+@[simp] theorem mem_sSup {S : Set (Filter α)} : s ∈ sSup S ↔ ∀ f ∈ S, s ∈ f := by
+  rw [sSup_eq_join_principal]; rfl
 
 @[simp]
 theorem mem_bot {s : Set α} : s ∈ (⊥ : Filter α) :=
@@ -236,6 +229,15 @@ instance instInf : Min (Filter α) :=
         rintro x y ⟨a, ha, b, hb, rfl⟩ ⟨c, hc, d, hd, rfl⟩
         refine ⟨a ∩ c, inter_mem ha hc, b ∩ d, inter_mem hb hd, ?_⟩
         ac_rfl }⟩
+
+theorem mem_inf_iff {f g : Filter α} {s : Set α} : s ∈ f ⊓ g ↔ ∃ t₁ ∈ f, ∃ t₂ ∈ g, s = t₁ ∩ t₂ :=
+  Iff.rfl
+
+theorem mem_inf_of_left {f g : Filter α} {s : Set α} (h : s ∈ f) : s ∈ f ⊓ g :=
+  ⟨s, h, univ, univ_mem, (inter_univ s).symm⟩
+
+theorem mem_inf_of_right {f g : Filter α} {s : Set α} (h : s ∈ g) : s ∈ f ⊓ g :=
+  ⟨univ, univ_mem, s, h, (univ_inter s).symm⟩
 
 /-- The supremum of two filters is the filter that contains sets that belong to both filters. -/
 instance instSup : Max (Filter α) where
@@ -262,6 +264,25 @@ instance instHNot : HNot (Filter α) where
 theorem mem_sdiff : s ∈ f \ g ↔ ∀ t ∈ g, s ⊆ t → t ∈ f := .rfl
 
 protected theorem hnot_def : ￢f = 𝓟 f.kerᶜ := rfl
+
+/-- Complete lattice structure on `Filter α`. -/
+instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
+  inf a b := a ⊓ b
+  sup a b := a ⊔ b
+  top := ⊤
+  bot := ⊥
+  le_sup_left _ _ _ h := h.1
+  le_sup_right _ _ _ h := h.2
+  sup_le _ _ _ h₁ h₂ _ h := ⟨h₁ h, h₂ h⟩
+  inf_le_left _ _ _ := mem_inf_of_left
+  inf_le_right _ _ _ := mem_inf_of_right
+  le_inf := fun _ _ _ h₁ h₂ _s ⟨_a, ha, _b, hb, hs⟩ => hs.symm ▸ inter_mem (h₁ ha) (h₂ hb)
+  le_top _ _ := univ_mem'
+  bot_le _ _ _ := trivial
+  __ := completeLatticeOfSup _ _ isLUB_join_principal
+
+protected theorem sSup_lowerBounds (s : Set (Filter α)) : sSup (lowerBounds s) = sInf s :=
+  (isLUB_sSup _).unique (isGLB_sInf _).isLUB
 
 
 /-- A filter is `NeBot` if it is not equal to `⊥`, or equivalently the empty set does not belong to

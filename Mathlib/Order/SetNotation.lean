@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2017 Johannes Hölzl. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Johannes Hölzl, Patrick Massot, Yury Kudryashov
+Authors: Johannes Hölzl, Patrick Massot, Yury Kudryashov, Yuyang Zhao
 -/
 module
 
 public import Mathlib.Data.Set.Operations
+public import Mathlib.Order.Bounds.Basic
 public import Mathlib.Util.Notation3
 
 /-!
@@ -15,9 +16,7 @@ In this file we introduce notation for indexed suprema, infima, unions, and inte
 
 ## Main definitions
 
-- `SupSet α`: typeclass introducing the operation `SupSet.sSup` (exported to the root namespace);
-  `sSup s` is the supremum of the set `s`;
-- `InfSet`: similar typeclass for infimum of a set;
+- `sSup s`, `sInf s`: supremum and infimum of the set `s`;
 - `iSup f`, `iInf f`: supremum and infimum of an indexed family of elements,
   defined as `sSup (Set.range f)` and `sInf (Set.range f)`, respectively;
 - `Set.sUnion s`, `Set.sInter s`: same as `sSup s` and `sInf s`,
@@ -35,34 +34,23 @@ In this file we introduce notation for indexed suprema, infima, unions, and inte
 
 @[expose] public section
 
+noncomputable section
+
 open Set
 
 universe u v
 variable {α : Type u} {ι : Sort v}
 
-/-- Class for the `sSup` operator -/
-class SupSet (α : Type*) where
-  /-- Supremum of a set -/
-  sSup : Set α → α
-
-/-- Class for the `sInf` operator -/
-@[to_dual existing]
-class InfSet (α : Type*) where
-  /-- Infimum of a set -/
-  sInf : Set α → α
-
-export SupSet (sSup)
-
-export InfSet (sInf)
+open Classical in
+/-- Supremum of a set -/
+@[to_dual /-- Infimum of a set -/]
+def sSup [LE α] [Nonempty α] (s : Set α) : α :=
+  if h : ∃ x, IsLUB s x then Classical.choose h else Classical.arbitrary α
 
 /-- Indexed supremum -/
 @[to_dual /-- Indexed infimum -/]
-def iSup [SupSet α] (s : ι → α) : α :=
+def iSup [LE α] [Nonempty α] (s : ι → α) : α :=
   sSup (range s)
-
-@[to_dual]
-instance (priority := 50) infSet_to_nonempty (α) [InfSet α] : Nonempty α :=
-  ⟨sInf ∅⟩
 
 /-- Indexed supremum. -/
 notation3 "⨆ " (...)", " r:60:(scoped f => iSup f) => r
@@ -131,6 +119,32 @@ meta def iInf_delab : Delab := whenPPOption Lean.getPPNotation <| withOverApp 4 
   return stx
 end delaborators
 
+@[to_dual]
+theorem exists_isLUB_iff_isLUB_sSup [LE α] [Nonempty α] {s : Set α} :
+    (∃ a, IsLUB s a) ↔ IsLUB s (sSup s) := by
+  constructor
+  · intro h
+    rw [sSup, dif_pos h]
+    exact Classical.choose_spec _
+  · exact fun h ↦ ⟨_, h⟩
+
+@[to_dual] alias ⟨isLUB_sSup_of_exists_isLUB, _⟩ := exists_isLUB_iff_isLUB_sSup
+
+@[to_dual]
+theorem IsLUB.sSup_eq [PartialOrder α] [Nonempty α] {s : Set α} {a : α} (h : IsLUB s a) :
+    sSup s = a :=
+  (isLUB_sSup_of_exists_isLUB ⟨a, h⟩).unique h
+
+@[to_dual]
+theorem IsLUB.iSup_eq [PartialOrder α] [Nonempty α] {f : ι → α} {a : α} (h : IsLUB (.range f) a) :
+    iSup f = a :=
+  h.sSup_eq
+
+@[to_dual]
+theorem sSup_of_not_bddAbove [Preorder α] [Nonempty α] {s : Set α}
+    (hs : ¬BddAbove s) : sSup s = Classical.arbitrary α :=
+  dif_neg (fun ⟨_, hx⟩ ↦ hs hx.bddAbove)
+
 namespace Set
 
 /-
@@ -145,22 +159,16 @@ But we would like to dualize set intervals such that e.g. `Ico a b` is dual to `
 -/
 attribute [to_dual_dont_translate] Set
 
-instance : InfSet (Set α) :=
-  ⟨fun s => { a | ∀ t ∈ s, a ∈ t }⟩
-
-instance : SupSet (Set α) :=
-  ⟨fun s => { a | ∃ t ∈ s, a ∈ t }⟩
-
 /-- Intersection of a set of sets. -/
 def sInter (S : Set (Set α)) : Set α :=
-  sInf S
+  { a | ∀ t ∈ S, a ∈ t }
 
 /-- Notation for `Set.sInter` Intersection of a set of sets. -/
 prefix:110 "⋂₀ " => sInter
 
 /-- Union of a set of sets. -/
 def sUnion (S : Set (Set α)) : Set α :=
-  sSup S
+  { a | ∃ t ∈ S, a ∈ t }
 
 /-- Notation for `Set.sUnion`. Union of a set of sets. -/
 prefix:110 "⋃₀ " => sUnion
@@ -175,11 +183,11 @@ theorem mem_sUnion {x : α} {S : Set (Set α)} : x ∈ ⋃₀ S ↔ ∃ t ∈ S,
 
 /-- Indexed union of a family of sets -/
 def iUnion (s : ι → Set α) : Set α :=
-  iSup s
+  sUnion (range s)
 
 /-- Indexed intersection of a family of sets -/
 def iInter (s : ι → Set α) : Set α :=
-  iInf s
+  sInter (range s)
 
 /-- Notation for `Set.iUnion`. Indexed union of a family of sets -/
 notation3 "⋃ " (...)", " r:60:(scoped f => iUnion f) => r
@@ -259,20 +267,26 @@ theorem mem_iInter {x : α} {s : ι → Set α} : (x ∈ ⋂ i, s i) ↔ ∀ i, 
   ⟨fun (h : ∀ a ∈ { a : Set α | ∃ i, s i = a }, x ∈ a) a => h (s a) ⟨a, rfl⟩,
     fun h _ ⟨a, (eq : s a = _)⟩ => eq ▸ h a⟩
 
+theorem isLUB_sUnion (S : Set (Set α)) : IsLUB S (⋃₀ S) :=
+  ⟨fun s hs _ hx ↦ ⟨s, hs, hx⟩, fun _ h _ ⟨_, ⟨hs, hx⟩⟩ => h hs hx⟩
+
+theorem isGLB_sInter (S : Set (Set α)) : IsGLB S (⋂₀ S) :=
+  ⟨fun _ hs _ hx ↦ hx _ hs, fun _ h _ hx _ hs => h hs hx⟩
+
 @[simp]
 theorem sSup_eq_sUnion (S : Set (Set α)) : sSup S = ⋃₀ S :=
-  rfl
+  (isLUB_sUnion S).sSup_eq
 
 @[simp]
 theorem sInf_eq_sInter (S : Set (Set α)) : sInf S = ⋂₀ S :=
-  rfl
+  (isGLB_sInter S).sInf_eq
 
 @[simp]
-theorem iSup_eq_iUnion (s : ι → Set α) : iSup s = iUnion s :=
-  rfl
+theorem iSup_eq_iUnion (s : ι → Set α) : iSup s = iUnion s := by
+  simp [iSup, iUnion]
 
 @[simp]
-theorem iInf_eq_iInter (s : ι → Set α) : iInf s = iInter s :=
-  rfl
+theorem iInf_eq_iInter (s : ι → Set α) : iInf s = iInter s := by
+  simp [iInf, iInter]
 
 end Set

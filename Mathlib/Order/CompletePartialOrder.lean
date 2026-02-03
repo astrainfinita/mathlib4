@@ -41,26 +41,28 @@ section CompletePartialOrder
 /--
 Complete partial orders are partial orders where every directed set has a least upper bound.
 -/
-class CompletePartialOrder (α : Type*) extends PartialOrder α, SupSet α where
-  /-- For each directed set `d`, `sSup d` is the least upper bound of `d`. -/
-  lubOfDirected : ∀ d, DirectedOn (· ≤ ·) d → IsLUB d (sSup d)
+class CompletePartialOrder (α : Type*) extends PartialOrder α where
+  /-- Every directed set `d` has a least upper bound.. -/
+  lubOfDirected : ∀ d, DirectedOn (· ≤ ·) d → ∃ x : α, IsLUB d x
 
 variable [CompletePartialOrder α] [Preorder β] {f : ι → α} {d : Set α} {a : α}
 
-protected lemma DirectedOn.isLUB_sSup : DirectedOn (· ≤ ·) d → IsLUB d (sSup d) :=
-CompletePartialOrder.lubOfDirected _
+instance : Nonempty α := (CompletePartialOrder.lubOfDirected ∅ directedOn_empty).nonempty
+
+protected lemma DirectedOn.isLUB_sSup (hd : DirectedOn (· ≤ ·) d) : IsLUB d (sSup d) :=
+  isLUB_sSup_of_exists_isLUB (CompletePartialOrder.lubOfDirected _ hd)
 
 protected lemma DirectedOn.le_sSup (hd : DirectedOn (· ≤ ·) d) (ha : a ∈ d) : a ≤ sSup d :=
-hd.isLUB_sSup.1 ha
+  hd.isLUB_sSup.1 ha
 
 protected lemma DirectedOn.sSup_le (hd : DirectedOn (· ≤ ·) d) (ha : ∀ b ∈ d, b ≤ a) : sSup d ≤ a :=
-hd.isLUB_sSup.2 ha
+  hd.isLUB_sSup.2 ha
 
 protected lemma Directed.le_iSup (hf : Directed (· ≤ ·) f) (i : ι) : f i ≤ ⨆ j, f j :=
-hf.directedOn_range.le_sSup <| Set.mem_range_self _
+  hf.directedOn_range.le_sSup <| Set.mem_range_self _
 
 protected lemma Directed.iSup_le (hf : Directed (· ≤ ·) f) (ha : ∀ i, f i ≤ a) : ⨆ i, f i ≤ a :=
-hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
+  hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
 
 --TODO: We could mimic more `sSup`/`iSup` lemmas
 
@@ -75,6 +77,7 @@ lemma CompletePartialOrder.scottContinuous {f : α → β} :
 open OmegaCompletePartialOrder
 
 /-- A complete partial order is an ω-complete partial order. -/
+noncomputable
 instance CompletePartialOrder.toOmegaCompletePartialOrder : OmegaCompletePartialOrder α where
   ωSup c := ⨆ n, c n
   le_ωSup c := c.directed.le_iSup

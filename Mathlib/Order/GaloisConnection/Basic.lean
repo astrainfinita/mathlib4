@@ -435,16 +435,9 @@ abbrev liftBoundedOrder [Preorder α] [BoundedOrder α] (gi : GaloisInsertion l 
 -- See note [reducible non-instances]
 /-- Lift all suprema and infima along a Galois insertion -/
 abbrev liftCompleteLattice [CompleteLattice α] (gi : GaloisInsertion l u) : CompleteLattice β :=
-  { gi.liftBoundedOrder, gi.liftLattice with
-    sSup := fun s => l (sSup (u '' s))
-    sSup_le := fun _ => (gi.isLUB_of_u_image (isLUB_sSup _)).2
-    le_sSup := fun _ => (gi.isLUB_of_u_image (isLUB_sSup _)).1
-    sInf := fun s =>
-      gi.choice (sInf (u '' s)) <|
-        (isGLB_sInf _).2 <|
-          gi.gc.monotone_u.mem_lowerBounds_image (gi.isGLB_of_u_image <| isGLB_sInf _).1
-    sInf_le := fun s => by rw [gi.choice_eq]; exact (gi.isGLB_of_u_image (isGLB_sInf _)).1
-    le_sInf := fun s => by rw [gi.choice_eq]; exact (gi.isGLB_of_u_image (isGLB_sInf _)).2 }
+  { gi.liftBoundedOrder, gi.liftLattice,
+    completeLatticeOfSup _ (fun s ↦ l (sSup (u '' s)))
+      (fun _ ↦ gi.isLUB_of_u_image (isLUB_sSup _)) with }
 
 end lift
 
@@ -549,27 +542,25 @@ abbrev liftBoundedOrder
 -- See note [reducible non-instances]
 /-- Lift all suprema and infima along a Galois coinsertion -/
 abbrev liftCompleteLattice [CompleteLattice β] (gi : GaloisCoinsertion l u) : CompleteLattice α :=
-  { @OrderDual.instCompleteLattice αᵒᵈ gi.dual.liftCompleteLattice with
-    sInf := fun s => u (sInf (l '' s))
-    sSup := fun s => gi.choice (sSup (l '' s)) _ }
+  { @OrderDual.instCompleteLattice αᵒᵈ gi.dual.liftCompleteLattice with }
 
 end lift
 
 end GaloisCoinsertion
 
 /-- `sSup` and `Iic` form a Galois insertion. -/
-def gi_sSup_Iic [CompleteSemilatticeSup α] :
+noncomputable def gi_sSup_Iic [CompleteSemilatticeSup α] :
     GaloisInsertion (sSup : Set α → α) (Iic : α → Set α) :=
   gc_sSup_Iic.toGaloisInsertion fun _ ↦ le_sSup le_rfl
 
 /-- `toDual ∘ Ici` and `sInf ∘ ofDual` form a Galois coinsertion. -/
-def gci_Ici_sInf [CompleteSemilatticeInf α] :
+noncomputable def gci_Ici_sInf [CompleteSemilatticeInf α] :
     GaloisCoinsertion (toDual ∘ Ici : α → (Set α)ᵒᵈ) (sInf ∘ ofDual : (Set α)ᵒᵈ → α) :=
   gc_Ici_sInf.toGaloisCoinsertion fun _ ↦ sInf_le le_rfl
 
 /-- If `α` is a partial order with bottom element (e.g., `ℕ`, `ℝ≥0`), then `WithBot.unbot' ⊥` and
 coercion form a Galois insertion. -/
-def WithBot.giUnbotDBot [Preorder α] [OrderBot α] :
+noncomputable def WithBot.giUnbotDBot [Preorder α] [OrderBot α] :
     GaloisInsertion (WithBot.unbotD ⊥) (some : α → WithBot α) where
   gc _ _ := WithBot.unbotD_le_iff (fun _ ↦ bot_le)
   le_l_u _ := le_rfl
