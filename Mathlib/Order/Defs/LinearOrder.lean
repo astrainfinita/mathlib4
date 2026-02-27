@@ -144,35 +144,29 @@ theorem max_def' (a b : α) : max a b = if b ≤ a then a else b := by
   match lt_trichotomy a b with
   | .inl h | .inr (.inl h) | .inr (.inr h) => simp [le_of_lt, not_le_of_gt, h, max_def]
 
+@[to_dual le_min_iff]
+theorem max_le_iff : max a b ≤ c ↔ a ≤ c ∧ b ≤ c := by
+  rw [max_def]
+  split_ifs with h
+  · simpa using le_trans h
+  · simpa using le_trans (le_of_not_ge h)
+
 instance : Std.LawfulOrderMin α where
   min_eq_or a b := by
     rw [min_def]
     split_ifs <;> simp
-  le_min_iff a b c := by
-    rw [min_def]
-    split_ifs with h
-    · simpa using (le_trans · h)
-    · simpa using (le_trans · (le_of_not_ge h))
+  le_min_iff _ _ _ := le_min_iff
 
 instance : Std.LawfulOrderMax α where
   max_eq_or a b := by
     rw [max_def]
     split_ifs <;> simp
-  max_le_iff a b c := by
-    rw [max_def]
-    split_ifs with h
-    · simpa using le_trans h
-    · simpa using le_trans (le_of_not_ge h)
-
-theorem le_min_iff : c ≤ min a b ↔ c ≤ a ∧ c ≤ b := Std.le_min_iff
+  max_le_iff _ _ _ := max_le_iff
 
 theorem le_max_iff : a ≤ max b c ↔ a ≤ b ∨ a ≤ c := Std.le_max
 
 @[to_dual existing le_max_iff]
 theorem min_le_iff : min a b ≤ c ↔ a ≤ c ∨ b ≤ c := Std.min_le
-
-@[to_dual existing le_min_iff]
-theorem max_le_iff : max a b ≤ c ↔ a ≤ c ∧ b ≤ c := Std.max_le_iff
 
 @[to_dual le_max_left]
 lemma min_le_left (a b : α) : min a b ≤ a := min_le_iff.mpr (.inl le_rfl)
