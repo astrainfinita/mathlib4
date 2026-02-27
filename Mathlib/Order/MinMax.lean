@@ -29,6 +29,7 @@ section
 
 variable [LinearOrder α] [LinearOrder β] {f : α → β} {s : Set α} {a b c d : α}
 
+-- translate from lattices to linear orders (sup → max, inf → min)
 theorem lt_min_iff : a < min b c ↔ a < b ∧ a < c :=
   lt_inf_iff
 
