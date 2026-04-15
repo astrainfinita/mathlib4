@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Defs
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Tactic.FastInstance
 public import Mathlib.Tactic.Spread
 
 /-!
@@ -67,9 +68,9 @@ preserves `*` to a commutative semigroup.  See note [reducible non-instances]. -
 /-- A type endowed with `+` is an additive commutative semigroup,if it admits
 an injective map that preserves `+` to an additive commutative semigroup. -/]
 protected abbrev commSemigroup [CommSemigroup M₂] (f : M₁ → M₂) (hf : Injective f)
-    (mul : ∀ x y, f (x * y) = f x * f y) : CommSemigroup M₁ where
-  toSemigroup := hf.semigroup f mul
-  __ := hf.commMagma f mul
+    (mul : ∀ x y, f (x * y) = f x * f y) : CommSemigroup M₁ := fast_instance%
+  { toSemigroup := hf.semigroup f mul
+    __ := hf.commMagma f mul }
 
 /-- A type has left-cancellative multiplication, if it admits an injective map that
 preserves `*` to another type with left-cancellative multiplication. -/
@@ -101,7 +102,7 @@ preserves `*` to a left cancel semigroup.  See note [reducible non-instances]. -
 @[to_additive /-- A type endowed with `+` is an additive left cancel semigroup, if it admits an
 injective map that preserves `+` to an additive left cancel semigroup. -/]
 protected abbrev leftCancelSemigroup [LeftCancelSemigroup M₂] (f : M₁ → M₂) (hf : Injective f)
-    (mul : ∀ x y, f (x * y) = f x * f y) : LeftCancelSemigroup M₁ :=
+    (mul : ∀ x y, f (x * y) = f x * f y) : LeftCancelSemigroup M₁ := fast_instance%
   { hf.semigroup f mul, hf.isLeftCancelMul f mul with }
 
 /-- A type endowed with `*` is a right cancel semigroup, if it admits an injective map that
@@ -110,7 +111,7 @@ preserves `*` to a right cancel semigroup.  See note [reducible non-instances]. 
 cancel semigroup, if it admits an injective map that preserves `+` to an additive right cancel
 semigroup. -/]
 protected abbrev rightCancelSemigroup [RightCancelSemigroup M₂] (f : M₁ → M₂) (hf : Injective f)
-    (mul : ∀ x y, f (x * y) = f x * f y) : RightCancelSemigroup M₁ :=
+    (mul : ∀ x y, f (x * y) = f x * f y) : RightCancelSemigroup M₁ := fast_instance%
   { hf.semigroup f mul, hf.isRightCancelMul f mul with }
 
 variable [One M₁]
@@ -135,6 +136,7 @@ injective map that preserves `0` and `+` to an additive monoid. See note
 [reducible non-instances]. -/]
 protected abbrev monoid [Monoid M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : Monoid M₁ :=
+  fast_instance%
   { hf.semigroup f mul, hf.mulOneClass f one mul with
     npow := fun n x => x ^ n,
     npow_zero := fun x => hf <| by rw [npow, one, pow_zero],
@@ -147,7 +149,7 @@ preserves `1` and `*` to a left cancel monoid. See note [reducible non-instances
 admits an injective map that preserves `0` and `+` to an additive left cancel monoid. -/]
 protected abbrev leftCancelMonoid [LeftCancelMonoid M₂] (f : M₁ → M₂) (hf : Injective f)
     (one : f 1 = 1) (mul : ∀ x y, f (x * y) = f x * f y)
-    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : LeftCancelMonoid M₁ :=
+    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : LeftCancelMonoid M₁ := fast_instance%
   { hf.monoid f one mul npow, hf.leftCancelSemigroup f mul with }
 
 /-- A type endowed with `1` and `*` is a right cancel monoid, if it admits an injective map that
@@ -157,7 +159,7 @@ preserves `1` and `*` to a right cancel monoid. See note [reducible non-instance
 admits an injective map that preserves `0` and `+` to an additive left cancel monoid. -/]
 protected abbrev rightCancelMonoid [RightCancelMonoid M₂] (f : M₁ → M₂) (hf : Injective f)
     (one : f 1 = 1) (mul : ∀ x y, f (x * y) = f x * f y)
-    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : RightCancelMonoid M₁ :=
+    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : RightCancelMonoid M₁ := fast_instance%
   { hf.monoid f one mul npow, hf.rightCancelSemigroup f mul with }
 
 /-- A type endowed with `1` and `*` is a cancel monoid, if it admits an injective map that preserves
@@ -167,7 +169,7 @@ protected abbrev rightCancelMonoid [RightCancelMonoid M₂] (f : M₁ → M₂) 
 admits an injective map that preserves `0` and `+` to an additive left cancel monoid. -/]
 protected abbrev cancelMonoid [CancelMonoid M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) :
-    CancelMonoid M₁ :=
+    CancelMonoid M₁ := fast_instance%
   { hf.leftCancelMonoid f one mul npow, hf.rightCancelMonoid f one mul npow with }
 
 /-- A type endowed with `1` and `*` is a commutative monoid, if it admits an injective map that
@@ -177,7 +179,7 @@ preserves `1` and `*` to a commutative monoid.  See note [reducible non-instance
 admits an injective map that preserves `0` and `+` to an additive commutative monoid. -/]
 protected abbrev commMonoid [CommMonoid M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) :
-    CommMonoid M₁ :=
+    CommMonoid M₁ := fast_instance%
   { hf.monoid f one mul npow, hf.commSemigroup f mul with }
 
 /-- A type endowed with `1` and `*` is a cancel commutative monoid if it admits an injective map
@@ -186,7 +188,7 @@ that preserves `1` and `*` to a cancel commutative monoid. See note [reducible n
 admits an injective map that preserves `0` and `+` to an additive cancel commutative monoid. -/]
 protected abbrev cancelCommMonoid [CancelCommMonoid M₂] (f : M₁ → M₂) (hf : Injective f)
     (one : f 1 = 1) (mul : ∀ x y, f (x * y) = f x * f y)
-    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : CancelCommMonoid M₁ :=
+    (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : CancelCommMonoid M₁ := fast_instance%
   { hf.commMonoid f one mul npow, hf.leftCancelSemigroup f mul with }
 
 /-- A type has an involutive inversion if it admits a surjective map that preserves `⁻¹` to a type
@@ -221,7 +223,7 @@ arguments. -/]
 protected abbrev divInvMonoid [DivInvMonoid M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvMonoid M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvMonoid M₁ := fast_instance%
   { hf.monoid f one mul npow with
     zpow := fun n x => x ^ n,
     zpow_zero' := fun x => hf <| by rw [zpow, zpow_zero, one],
@@ -240,7 +242,7 @@ map that preserves `1`, `*`, `⁻¹`, and `/` to a `DivInvOneMonoid`. See note
 protected abbrev divInvOneMonoid [DivInvOneMonoid M₂] (f : M₁ → M₂) (hf : Injective f)
     (one : f 1 = 1) (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvOneMonoid M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvOneMonoid M₁ := fast_instance%
   { hf.divInvMonoid f one mul inv div npow zpow, hf.invOneClass f one inv with }
 
 /-- A type endowed with `1`, `*`, `⁻¹`, and `/` is a `DivisionMonoid` if it admits an injective map
@@ -253,7 +255,7 @@ and `[SMul ℤ M₁]` arguments. -/]
 protected abbrev divisionMonoid [DivisionMonoid M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivisionMonoid M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivisionMonoid M₁ := fast_instance%
   { hf.divInvMonoid f one mul inv div npow zpow, hf.involutiveInv f inv with
     mul_inv_rev := fun x y => hf <| by rw [inv, mul, mul_inv_rev, mul, inv, inv],
     inv_eq_of_mul := fun x y h => hf <| by
@@ -270,7 +272,7 @@ and binary `-` to a `SubtractionCommMonoid`. This version takes custom `nsmul` a
 protected abbrev divisionCommMonoid [DivisionCommMonoid M₂] (f : M₁ → M₂) (hf : Injective f)
     (one : f 1 = 1) (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivisionCommMonoid M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivisionCommMonoid M₁ := fast_instance%
   { hf.divisionMonoid f one mul inv div npow zpow, hf.commSemigroup f mul with }
 
 /-- A type endowed with `1`, `*` and `⁻¹` is a group, if it admits an injective map that preserves
@@ -281,7 +283,7 @@ injective map that preserves `0` and `+` to an additive group. -/]
 protected abbrev group [Group M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : Group M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : Group M₁ := fast_instance%
   { hf.divInvMonoid f one mul inv div npow zpow with
     inv_mul_cancel := fun x => hf <| by rw [mul, inv, inv_mul_cancel, one] }
 
@@ -294,7 +296,7 @@ admits an injective map that preserves `0` and `+` to an additive commutative gr
 protected abbrev commGroup [CommGroup M₂] (f : M₁ → M₂) (hf : Injective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : CommGroup M₁ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : CommGroup M₁ := fast_instance%
   { hf.group f one mul inv div npow zpow, hf.commMonoid f one mul npow with }
 
 end Injective
@@ -332,9 +334,9 @@ protected abbrev commMagma [CommMagma M₁] (f : M₁ → M₂) (hf : Surjective
 /-- A type endowed with `+` is an additive commutative semigroup, if it admits
 a surjective map that preserves `+` from an additive commutative semigroup. -/]
 protected abbrev commSemigroup [CommSemigroup M₁] (f : M₁ → M₂) (hf : Surjective f)
-    (mul : ∀ x y, f (x * y) = f x * f y) : CommSemigroup M₂ where
-  toSemigroup := hf.semigroup f mul
-  __ := hf.commMagma f mul
+    (mul : ∀ x y, f (x * y) = f x * f y) : CommSemigroup M₂ := fast_instance%
+  { toSemigroup := hf.semigroup f mul
+    __ := hf.commMagma f mul }
 
 variable [One M₂]
 
@@ -358,6 +360,7 @@ surjective map that preserves `0` and `+` to an additive monoid. This version ta
 as a `[SMul ℕ M₂]` argument. -/]
 protected abbrev monoid [Monoid M₁] (f : M₁ → M₂) (hf : Surjective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) : Monoid M₂ :=
+  fast_instance%
   { hf.semigroup f mul, hf.mulOneClass f one mul with
     npow := fun n x => x ^ n,
     npow_zero := hf.forall.2 fun x => by rw [← npow, pow_zero, ← one],
@@ -372,7 +375,7 @@ preserves `1` and `*` from a commutative monoid. See note [reducible non-instanc
 admits a surjective map that preserves `0` and `+` to an additive commutative monoid. -/]
 protected abbrev commMonoid [CommMonoid M₁] (f : M₁ → M₂) (hf : Surjective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n) :
-    CommMonoid M₂ :=
+    CommMonoid M₂ := fast_instance%
   { hf.monoid f one mul npow, hf.commSemigroup f mul with }
 
 /-- A type has an involutive inversion if it admits a surjective map that preserves `⁻¹` to a type
@@ -395,7 +398,7 @@ a `SubNegMonoid`. -/]
 protected abbrev divInvMonoid [DivInvMonoid M₁] (f : M₁ → M₂) (hf : Surjective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvMonoid M₂ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : DivInvMonoid M₂ := fast_instance%
   { hf.monoid f one mul npow with
     zpow := fun n x => x ^ n,
     zpow_zero' := hf.forall.2 fun x => by rw [← zpow, zpow_zero, ← one],
@@ -413,7 +416,7 @@ surjective map that preserves `0` and `+` to an additive group. -/]
 protected abbrev group [Group M₁] (f : M₁ → M₂) (hf : Surjective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : Group M₂ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : Group M₂ := fast_instance%
   { hf.divInvMonoid f one mul inv div npow zpow with
     inv_mul_cancel := hf.forall.2 fun x => by rw [← inv, ← mul, inv_mul_cancel, one] }
 
@@ -426,7 +429,7 @@ admits a surjective map that preserves `0` and `+` to an additive commutative gr
 protected abbrev commGroup [CommGroup M₁] (f : M₁ → M₂) (hf : Surjective f) (one : f 1 = 1)
     (mul : ∀ x y, f (x * y) = f x * f y) (inv : ∀ x, f x⁻¹ = (f x)⁻¹)
     (div : ∀ x y, f (x / y) = f x / f y) (npow : ∀ (x) (n : ℕ), f (x ^ n) = f x ^ n)
-    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : CommGroup M₂ :=
+    (zpow : ∀ (x) (n : ℤ), f (x ^ n) = f x ^ n) : CommGroup M₂ := fast_instance%
   { hf.group f one mul inv div npow zpow, hf.commMonoid f one mul npow with }
 
 end Surjective

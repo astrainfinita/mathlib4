@@ -49,13 +49,13 @@ lemma ringEquiv_symm_apply (e : α ≃ β) [Add β] [Mul β] (b : β) : by
 
 /-- Transfer `NonUnitalNonAssocSemiring` across an `Equiv` -/
 protected abbrev nonUnitalNonAssocSemiring [NonUnitalNonAssocSemiring β] :
-    NonUnitalNonAssocSemiring α := by
+    NonUnitalNonAssocSemiring α := fast_instance% by
   let zero := e.zero
   let add := e.add
   let mul := e.mul
   let nsmul := e.smul ℕ
   apply e.injective.nonUnitalNonAssocSemiring _ <;> intros <;> exact e.apply_symm_apply _
-
+#print Equiv.nonUnitalNonAssocSemiring
 /-- Transfer `NonUnitalSemiring` across an `Equiv` -/
 protected abbrev nonUnitalSemiring [NonUnitalSemiring β] : NonUnitalSemiring α := by
   let zero := e.zero

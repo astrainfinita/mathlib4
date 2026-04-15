@@ -161,7 +161,7 @@ variable (A)
 /-- Compose a `SMulWithZero` with a `ZeroHom`, with action `f r' • m` -/
 @[implicit_reducible]
 def SMulWithZero.compHom (f : ZeroHom M₀' M₀) : SMulWithZero M₀' A where
-  smul := (f · • ·)
+  smul := SMul.comp.smul f
   smul_zero m := smul_zero (f m)
   zero_smul m := by change (f 0) • m = 0; rw [map_zero, zero_smul]
 
@@ -239,10 +239,10 @@ variable (A)
 
 /-- Compose a `MulActionWithZero` with a `MonoidWithZeroHom`, with action `f r' • m` -/
 @[implicit_reducible]
-def MulActionWithZero.compHom (f : M₀' →*₀ M₀) : MulActionWithZero M₀' A where
-  __ := SMulWithZero.compHom A f.toZeroHom
-  mul_smul r s m := by change f (r * s) • m = f r • f s • m; simp [mul_smul]
-  one_smul m := by change f 1 • m = m; simp
+def MulActionWithZero.compHom (f : M₀' →*₀ M₀) : MulActionWithZero M₀' A := fast_instance%
+  { __ := SMulWithZero.compHom A f.toZeroHom
+    mul_smul r s m := by change f (r * s) • m = f r • f s • m; simp [mul_smul]
+    one_smul m := by change f 1 • m = m; simp }
 
 end MonoidWithZero
 
@@ -309,7 +309,7 @@ variable (A)
 
 /-- Compose a `DistribSMul` with a function, with scalar multiplication `f r' • m`.
 See note [reducible non-instances]. -/
-abbrev DistribSMul.compFun (f : N → M) : DistribSMul N A :=
+abbrev DistribSMul.compFun (f : N → M) : DistribSMul N A := fast_instance%
   { SMulZeroClass.compFun A f with
     smul_add := fun x => smul_add (f x) }
 
