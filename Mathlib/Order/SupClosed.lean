@@ -54,7 +54,7 @@ lemma SupClosed.inter (hs : SupClosed s) (ht : SupClosed t) : SupClosed (s ∩ t
   fun _a ha _b hb ↦ ⟨hs ha.1 hb.1, ht ha.2 hb.2⟩
 
 lemma supClosed_sInter (hS : ∀ s ∈ S, SupClosed s) : SupClosed (⋂₀ S) :=
-  fun _a ha _b hb _s hs ↦ hS _ hs (ha _ hs) (hb _ hs)
+  sInter_eq_setOf _ ▸ fun _a ha _b hb _s hs ↦ hS _ hs (ha _ hs) (hb _ hs)
 
 lemma supClosed_iInter (hf : ∀ i, SupClosed (f i)) : SupClosed (⋂ i, f i) :=
   supClosed_sInter <| forall_mem_range.2 hf
@@ -130,7 +130,7 @@ lemma InfClosed.inter (hs : InfClosed s) (ht : InfClosed t) : InfClosed (s ∩ t
   fun _a ha _b hb ↦ ⟨hs ha.1 hb.1, ht ha.2 hb.2⟩
 
 lemma infClosed_sInter (hS : ∀ s ∈ S, InfClosed s) : InfClosed (⋂₀ S) :=
-  fun _a ha _b hb _s hs ↦ hS _ hs (ha _ hs) (hb _ hs)
+  sInter_eq_setOf _ ▸ fun _a ha _b hb _s hs ↦ hS _ hs (ha _ hs) (hb _ hs)
 
 lemma infClosed_iInter (hf : ∀ i, InfClosed (f i)) : InfClosed (⋂ i, f i) :=
   infClosed_sInter <| forall_mem_range.2 hf
@@ -426,7 +426,7 @@ variable [Lattice α] [Lattice β] {s t : Set α}
 
 /-- Every set in a join-semilattice generates a set closed under join. -/
 @[simps! isClosed]
-def latticeClosure : ClosureOperator (Set α) :=
+noncomputable def latticeClosure : ClosureOperator (Set α) :=
   .ofCompletePred IsSublattice fun _ ↦ isSublattice_sInter
 
 @[simp] lemma subset_latticeClosure : s ⊆ latticeClosure s := latticeClosure.le_closure _
@@ -535,16 +535,14 @@ end DistribLattice
 @[implicit_reducible]
 def SemilatticeSup.toCompleteSemilatticeSup [SemilatticeSup α] (sSup : Set α → α)
     (h : ∀ s, SupClosed s → IsLUB s (sSup s)) : CompleteSemilatticeSup α where
-  sSup := fun s => sSup (supClosure s)
-  isLUB_sSup _ := isLUB_supClosure.mp <| h _ supClosed_supClosure
+  exists_isLUB s := ⟨sSup (supClosure s), isLUB_supClosure.mp <| h _ supClosed_supClosure⟩
 
 /-- A meet-semilattice where every inf-closed set has a greatest lower bound is automatically
 complete. -/
 @[implicit_reducible]
 def SemilatticeInf.toCompleteSemilatticeInf [SemilatticeInf α] (sInf : Set α → α)
     (h : ∀ s, InfClosed s → IsGLB s (sInf s)) : CompleteSemilatticeInf α where
-  sInf := fun s => sInf (infClosure s)
-  isGLB_sInf _ := isGLB_infClosure.mp <| h _ infClosed_infClosure
+  exists_isGLB s := ⟨sInf (infClosure s), isGLB_infClosure.mp <| h _ infClosed_infClosure⟩
 
 
 section ConditionallyCompleteLattice

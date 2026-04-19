@@ -76,11 +76,15 @@ instance instBot : Bot L where
 instance instTop : Top L where
   top := ⟨⊤, top_mem⟩
 
-instance instSupSet : SupSet L where
-  sSup s := ⟨sSup <| (↑) '' s, L.sSupClosed' image_val_subset⟩
+instance : PartialOrder L := Subtype.coe_injective.partialOrder _ .rfl .rfl
 
-instance instInfSet : InfSet L where
-  sInf s := ⟨sInf <| (↑) '' s, L.sInfClosed' image_val_subset⟩
+lemma preservesLUB (s : Set L) : PreservesLUB ((↑) : L → α) s :=
+  .of_isLUB_image Subtype.coe_le_coe
+    ⟨⟨sSup <| (↑) '' s, L.sSupClosed' image_val_subset⟩, rfl⟩ (isLUB_sSup _)
+
+lemma preservesGLB (s : Set L) : PreservesGLB ((↑) : L → α) s :=
+  .of_isGLB_image Subtype.coe_le_coe
+    ⟨⟨sInf <| (↑) '' s, L.sInfClosed' image_val_subset⟩, rfl⟩ (isGLB_sInf _)
 
 theorem sSupClosed {s : Set α} (h : s ⊆ L) : sSup s ∈ L := L.sSupClosed' h
 
@@ -90,12 +94,14 @@ theorem sInfClosed {s : Set α} (h : s ⊆ L) : sInf s ∈ L := L.sInfClosed' h
 
 @[simp] theorem coe_top : (↑(⊤ : L) : α) = ⊤ := rfl
 
-@[simp] theorem coe_sSup (S : Set L) : (↑(sSup S) : α) = sSup {(s : α) | s ∈ S} := rfl
+@[simp] theorem coe_sSup (S : Set L) : (↑(sSup S) : α) = sSup {(s : α) | s ∈ S} :=
+  (preservesLUB _).map_sSup
 
 theorem coe_sSup' (S : Set L) : (↑(sSup S) : α) = ⨆ N ∈ S, (N : α) := by
   rw [coe_sSup, ← Set.image, sSup_image]
 
-@[simp] theorem coe_sInf (S : Set L) : (↑(sInf S) : α) = sInf {(s : α) | s ∈ S} := rfl
+@[simp] theorem coe_sInf (S : Set L) : (↑(sInf S) : α) = sInf {(s : α) | s ∈ S} :=
+  (preservesGLB _).map_sInf
 
 theorem coe_sInf' (S : Set L) : (↑(sInf S) : α) = ⨅ N ∈ S, (N : α) := by
   rw [coe_sInf, ← Set.image, sInf_image]
@@ -112,13 +118,14 @@ instance : Min {x // x ∈ L} := Sublattice.instInfCoe
 
 instance instCompleteLattice : CompleteLattice L :=
   Subtype.coe_injective.completeLattice _ .rfl .rfl
-    Sublattice.coe_sup Sublattice.coe_inf coe_sSup' coe_sInf' coe_top coe_bot
+    Sublattice.coe_sup Sublattice.coe_inf
+    (fun _ ↦ ⟨_, coe_sSup' _⟩) (fun _ ↦ ⟨_, coe_sInf' _⟩) coe_top coe_bot
 
 /-- The natural complete lattice hom from a complete sublattice to the original lattice. -/
 def subtype (L : CompleteSublattice α) : CompleteLatticeHom L α where
   toFun := Subtype.val
-  map_sInf' _ := rfl
-  map_sSup' _ := rfl
+  map_sInf' _ := coe_sInf _
+  map_sSup' _ := coe_sSup _
 
 @[simp, norm_cast] lemma coe_subtype (L : CompleteSublattice α) : L.subtype = ((↑) : L → α) := rfl
 lemma subtype_apply (L : Sublattice α) (a : L) : L.subtype a = a := rfl

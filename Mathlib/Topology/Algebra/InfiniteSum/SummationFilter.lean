@@ -165,7 +165,7 @@ variable (β)
 
 /-- **Unconditional summation**: a function on `β` is said to be *unconditionally summable* if its
 partial sums over finite subsets converge with respect to the `atTop` filter. -/
-@[simps] def unconditional : SummationFilter β where
+@[simps] noncomputable def unconditional : SummationFilter β where
   filter := atTop
 
 instance : (unconditional β).LeAtTop := ⟨le_rfl⟩
@@ -213,7 +213,7 @@ variable [Preorder β] [LocallyFiniteOrder β]
 
 /-- **Conditional summation**, for ordered types `β` such that closed intervals `[x, y]` are
 finite: this corresponds to limits of finite sums over larger and larger intervals. -/
-@[simps] def conditional : SummationFilter β where
+@[simps] noncomputable def conditional : SummationFilter β where
   filter := (atBot ×ˢ atTop).map (fun p ↦ Finset.Icc p.1 p.2)
 
 instance : (conditional β).LeAtTop := ⟨support_eq_univ_iff.mp <| by

@@ -384,16 +384,9 @@ abbrev liftBoundedOrder [Preorder α] [BoundedOrder α] (gi : GaloisInsertion l 
 /-- Lift all suprema and infima along a Galois insertion -/
 @[to_dual /-- Lift all suprema and infima along a Galois coinsertion -/]
 abbrev liftCompleteLattice [CompleteLattice α] (gi : GaloisInsertion l u) : CompleteLattice β :=
-  { gi.liftBoundedOrder, gi.liftLattice with
-    sSup := fun s => l (sSup (u '' s))
-    isLUB_sSup _ := gi.isLUB_of_u_image (isLUB_sSup _)
-    sInf := fun s =>
-      gi.choice (sInf (u '' s)) <|
-        (isGLB_sInf _).2 <|
-          gi.gc.monotone_u.mem_lowerBounds_image (gi.isGLB_of_u_image <| isGLB_sInf _).1
-    isGLB_sInf _ := by
-      rw [gi.choice_eq]
-      exact gi.isGLB_of_u_image (isGLB_sInf _) }
+  letI := completeLatticeOfSup _ (fun s ↦ l (sSup (u '' s)))
+    (fun _ ↦ gi.isLUB_of_u_image (isLUB_sSup _))
+  { gi.liftBoundedOrder, gi.liftLattice, this with }
 
 end lift
 
@@ -417,12 +410,12 @@ theorem gc_Ici_sInf [CompleteSemilatticeInf α] :
   fun _ _ ↦ le_sInf_iff.symm
 
 /-- `sSup` and `Iic` form a Galois insertion. -/
-def gi_sSup_Iic [CompleteSemilatticeSup α] :
+noncomputable def gi_sSup_Iic [CompleteSemilatticeSup α] :
     GaloisInsertion (sSup : Set α → α) (Iic : α → Set α) :=
   gc_sSup_Iic.toGaloisInsertion fun _ ↦ le_sSup le_rfl
 
 /-- `toDual ∘ Ici` and `sInf ∘ ofDual` form a Galois coinsertion. -/
-def gci_Ici_sInf [CompleteSemilatticeInf α] :
+noncomputable def gci_Ici_sInf [CompleteSemilatticeInf α] :
     GaloisCoinsertion (toDual ∘ Ici : α → (Set α)ᵒᵈ) (sInf ∘ ofDual : (Set α)ᵒᵈ → α) :=
   gc_Ici_sInf.toGaloisCoinsertion fun _ ↦ sInf_le le_rfl
 

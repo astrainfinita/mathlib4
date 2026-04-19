@@ -214,6 +214,8 @@ instance : SetLike (SubMulAction R M) M :=
 
 @[to_additive] instance : PartialOrder (SubMulAction R M) := .ofSetLike (SubMulAction R M) M
 
+@[to_additive] instance : IsConcreteLE (SubMulAction R M) M := ⟨Iff.rfl⟩
+
 @[to_additive]
 instance : SMulMemClass (SubMulAction R M) R M where smul_mem := smul_mem' _
 
@@ -262,29 +264,29 @@ instance : Min (SubMulAction R M) :=
   ⟨fun s t => ⟨s ∩ t, by aesop⟩⟩
 
 @[to_additive]
-instance : SupSet (SubMulAction R M) :=
-  ⟨fun S => ⟨⋃ s ∈ S, s, by aesop⟩⟩
+lemma preservesLUB (S : Set (SubMulAction R M)) : PreservesLUB ((↑) : _ → Set M) S :=
+  .of_isLUB_image SetLike.coe_subset_coe ⟨⟨⋃ s ∈ S, s, by aesop⟩, rfl⟩ isLUB_biSup
 
 @[to_additive]
-instance : InfSet (SubMulAction R M) :=
-  ⟨fun S => ⟨⋂ s ∈ S, ↑s, by aesop⟩⟩
+lemma preservesGLB (S : Set (SubMulAction R M)) : PreservesGLB ((↑) : _ → Set M) S :=
+  .of_isGLB_image SetLike.coe_subset_coe ⟨⟨⋂ s ∈ S, s, by aesop⟩, rfl⟩ isGLB_biInf
 
 @[to_additive]
 instance : CompleteLattice (SubMulAction R M) :=
-  SetLike.coe_injective.completeLattice _ .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl)
-    (fun _ ↦ rfl) rfl rfl
+  SetLike.coe_injective.completeLattice _ .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun s ↦ ⟨_, (preservesLUB s).map_sSup_eq_biSup⟩)
+    (fun s ↦ ⟨_, (preservesGLB s).map_sInf_eq_biInf⟩)
+    rfl rfl
 
 @[to_additive (attr := simp)]
 theorem mem_iSup {ι : Sort*} {p : ι → SubMulAction R M} {x : M} :
     x ∈ ⨆ i, p i ↔ ∃ i, x ∈ p i := by
-  change x ∈ ⋃ s ∈ Set.range p, s ↔ _
-  simp
+  simp [iSup, (preservesLUB _).map_sSup, ← SetLike.mem_coe, ← mem_carrier]
 
 @[to_additive (attr := simp)]
 theorem mem_iInf {ι : Sort*} {p : ι → SubMulAction R M} {x : M} :
     x ∈ ⨅ i, p i ↔ ∀ i, x ∈ p i := by
-  change x ∈ ⋂ s ∈ Set.range p, s ↔ _
-  simp
+  simp [iInf, (preservesGLB _).map_sInf, ← SetLike.mem_coe, ← mem_carrier]
 
 end SubMulAction
 

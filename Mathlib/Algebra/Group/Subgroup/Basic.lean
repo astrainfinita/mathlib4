@@ -516,7 +516,7 @@ variable {s : Set G}
 elements of `s`. It is the smallest normal subgroup containing `s`. -/
 @[to_additive /-- The normal closure of a set `s` is the closure of all the additive conjugates of
 elements of `s`. It is the smallest normal additive subgroup containing `s`. -/]
-def normalClosure (s : Set G) : Subgroup G :=
+noncomputable def normalClosure (s : Set G) : Subgroup G :=
   closure (conjugatesOfSet s)
 
 @[to_additive]

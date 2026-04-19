@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finset.Fold
 public import Mathlib.Data.Multiset.Bind
-public import Mathlib.Order.SetNotation
+public import Mathlib.Order.Bounds.Basic
 
 /-!
 # Unions of finite sets

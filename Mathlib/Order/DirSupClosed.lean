@@ -103,7 +103,7 @@ theorem DirSupClosedOn.univ : DirSupClosedOn D univ := by simp
 theorem DirSupInaccOn.univ : DirSupInaccOn D univ := by simp
 
 theorem DirSupClosedOn.sInter {s : Set (Set α)} (hs : ∀ x ∈ s, DirSupClosedOn D x) :
-    DirSupClosedOn D (⋂₀ s) :=
+    DirSupClosedOn D (⋂₀ s) := sInter_eq_setOf _ ▸
   fun _d hD hds hd hd' _a ha t ht ↦ hs t ht hD (hds.trans fun _x hx ↦ hx _ ht) hd hd' ha
 
 theorem DirSupClosed.sInter {s : Set (Set α)} (hs : ∀ x ∈ s, DirSupClosed x) :

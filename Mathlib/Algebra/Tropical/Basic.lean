@@ -136,6 +136,9 @@ theorem surjective_trop : Function.Surjective (trop : R → Tropical R) :=
 theorem surjective_untrop : Function.Surjective (untrop : Tropical R → R) :=
   tropEquiv.symm.surjective
 
+instance [Nonempty R] : Nonempty (Tropical R) :=
+  ‹Nonempty R›.elim fun x ↦ ⟨trop x⟩
+
 instance [Inhabited R] : Inhabited (Tropical R) :=
   ⟨trop default⟩
 

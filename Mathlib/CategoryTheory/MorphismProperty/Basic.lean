@@ -73,7 +73,8 @@ lemma of_eq_top {P : MorphismProperty C} (h : P = ⊤) {X Y : C} (f : X ⟶ Y) :
 @[simp]
 lemma sSup_iff (S : Set (MorphismProperty C)) {X Y : C} (f : X ⟶ Y) :
     sSup S f ↔ ∃ (W : S), W.1 f := by
-  dsimp [sSup, iSup]
+  simp +instances only [MorphismProperty, instCompleteBooleanAlgebra, sSup_apply,
+    iSup, sSup_Prop_eq] at ⊢
   constructor
   · rintro ⟨_, ⟨⟨_, ⟨⟨_, ⟨_, h⟩, rfl⟩, rfl⟩⟩, rfl⟩, hf⟩
     exact ⟨⟨_, h⟩, hf⟩

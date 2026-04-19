@@ -43,15 +43,17 @@ To differentiate the statements from the corresponding statements in (unconditio
 complete lattices, we prefix `sInf` and `sSup` by a `c` everywhere. The same statements should
 hold in both worlds, sometimes with additional assumptions of nonemptiness or
 boundedness. -/
-class ConditionallyCompleteLattice (α : Type*) extends Lattice α, SupSet α, InfSet α where
+class ConditionallyCompleteLattice (α : Type*) extends Lattice α where
+  [toNonempty : Nonempty α]
   /-- Every nonempty subset which is bounded above has a least upper bound. -/
-  isLUB_csSup : ∀ s : Set α, s.Nonempty → BddAbove s → IsLUB s (sSup s)
+  exists_isLUB_cond : ∀ s : Set α, s.Nonempty → BddAbove s → ∃ a, IsLUB s a
   /-- Every nonempty subset which is bounded below has a greatest lower bound. -/
-  isGLB_csInf : ∀ s : Set α, s.Nonempty → BddBelow s → IsGLB s (sInf s)
+  exists_isGLB_cond : ∀ s : Set α, s.Nonempty → BddBelow s → ∃ a, IsGLB s a
 
-attribute [to_dual self (reorder := 3 4, 5 6)] ConditionallyCompleteLattice.mk
-attribute [to_dual existing] ConditionallyCompleteLattice.toSupSet
-attribute [to_dual existing] ConditionallyCompleteLattice.isLUB_csSup
+attribute [to_dual self (reorder := 4 5)] ConditionallyCompleteLattice.mk
+attribute [to_dual existing] ConditionallyCompleteLattice.exists_isLUB_cond
+
+attribute [instance 50] ConditionallyCompleteLattice.toNonempty
 
 /-- A conditionally complete linear order is a linear order in which
 every nonempty subset which is bounded above has a supremum, and
@@ -72,10 +74,6 @@ class ConditionallyCompleteLinearOrder (α : Type*)
   toDecidableEq : DecidableEq α := @decidableEqOfDecidableLE _ _ toDecidableLE
   /-- In a `ConditionallyCompleteLinearOrder`, we assume the order relations are all decidable. -/
   toDecidableLT : DecidableLT α := @decidableLTOfDecidableLE _ _ toDecidableLE
-  /-- If a set is not bounded above, its supremum is by convention `sSup ∅`. -/
-  csSup_of_not_bddAbove : ∀ s, ¬BddAbove s → sSup s = sSup (∅ : Set α)
-  /-- If a set is not bounded below, its infimum is by convention `sInf ∅`. -/
-  csInf_of_not_bddBelow : ∀ s, ¬BddBelow s → sInf s = sInf (∅ : Set α)
   compare a b := compareOfLessAndEq a b
   /-- Comparison via `compare` is equal to the canonical comparison given decidable `<` and `=`. -/
   compare_eq_compareOfLessAndEq : ∀ a b, compare a b = compareOfLessAndEq a b := by
@@ -91,8 +89,6 @@ hold in both worlds, sometimes with additional assumptions of nonemptiness or
 boundedness. -/
 class ConditionallyCompleteLinearOrderBot (α : Type*) extends ConditionallyCompleteLinearOrder α,
     OrderBot α where
-  /-- The supremum of the empty set is special-cased to `⊥` -/
-  csSup_empty : sSup ∅ = ⊥
 
 -- see Note [lower instance priority]
 attribute [instance 100] ConditionallyCompleteLinearOrderBot.toOrderBot
@@ -128,7 +124,7 @@ instance : ConditionallyCompleteLattice my_T :=
   __ := conditionallyCompleteLatticeOfsInf my_T ...
 ```
 -/]
-def conditionallyCompleteLatticeOfsSup (α : Type*) [H1 : PartialOrder α] [H2 : SupSet α]
+noncomputable def conditionallyCompleteLatticeOfsSup (α : Type*) [H1 : PartialOrder α] [Nonempty α]
     (bddAbove_pair : ∀ a b : α, BddAbove ({a, b} : Set α))
     (bddBelow_pair : ∀ a b : α, BddBelow ({a, b} : Set α))
     (isLUB_sSup : ∀ s : Set α, BddAbove s → s.Nonempty → IsLUB s (sSup s)) :
@@ -137,10 +133,8 @@ def conditionallyCompleteLatticeOfsSup (α : Type*) [H1 : PartialOrder α] [H2 :
     (fun a b ↦ isLUB_sSup {a, b} (bddAbove_pair a b) (insert_nonempty _ _))
     (fun a b ↦ isLUB_lowerBounds.mp <| isLUB_sSup (lowerBounds {a, b})
       (insert_nonempty _ _).bddAbove_lowerBounds (bddBelow_pair a b))
-  __ := H2
-  sInf s := sSup (lowerBounds s)
-  isLUB_csSup _ hn hb := isLUB_sSup _ hb hn
-  isGLB_csInf _ hn hb := isLUB_lowerBounds.mp (isLUB_sSup _ hn.bddAbove_lowerBounds hb)
+  exists_isLUB_cond _ hn hb := ⟨_, isLUB_sSup _ hb hn⟩
+  exists_isGLB_cond _ hn hb := ⟨_, isLUB_lowerBounds.mp (isLUB_sSup _ hn.bddAbove_lowerBounds hb)⟩
 
 /-- A version of `conditionallyCompleteLatticeOfsSup` when we already know that `α` is a lattice.
 
@@ -149,7 +143,8 @@ This should only be used when it is both hard and unnecessary to provide `sInf` 
 /-- A version of `conditionallyCompleteLatticeOfsInf` when we already know that `α` is a lattice.
 
 This should only be used when it is both hard and unnecessary to provide `sSup` explicitly. -/]
-def conditionallyCompleteLatticeOfLatticeOfsSup (α : Type*) [H1 : Lattice α] [SupSet α]
+noncomputable def conditionallyCompleteLatticeOfLatticeOfsSup (α : Type*)
+    [H1 : Lattice α] [Nonempty α]
     (isLUB_sSup : ∀ s : Set α, BddAbove s → s.Nonempty → IsLUB s (sSup s)) :
     ConditionallyCompleteLattice α :=
   { H1,
@@ -167,12 +162,5 @@ noncomputable abbrev WellFoundedLT.conditionallyCompleteLinearOrderBot (α : Typ
   __ := i₂
   __ := LinearOrder.toLattice
   __ :=
-    letI : InfSet α := ⟨fun s => if hs : s.Nonempty then h.wf.min s hs else ⊥⟩
-    conditionallyCompleteLatticeOfLatticeOfsInf _ fun s _ hn ↦ by
-      simp only [dif_pos hn]
-      exact IsLeast.isGLB ⟨h.wf.min_mem s hn, fun _ hx ↦ h.wf.min_le hx⟩
-  csSup_empty := by simp [sSup, bot_unique (WellFounded.min_le _ (mem_univ _))]
-  csSup_of_not_bddAbove s H := by
-    rw [BddAbove] at H
-    simp [sSup, H, bot_unique (WellFounded.min_le _ (mem_univ _))]
-  csInf_of_not_bddBelow s H := (H (OrderBot.bddBelow s)).elim
+    conditionallyCompleteLatticeOfLatticeOfsInf _ fun s _ hn ↦ isGLB_sInf_of_isGLB
+      (IsLeast.isGLB ⟨h.wf.min_mem s hn, fun _ hx ↦ h.wf.min_le hx⟩)

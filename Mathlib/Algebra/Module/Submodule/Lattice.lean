@@ -177,23 +177,17 @@ def topEquiv : (⊤ : Submodule R M) ≃ₗ[R] M where
 ## Infima & suprema in a submodule
 -/
 
-instance : InfSet (Submodule R M) :=
-  ⟨fun S ↦
+lemma preservesGLB (S : Set (Submodule R M)) : PreservesGLB ((↑) : _ → Set M) S := by
+  refine .of_isGLB_image SetLike.coe_subset_coe ?_ isGLB_biInf
+  use
     { carrier := ⋂ s ∈ S, (s : Set M)
       zero_mem' := by simp [zero_mem]
       add_mem' := by simp +contextual [add_mem]
-      smul_mem' := by simp +contextual [smul_mem] }⟩
-
-set_option backward.privateInPublic true in
-private theorem sInf_le' {S : Set (Submodule R M)} {p} : p ∈ S → sInf S ≤ p :=
-  Set.biInter_subset_of_mem
-
-set_option backward.privateInPublic true in
-private theorem le_sInf' {S : Set (Submodule R M)} {p} : (∀ q ∈ S, p ≤ q) → p ≤ sInf S :=
-  Set.subset_iInter₂
+      smul_mem' := by simp +contextual [smul_mem] }
+  rfl
 
 protected theorem isGLB_sInf {S : Set (Submodule R M)} : IsGLB S (sInf S) :=
-  .of_image SetLike.coe_subset_coe isGLB_biInf
+  (preservesGLB S).isGLB_sInf
 
 instance : Min (Submodule R M) :=
   ⟨fun p q ↦
@@ -202,22 +196,19 @@ instance : Min (Submodule R M) :=
       add_mem' := by simp +contextual [add_mem]
       smul_mem' := by simp +contextual [smul_mem] }⟩
 
-set_option backward.privateInPublic true in
-set_option backward.privateInPublic.warn false in
-instance completeLattice : CompleteLattice (Submodule R M) :=
+noncomputable instance completeLattice : CompleteLattice (Submodule R M) :=
   { (inferInstance : OrderTop (Submodule R M)),
     (inferInstance : OrderBot (Submodule R M)) with
     sup := fun a b ↦ sInf { x | a ≤ x ∧ b ≤ x }
-    le_sup_left := fun _ _ ↦ le_sInf' fun _ ⟨h, _⟩ ↦ h
-    le_sup_right := fun _ _ ↦ le_sInf' fun _ ⟨_, h⟩ ↦ h
-    sup_le := fun _ _ _ h₁ h₂ ↦ sInf_le' ⟨h₁, h₂⟩
+    le_sup_left := fun _ _ ↦ Submodule.isGLB_sInf.2 fun _ ⟨h, _⟩ ↦ h
+    le_sup_right := fun _ _ ↦ Submodule.isGLB_sInf.2 fun _ ⟨_, h⟩ ↦ h
+    sup_le := fun _ _ _ h₁ h₂ ↦ Submodule.isGLB_sInf.1 ⟨h₁, h₂⟩
     inf := (· ⊓ ·)
     le_inf := fun _ _ _ ↦ Set.subset_inter
     inf_le_left := fun _ _ ↦ Set.inter_subset_left
     inf_le_right := fun _ _ ↦ Set.inter_subset_right
-    sSup S := sInf {sm | ∀ s ∈ S, s ≤ sm}
-    isLUB_sSup _ := isGLB_upperBounds.mp Submodule.isGLB_sInf
-    isGLB_sInf _ := Submodule.isGLB_sInf }
+    exists_isLUB _ := ⟨_, isGLB_upperBounds.mp Submodule.isGLB_sInf⟩
+    exists_isGLB _ := ⟨_, Submodule.isGLB_sInf⟩ }
 
 @[simp]
 theorem coe_inf : ↑(p ⊓ q) = (p ∩ q : Set M) :=
@@ -229,7 +220,7 @@ theorem mem_inf {p q : Submodule R M} {x : M} : x ∈ p ⊓ q ↔ x ∈ p ∧ x 
 
 @[simp, norm_cast]
 theorem coe_sInf (P : Set (Submodule R M)) : (↑(sInf P) : Set M) = ⋂ p ∈ P, ↑p :=
-  rfl
+  (preservesGLB P).map_sInf_eq_biInf
 
 @[simp]
 theorem coe_finsetInf {ι} (s : Finset ι) (p : ι → Submodule R M) :
@@ -245,8 +236,8 @@ theorem coe_iInf {ι} (p : ι → Submodule R M) : (↑(⨅ i, p i) : Set M) = �
   rw [iInf, coe_sInf]; simp only [Set.mem_range, Set.iInter_exists, Set.iInter_iInter_eq']
 
 @[simp]
-theorem mem_sInf {S : Set (Submodule R M)} {x : M} : x ∈ sInf S ↔ ∀ p ∈ S, x ∈ p :=
-  Set.mem_iInter₂
+theorem mem_sInf {S : Set (Submodule R M)} {x : M} : x ∈ sInf S ↔ ∀ p ∈ S, x ∈ p := by
+  simp [← SetLike.mem_coe]
 
 @[simp]
 theorem mem_iInf {ι} (p : ι → Submodule R M) {x} : x ∈ ⨅ i, p i ↔ ∀ i, x ∈ p i := by

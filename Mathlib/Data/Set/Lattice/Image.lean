@@ -139,7 +139,7 @@ theorem mapsTo_iUnion₂_iUnion₂ {s : ∀ i, κ i → Set α} {t : ∀ i, κ i
 @[simp]
 theorem mapsTo_sInter {s : Set α} {T : Set (Set β)} {f : α → β} :
     MapsTo f s (⋂₀ T) ↔ ∀ t ∈ T, MapsTo f s t :=
-  forall₂_comm
+  sInter_eq_setOf _ ▸ forall₂_comm
 
 @[simp]
 theorem mapsTo_iInter {s : Set α} {t : ι → Set β} {f : α → β} :
@@ -256,7 +256,7 @@ theorem inj_on_iUnion_of_directed {s : ι → Set α} (hs : Directed (· ⊆ ·)
 
 
 theorem surjOn_sUnion {s : Set α} {T : Set (Set β)} {f : α → β} (H : ∀ t ∈ T, SurjOn f s t) :
-    SurjOn f s (⋃₀ T) := fun _ ⟨t, ht, hx⟩ => H t ht hx
+    SurjOn f s (⋃₀ T) := sUnion_eq_setOf _ ▸ fun _ ⟨t, ht, hx⟩ => H t ht hx
 
 theorem surjOn_iUnion {s : Set α} {t : ι → Set β} {f : α → β} (H : ∀ i, SurjOn f s (t i)) :
     SurjOn f s (⋃ i, t i) :=
@@ -475,7 +475,7 @@ lemma biUnion_prod' (s : Set β) (t : Set γ) (f : β × γ → Set α) :
 
 theorem sInter_prod_sInter_subset (S : Set (Set α)) (T : Set (Set β)) :
     ⋂₀ S ×ˢ ⋂₀ T ⊆ ⋂ r ∈ S ×ˢ T, r.1 ×ˢ r.2 :=
-  subset_iInter₂ fun x hx _ hy => ⟨hy.1 x.1 hx.1, hy.2 x.2 hx.2⟩
+  subset_iInter₂ fun x hx _ hy => ⟨mem_sInter.mp hy.1 x.1 hx.1, mem_sInter.mp hy.2 x.2 hx.2⟩
 
 theorem sInter_prod_sInter {S : Set (Set α)} {T : Set (Set β)} (hS : S.Nonempty) (hT : T.Nonempty) :
     ⋂₀ S ×ˢ ⋂₀ T = ⋂ r ∈ S ×ˢ T, r.1 ×ˢ r.2 := by
@@ -483,6 +483,7 @@ theorem sInter_prod_sInter {S : Set (Set α)} {T : Set (Set β)} (hS : S.Nonempt
   obtain ⟨s₂, h₂⟩ := hT
   refine Set.Subset.antisymm (sInter_prod_sInter_subset S T) fun x hx => ?_
   rw [mem_iInter₂] at hx
+  rw [mem_prod, mem_sInter, mem_sInter]
   exact ⟨fun s₀ h₀ => (hx (s₀, s₂) ⟨h₀, h₂⟩).1, fun s₀ h₀ => (hx (s₁, s₀) ⟨h₁, h₀⟩).2⟩
 
 theorem sInter_prod {S : Set (Set α)} (hS : S.Nonempty) (t : Set β) :

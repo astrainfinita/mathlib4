@@ -303,6 +303,18 @@ theorem copy_eq (G' : Subgraph G) (V'' : Set V) (hV : V'' = G'.verts)
     (adj' : V → V → Prop) (hadj : adj' = G'.Adj) : G'.copy V'' hV adj' hadj = G' :=
   Subgraph.ext hV hadj
 
+theorem verts_spanningCoe_injective :
+    (fun G' : Subgraph G => (G'.verts, G'.spanningCoe)).Injective := by
+  intro G₁ G₂ h
+  rw [Prod.ext_iff] at h
+  exact Subgraph.ext h.1 (spanningCoe_inj.1 h.2)
+
+/-- For subgraphs `G₁`, `G₂`, `G₁ ≤ G₂` iff `G₁.verts ⊆ G₂.verts` and
+`∀ a b, G₁.adj a b → G₂.adj a b`. -/
+instance : PartialOrder G.Subgraph where
+  __ := PartialOrder.lift _ verts_spanningCoe_injective
+  le x y := x.verts ⊆ y.verts ∧ ∀ ⦃v w : V⦄, x.Adj v w → y.Adj v w
+
 /-- The union of two subgraphs. -/
 instance : Max G.Subgraph where
   max G₁ G₂ :=
@@ -339,25 +351,34 @@ instance : Bot G.Subgraph where
       edge_vert := False.elim
       symm := fun _ _ => id }
 
-instance : SupSet G.Subgraph where
-  sSup s :=
-    { verts := ⋃ G' ∈ s, verts G'
-      Adj := fun a b => ∃ G' ∈ s, Adj G' a b
-      adj_sub := by
-        rintro a b ⟨G', -, hab⟩
-        exact G'.adj_sub hab
-      edge_vert := by
-        rintro a b ⟨G', hG', hab⟩
-        exact Set.mem_iUnion₂_of_mem hG' (G'.edge_vert hab)
-      symm := fun a b h => by simpa [adj_comm] using h }
+def sSup' (s : Set G.Subgraph) : G.Subgraph where
+  verts := ⋃ G' ∈ s, verts G'
+  Adj := fun a b => ∃ G' ∈ s, Adj G' a b
+  adj_sub := by
+    rintro a b ⟨G', -, hab⟩
+    exact G'.adj_sub hab
+  edge_vert := by
+    rintro a b ⟨G', hG', hab⟩
+    exact Set.mem_iUnion₂_of_mem hG' (G'.edge_vert hab)
+  symm := fun a b h => by simpa [adj_comm] using h
 
-instance : InfSet G.Subgraph where
-  sInf s :=
-    { verts := ⋂ G' ∈ s, verts G'
-      Adj := fun a b => (∀ ⦃G'⦄, G' ∈ s → Adj G' a b) ∧ G.Adj a b
-      adj_sub := And.right
-      edge_vert := fun hab => Set.mem_iInter₂_of_mem fun G' hG' => G'.edge_vert <| hab.1 hG'
-      symm := fun _ _ => And.imp (forall₂_imp fun _ _ => Adj.symm) G.adj_symm }
+lemma isLUB_sSup' (s : Set G.Subgraph) : IsLUB s (sSup' s) :=
+  ⟨fun G' hG' ↦ ⟨Set.subset_biUnion_of_mem hG', fun _ _ hab => ⟨G', hG', hab⟩⟩,
+    fun _ hG' ↦
+      ⟨Set.iUnion₂_subset fun _ hH => (hG' hH).1, fun _ _ ⟨_, hH, hab⟩ ↦ (hG' hH).2 hab⟩⟩
+
+def sInf' (s : Set G.Subgraph) : G.Subgraph where
+  verts := ⋂ G' ∈ s, verts G'
+  Adj := fun a b => (∀ ⦃G'⦄, G' ∈ s → Adj G' a b) ∧ G.Adj a b
+  adj_sub := And.right
+  edge_vert := fun hab => Set.mem_iInter₂_of_mem fun G' hG' => G'.edge_vert <| hab.1 hG'
+  symm := fun _ _ => And.imp (forall₂_imp fun _ _ => Adj.symm) G.adj_symm
+
+lemma isGLB_sInf' (s : Set G.Subgraph) : IsGLB s (sInf' s) :=
+  ⟨fun G' hG' ↦ ⟨Set.iInter₂_subset G' hG', fun _ _ hab => hab.1 hG'⟩,
+    fun G' hG' ↦
+      ⟨Set.subset_iInter₂ fun _ hH => (hG' hH).1, fun _ _ hab =>
+        ⟨fun _ hH => (hG' hH).2 hab, G'.adj_sub hab⟩⟩⟩
 
 @[simp]
 theorem sup_adj : (G₁ ⊔ G₂).Adj a b ↔ G₁.Adj a b ∨ G₂.Adj a b :=
@@ -400,11 +421,11 @@ theorem ne_bot_iff_nonempty_verts (G' : G.Subgraph) : G' ≠ ⊥ ↔ G'.verts.No
 
 @[simp]
 theorem sSup_adj {s : Set G.Subgraph} : (sSup s).Adj a b ↔ ∃ G ∈ s, Adj G a b :=
-  Iff.rfl
+  (isLUB_sSup' _).sSup_eq ▸ Iff.rfl
 
 @[simp]
 theorem sInf_adj {s : Set G.Subgraph} : (sInf s).Adj a b ↔ (∀ G' ∈ s, Adj G' a b) ∧ G.Adj a b :=
-  Iff.rfl
+  (isGLB_sInf' _).sInf_eq ▸ Iff.rfl
 
 @[simp]
 theorem iSup_adj {f : ι → G.Subgraph} : (⨆ i, f i).Adj a b ↔ ∃ i, (f i).Adj a b := by
@@ -428,11 +449,11 @@ theorem iInf_adj_of_nonempty [Nonempty ι] {f : ι → G.Subgraph} :
 
 @[simp]
 theorem verts_sSup (s : Set G.Subgraph) : (sSup s).verts = ⋃ G' ∈ s, verts G' :=
-  rfl
+  (isLUB_sSup' _).sSup_eq ▸ rfl
 
 @[simp]
 theorem verts_sInf (s : Set G.Subgraph) : (sInf s).verts = ⋂ G' ∈ s, verts G' :=
-  rfl
+  (isGLB_sInf' _).sInf_eq ▸ rfl
 
 @[simp]
 theorem verts_iSup {f : ι → G.Subgraph} : (⨆ i, f i).verts = ⋃ i, (f i).verts := by simp [iSup]
@@ -451,18 +472,6 @@ def topIso : (⊤ : G.Subgraph).coe ≃g G where
   left_inv _ := Subtype.eta ..
   map_rel_iff' := .rfl
 
-theorem verts_spanningCoe_injective :
-    (fun G' : Subgraph G => (G'.verts, G'.spanningCoe)).Injective := by
-  intro G₁ G₂ h
-  rw [Prod.ext_iff] at h
-  exact Subgraph.ext h.1 (spanningCoe_inj.1 h.2)
-
-/-- For subgraphs `G₁`, `G₂`, `G₁ ≤ G₂` iff `G₁.verts ⊆ G₂.verts` and
-`∀ a b, G₁.adj a b → G₂.adj a b`. -/
-instance : PartialOrder G.Subgraph where
-  __ := PartialOrder.lift _ verts_spanningCoe_injective
-  le x y := x.verts ⊆ y.verts ∧ ∀ ⦃v w : V⦄, x.Adj v w → y.Adj v w
-
 instance distribLattice : DistribLattice G.Subgraph :=
   verts_spanningCoe_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
 
@@ -475,19 +484,12 @@ instance : BoundedOrder (Subgraph G) where
 def completelyDistribLatticeMinimalAxioms : CompletelyDistribLattice.MinimalAxioms G.Subgraph where
   le_top G' := ⟨Set.subset_univ _, fun _ _ => G'.adj_sub⟩
   bot_le _ := ⟨Set.empty_subset _, fun _ _ => False.elim⟩
-  isLUB_sSup _ :=
-    ⟨fun G' hG' ↦ ⟨Set.subset_biUnion_of_mem hG', fun _ _ hab => ⟨G', hG', hab⟩⟩,
-      fun G' hG' ↦
-        ⟨Set.iUnion₂_subset fun _ hH => (hG' hH).1, fun a b ⟨H, hH, hab⟩ ↦ (hG' hH).2 hab⟩⟩
-  isGLB_sInf _ :=
-    ⟨fun G' hG' ↦ ⟨Set.iInter₂_subset G' hG', fun _ _ hab => hab.1 hG'⟩,
-      fun G' hG' ↦
-        ⟨Set.subset_iInter₂ fun _ hH => (hG' hH).1, fun _ _ hab =>
-          ⟨fun _ hH => (hG' hH).2 hab, G'.adj_sub hab⟩⟩⟩
+  exists_isLUB _ := ⟨_, isLUB_sSup' _⟩
+  exists_isGLB _ := ⟨_, isGLB_sInf' _⟩
   iInf_iSup_eq f := Subgraph.ext (by simpa using iInf_iSup_eq)
     (by ext; simp [Classical.skolem])
 
-instance : CompletelyDistribLattice G.Subgraph :=
+noncomputable instance : CompletelyDistribLattice G.Subgraph :=
   fast_instance% .ofMinimalAxioms completelyDistribLatticeMinimalAxioms
 
 @[gcongr] lemma verts_mono {H H' : G.Subgraph} (h : H ≤ H') : H.verts ⊆ H'.verts := h.1

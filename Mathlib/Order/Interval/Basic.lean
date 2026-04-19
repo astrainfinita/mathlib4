@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Data.Set.Lattice.Image
 public import Mathlib.Data.SetLike.Basic
+public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
 
 /-!
 # Order intervals
@@ -593,6 +594,74 @@ theorem coe_sup_interval [Lattice α] (s t : NonemptyInterval α) :
     (↑(s ⊔ t) : Interval α) = ↑s ⊔ ↑t :=
   rfl
 
+lemma bddBelow_range_fst [LE α] {S : Set (NonemptyInterval α)} (h : BddAbove S) :
+    BddBelow (range fun s : S ↦ s.val.fst) := by
+  obtain ⟨⟨⟨l, r⟩, hlr⟩, h⟩ := h
+  use l
+  simp only [mem_lowerBounds_range]
+  rintro ⟨t, ht⟩
+  exact (h ht).1
+
+lemma bddAbove_range_snd [LE α] {S : Set (NonemptyInterval α)} (h : BddAbove S) :
+    BddAbove (range fun s : S ↦ s.val.snd) := by
+  obtain ⟨⟨⟨l, r⟩, hlr⟩, h⟩ := h
+  use r
+  simp only [mem_upperBounds_range]
+  rintro ⟨t, ht⟩
+  exact (h ht).2
+
+lemma bddAbove_range_fst [LE α] {S : Set (NonemptyInterval α)} (h : BddBelow S) :
+    BddAbove (range fun s : S ↦ s.val.fst) := by
+  obtain ⟨⟨⟨l, r⟩, hlr⟩, h⟩ := h
+  use l
+  simp only [mem_upperBounds_range]
+  rintro ⟨t, ht⟩
+  exact (h ht).1
+
+lemma bddBelow_range_snd [LE α] {S : Set (NonemptyInterval α)} (h : BddBelow S) :
+    BddBelow (range fun s : S ↦ s.val.snd) := by
+  obtain ⟨⟨⟨l, r⟩, hlr⟩, h⟩ := h
+  use r
+  simp only [mem_lowerBounds_range]
+  rintro ⟨t, ht⟩
+  exact (h ht).2
+
+protected noncomputable def csSup' [ConditionallyCompleteLattice α]
+    {S : Set (NonemptyInterval α)} (hn : S.Nonempty) (hb : BddAbove S) :
+    NonemptyInterval α :=
+  ⟨⟨⨅ s : S, s.1.fst, ⨆ s : S, s.1.snd⟩, by
+    obtain ⟨s, hs⟩ := hn
+    exact ciInf_le_of_le (bddBelow_range_fst hb) ⟨s, hs⟩
+      (le_ciSup_of_le (bddAbove_range_snd hb) ⟨s, hs⟩ s.fst_le_snd)⟩
+
+protected noncomputable def csInf' [ConditionallyCompleteLattice α]
+    {S : Set (NonemptyInterval α)} (hn : S.Nonempty) (hb : BddBelow S) :
+    NonemptyInterval α :=
+  ⟨⟨⨆ s : S, s.1.fst, ⨅ s : S, s.1.snd⟩, by
+    rw [← Set.nonempty_coe_sort] at hn
+    obtain ⟨⟨⟨l, r⟩, hlr⟩, hb⟩ := hb
+    exact ciSup_le fun ⟨s, hs⟩ ↦ (le_ciInf fun ⟨t, ht⟩ ↦ ((hb hs).1.trans hlr).trans (hb ht).2)⟩
+
+protected lemma isLUB_csSup' [ConditionallyCompleteLattice α]
+    {S : Set (NonemptyInterval α)} (hn : S.Nonempty) (hb : BddAbove S) :
+    IsLUB S (NonemptyInterval.csSup' hn hb) := by
+  constructor
+  · intro s hs
+    exact ⟨ciInf_le (bddBelow_range_fst hb) ⟨s, hs⟩, le_ciSup (bddAbove_range_snd hb) ⟨s, hs⟩⟩
+  · intro s hs
+    rw [← Set.nonempty_coe_sort] at hn
+    exact ⟨le_ciInf fun ⟨_, ht⟩ ↦ (hs ht).1, ciSup_le fun ⟨_, ht⟩ ↦ (hs ht).2⟩
+
+protected lemma isGLB_csInf' [ConditionallyCompleteLattice α]
+    {S : Set (NonemptyInterval α)} (hn : S.Nonempty) (hb : BddBelow S) :
+    IsGLB S (NonemptyInterval.csInf' hn hb) := by
+  constructor
+  · intro s hs
+    exact ⟨le_ciSup (bddAbove_range_fst hb) ⟨s, hs⟩, ciInf_le (bddBelow_range_snd hb) ⟨s, hs⟩⟩
+  · intro s hs
+    rw [← Set.nonempty_coe_sort] at hn
+    exact ⟨ciSup_le fun ⟨_, ht⟩ ↦ (hs ht).1, le_ciInf fun ⟨_, ht⟩ ↦ (hs ht).2⟩
+
 end NonemptyInterval
 
 namespace Interval
@@ -601,78 +670,57 @@ section CompleteLattice
 
 variable [CompleteLattice α]
 
-open Classical in
-noncomputable instance completeLattice [DecidableLE α] : CompleteLattice (Interval α) where
-  sSup := fun S =>
-    if h : S ⊆ {⊥} then ⊥
-    else
-      coe
-        ⟨⟨⨅ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.fst,
-            ⨆ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.snd⟩, by
-          obtain ⟨s, hs, ha⟩ := not_subset.1 h
-          lift s to NonemptyInterval α using ha
-          exact iInf₂_le_of_le s hs (le_iSup₂_of_le s hs s.fst_le_snd)⟩
-  isLUB_sSup _ := by
-    constructor
-    · intro s ha
-      split_ifs with h
-      · exact (h ha).le
-      cases s
-      · exact bot_le
-      · -- Porting note: This case was
-        -- `exact WithBot.some_le_some.2 ⟨iInf₂_le _ ha, le_iSup₂_of_le _ ha le_rfl⟩`
-        -- but there seems to be a defEq-problem at `iInf₂_le` that lean cannot resolve yet.
-        apply Interval.coe_le_coe.2
-        constructor
-        · apply iInf₂_le
-          exact ha
-        · exact le_iSup₂_of_le _ ha le_rfl
-    · intro s ha
-      split_ifs with h
-      · exact bot_le
-      obtain ⟨b, hs, hb⟩ := not_subset.1 h
-      lift s to NonemptyInterval α using ne_bot_of_le_ne_bot hb (ha hs)
-      exact
-        Interval.coe_le_coe.2
-          ⟨le_iInf₂ fun c hc => (WithBot.coe_le_coe.1 <| ha hc).1,
-            iSup₂_le fun c hc => (WithBot.coe_le_coe.1 <| ha hc).2⟩
-  sInf := fun S =>
-    if h :
-        ⊥ ∉ S ∧
-          ∀ ⦃s : NonemptyInterval α⦄,
-            ↑s ∈ S → ∀ ⦃t : NonemptyInterval α⦄, ↑t ∈ S → s.fst ≤ t.snd then
-      coe
-        ⟨⟨⨆ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.fst,
-            ⨅ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.snd⟩,
-          iSup₂_le fun s hs => le_iInf₂ <| h.2 hs⟩
-    else ⊥
-  isGLB_sInf s₁ := by
-    constructor
-    · intro s ha
-      split_ifs with h
-      · lift s to NonemptyInterval α using ne_of_mem_of_not_mem ha h.1
-        -- Porting note: Lean failed to figure out the function `f` by itself,
-        -- so I added it through manually
-        let f := fun (s : NonemptyInterval α) (_ : ↑s ∈ s₁) => s.toProd.fst
-        exact WithBot.coe_le_coe.2 ⟨le_iSup₂ (f := f) s ha, iInf₂_le s ha⟩
-      · exact bot_le
-    · intro s ha
-      cases s with
-      | bot => exact bot_le
-      | coe s =>
-        split_ifs with h
-        · exact WithBot.coe_le_coe.2
-            ⟨iSup₂_le fun t hb => (WithBot.coe_le_coe.1 <| ha hb).1,
-              le_iInf₂ fun t hb => (WithBot.coe_le_coe.1 <| ha hb).2⟩
-        · rw [not_and_or, not_not] at h
-          rcases h with h | h
-          · exact ha h
-          · cases h fun b hb c hc ↦ (WithBot.coe_le_coe.1 <| ha hb).1.trans
-              (s.fst_le_snd.trans (WithBot.coe_le_coe.1 <| ha hc).2)
+instance [DecidableLE α] : ConditionallyCompleteLattice (Interval α) where
+  exists_isLUB_cond _ _ :=
+    WithBot.exists_isLUB_cond_of_exists_isLUB_cond (⟨_, NonemptyInterval.isLUB_csSup' · ·⟩)
+  exists_isGLB_cond _ :=
+    WithBot.exists_isGLB_cond_of_exists_isGLB_cond (⟨_, NonemptyInterval.isGLB_csInf' · ·⟩)
 
+instance completeLattice [DecidableLE α] : CompleteLattice (Interval α) := inferInstance
+
+-- TODO: generalize lemmas about `WithBot` and remove it
+open Classical in
+private noncomputable def sInf' (S : Set (Interval α)) : Interval α :=
+  if h :
+      ⊥ ∉ S ∧
+        ∀ ⦃s : NonemptyInterval α⦄,
+          ↑s ∈ S → ∀ ⦃t : NonemptyInterval α⦄, ↑t ∈ S → s.fst ≤ t.snd then
+    coe
+      ⟨⟨⨆ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.fst,
+          ⨅ (s : NonemptyInterval α) (_ : ↑s ∈ S), s.snd⟩,
+        iSup₂_le fun _ hs => le_iInf₂ <| h.2 hs⟩
+  else ⊥
+
+private lemma isGLB_sInf' (S : Set (Interval α)) : IsGLB S (sInf' S) := by
+  unfold Interval.sInf'
+  constructor
+  · intro s ha
+    split_ifs with h
+    · lift s to NonemptyInterval α using ne_of_mem_of_not_mem ha h.1
+      -- Porting note: Lean failed to figure out the function `f` by itself,
+      -- so I added it through manually
+      let f := fun (s : NonemptyInterval α) (_ : ↑s ∈ S) => s.toProd.fst
+      exact WithBot.coe_le_coe.2 ⟨le_iSup₂ (f := f) s ha, iInf₂_le s ha⟩
+    · exact bot_le
+  · intro s ha
+    cases s with
+    | bot => exact bot_le
+    | coe s =>
+      split_ifs with h
+      · exact WithBot.coe_le_coe.2
+          ⟨iSup₂_le fun t hb => (WithBot.coe_le_coe.1 <| ha hb).1,
+            le_iInf₂ fun t hb => (WithBot.coe_le_coe.1 <| ha hb).2⟩
+      · rw [not_and_or, not_not] at h
+        rcases h with h | h
+        · exact ha h
+        · cases h fun b hb c hc ↦ (coe_le_coe.1 <| ha hb).1.trans
+            (s.fst_le_snd.trans (WithBot.coe_le_coe.1 <| ha hc).2)
+
+set_option backward.isDefEq.respectTransparency false in
 @[simp, norm_cast]
-theorem coe_sInf [DecidableLE α] (S : Set (Interval α)) : ↑(sInf S) = ⋂ s ∈ S, (s : Set α) := by
+theorem coe_sInf (S : Set (Interval α)) : ↑(sInf S) = ⋂ s ∈ S, (s : Set α) := by
   classical
+  rw [(Interval.isGLB_sInf' S).sInf_eq]
   change ((dite _ _ _ : Interval α) : Set α) = ⋂ (s : Interval α) (_ : s ∈ S), (s : Set α)
   split_ifs with h
   · ext
@@ -687,11 +735,11 @@ theorem coe_sInf [DecidableLE α] (S : Set (Interval α)) : ↑(sInf S) = ⋂ s 
     exact h fun s ha t hb => (hx _ ha).1.trans (hx _ hb).2
 
 @[simp, norm_cast]
-theorem coe_iInf [DecidableLE α] (f : ι → Interval α) :
+theorem coe_iInf (f : ι → Interval α) :
     ↑(⨅ i, f i) = ⋂ i, (f i : Set α) := by simp [iInf]
 
 @[norm_cast]
-theorem coe_iInf₂ [DecidableLE α] (f : ∀ i, κ i → Interval α) :
+theorem coe_iInf₂ (f : ∀ i, κ i → Interval α) :
     ↑(⨅ (i) (j), f i j) = ⋂ (i) (j), (f i j : Set α) := by simp_rw [coe_iInf]
 
 end CompleteLattice

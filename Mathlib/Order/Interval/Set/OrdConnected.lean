@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Order.Interval.Set.OrderEmbedding
 public import Mathlib.Order.Antichain
-public import Mathlib.Order.SetNotation
+public import Mathlib.Order.Bounds.Basic
 
 /-!
 # Order-connected sets
@@ -142,8 +142,10 @@ theorem ordConnected_dual {s : Set α} : OrdConnected (OrderDual.ofDual ⁻¹' s
 @[deprecated (since := "2025-10-28")] alias dual_ordConnected_iff := ordConnected_dual
 
 theorem ordConnected_sInter {S : Set (Set α)} (hS : ∀ s ∈ S, OrdConnected s) :
-    OrdConnected (⋂₀ S) :=
-  ⟨fun _x hx _y hy _z hz s hs => (hS s hs).out (hx s hs) (hy s hs) hz⟩
+    OrdConnected (⋂₀ S) where
+  out' _x hx _y hy _z hz := by
+    rw [mem_sInter] at hx hy ⊢
+    exact fun s hs ↦ (hS s hs).out (hx s hs) (hy s hs) hz
 
 theorem ordConnected_iInter {ι : Sort*} {s : ι → Set α} (hs : ∀ i, OrdConnected (s i)) :
     OrdConnected (⋂ i, s i) :=

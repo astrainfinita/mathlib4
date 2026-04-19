@@ -32,11 +32,11 @@ namespace OrderDual
 
 instance [ConditionallyCompletePartialOrderSup α] :
     ConditionallyCompletePartialOrderInf αᵒᵈ where
-  isGLB_csInf_of_directed _ h_dir h_non h_bdd := h_dir.isLUB_csSup (α := α) h_non h_bdd
+  exists_isGLB_cond_of_directed _ h_dir h_non h_bdd := ⟨_, h_dir.isLUB_csSup (α := α) h_non h_bdd⟩
 
 instance [ConditionallyCompletePartialOrderInf α] :
     ConditionallyCompletePartialOrderSup αᵒᵈ where
-  isLUB_csSup_of_directed _ h_dir h_non h_bdd := h_dir.isGLB_csInf (α := α) h_non h_bdd
+  exists_isLUB_cond_of_directed _ h_dir h_non h_bdd := ⟨_, h_dir.isGLB_csInf (α := α) h_non h_bdd⟩
 
 instance [ConditionallyCompletePartialOrder α] :
     ConditionallyCompletePartialOrder αᵒᵈ where

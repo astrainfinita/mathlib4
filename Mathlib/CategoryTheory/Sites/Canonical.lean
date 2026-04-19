@@ -79,28 +79,34 @@ def finestTopologySingle (P : Cᵒᵖ ⥤ Type v) : GrothendieckTopology C where
 /-- Construct the finest (largest) Grothendieck topology for which all the given presheaves are
 sheaves. -/
 @[stacks 00Z9 "Equal to that Stacks construction"]
-def finestTopology (Ps : Set (Cᵒᵖ ⥤ Type v)) : GrothendieckTopology C :=
+noncomputable def finestTopology (Ps : Set (Cᵒᵖ ⥤ Type v)) : GrothendieckTopology C :=
   sInf (finestTopologySingle '' Ps)
+
+lemma mem_finestTopology {S : Sieve X} {Ps : Set (Cᵒᵖ ⥤ Type v)} :
+    S ∈ finestTopology Ps X ↔ ∀ a ∈ Ps, S ∈ finestTopologySingle a X := by
+  simp [finestTopology, GrothendieckTopology.mem_sInf]
 
 /-- Check that if `P ∈ Ps`, then `P` is indeed a sheaf for the finest topology on `Ps`. -/
 theorem sheaf_for_finestTopology (Ps : Set (Cᵒᵖ ⥤ Type v)) (h : P ∈ Ps) :
     Presieve.IsSheaf (finestTopology Ps) P := fun X S hS => by
-  simpa using hS _ ⟨⟨_, _, ⟨_, h, rfl⟩, rfl⟩, rfl⟩ _ (𝟙 _)
+  rw [mem_finestTopology] at hS
+  simpa using hS _ h _ (𝟙 _)
 
 /--
 Check that if each `P ∈ Ps` is a sheaf for `J`, then `J` is a subtopology of `finestTopology Ps`.
 -/
 theorem le_finestTopology (Ps : Set (Cᵒᵖ ⥤ Type v)) (J : GrothendieckTopology C)
     (hJ : ∀ P ∈ Ps, Presieve.IsSheaf J P) : J ≤ finestTopology Ps := by
-  rintro X S hS _ ⟨⟨_, _, ⟨P, hP, rfl⟩, rfl⟩, rfl⟩
-  intro Y f
+  intro X S hS
+  rw [mem_finestTopology]
+  intro P hP Y f
   -- this can't be combined with the previous because the `subst` is applied at the end
   exact hJ P hP (S.pullback f) (J.pullback_stable f hS)
 
 /-- The `canonicalTopology` on a category is the finest (largest) topology for which every
 representable presheaf is a sheaf. -/
 @[stacks 00ZA]
-def canonicalTopology (C : Type u) [Category.{v} C] : GrothendieckTopology C :=
+noncomputable def canonicalTopology (C : Type u) [Category.{v} C] : GrothendieckTopology C :=
   finestTopology (Set.range yoneda.obj)
 
 /-- `yoneda.obj X` is a sheaf for the canonical topology. -/

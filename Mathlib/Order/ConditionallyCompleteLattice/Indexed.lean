@@ -31,29 +31,29 @@ section
 Extension of `iSup` and `iInf` from a preorder `α` to `WithTop α` and `WithBot α`
 -/
 
-variable [Preorder α]
-
 @[simp]
-theorem WithTop.iInf_empty [IsEmpty ι] [InfSet α] (f : ι → WithTop α) :
+theorem WithTop.iInf_empty [Preorder α] [IsEmpty ι] [Nonempty α] (f : ι → WithTop α) :
     ⨅ i, f i = ⊤ := by rw [iInf, range_eq_empty, WithTop.sInf_empty]
 
+variable [ConditionallyCompleteLattice α]
+
 @[norm_cast]
-theorem WithTop.coe_iInf [Nonempty ι] [InfSet α] {f : ι → α} (hf : BddBelow (range f)) :
+theorem WithTop.coe_iInf [Nonempty ι] {f : ι → α} (hf : BddBelow (range f)) :
     ↑(⨅ i, f i) = (⨅ i, f i : WithTop α) := by
   rw [iInf, iInf, WithTop.coe_sInf' (range_nonempty f) hf, ← range_comp, Function.comp_def]
 
 @[norm_cast]
-theorem WithTop.coe_iSup [SupSet α] (f : ι → α) (h : BddAbove (Set.range f)) :
+theorem WithTop.coe_iSup [OrderBot α] (f : ι → α) (h : BddAbove (Set.range f)) :
     ↑(⨆ i, f i) = (⨆ i, f i : WithTop α) := by
   rw [iSup, iSup, WithTop.coe_sSup' h, ← range_comp, Function.comp_def]
 
 @[simp]
-theorem WithBot.ciSup_empty [IsEmpty ι] [SupSet α] (f : ι → WithBot α) :
+theorem WithBot.ciSup_empty [IsEmpty ι] [Nonempty α] (f : ι → WithBot α) :
     ⨆ i, f i = ⊥ :=
   WithTop.iInf_empty (α := αᵒᵈ) _
 
 @[norm_cast]
-theorem WithBot.coe_iSup [Nonempty ι] [SupSet α] {f : ι → α} (hf : BddAbove (range f)) :
+theorem WithBot.coe_iSup [Nonempty ι] [Nonempty α] {f : ι → α} (hf : BddAbove (range f)) :
     ↑(⨆ i, f i) = (⨆ i, f i : WithBot α) :=
   WithTop.coe_iInf (α := αᵒᵈ) hf
 
@@ -70,7 +70,7 @@ theorem WithBot.coe_biSup {ι : Type*} {s : Set ι} (hs : s.Nonempty)
   · simpa only [iSup_neg h] using le_trans (by simp) (le_biSup _ hj)
 
 @[norm_cast]
-theorem WithBot.coe_iInf [InfSet α] (f : ι → α) (h : BddBelow (Set.range f)) :
+theorem WithBot.coe_iInf [OrderTop α] (f : ι → α) (h : BddBelow (Set.range f)) :
     ↑(⨅ i, f i) = (⨅ i, f i : WithBot α) :=
   WithTop.coe_iSup (α := αᵒᵈ) _ h
 
@@ -153,7 +153,8 @@ theorem BddAbove.range_iSup_of_iUnion_range {κ : ι → Sort*} {f : ∀ i, κ i
   refine ⟨a ⊔ (sSup ∅), fun x ⟨i, hx⟩ ↦ hx ▸ ?_⟩
   cases isEmpty_or_nonempty <| κ i
   · exact iSup_of_empty' (f i) ▸ le_sup_right
-  exact ciSup_le fun j ↦ le_sup_of_le_left <| h ⟨_, ⟨i, rfl⟩, ⟨j, rfl⟩⟩
+  simp only [mem_upperBounds, mem_iUnion] at h
+  exact ciSup_le fun j ↦ le_sup_of_le_left <| h _ ⟨i, j, rfl⟩
 
 theorem le_ciSup₂ {κ : ι → Sort*} {f : ∀ i, κ i → α} (H : BddAbove <| ⋃ i, range (f i)) (i : ι)
     (j : κ i) : f i j ≤ ⨆ (i) (j), f i j :=
@@ -195,7 +196,8 @@ theorem BddBelow.range_iInf_of_iUnion_range {κ : ι → Sort*} {f : ∀ i, κ i
   refine ⟨a ⊓ (sInf ∅), fun x ⟨i, hx⟩ ↦ hx ▸ ?_⟩
   cases isEmpty_or_nonempty <| κ i
   · exact iInf_of_isEmpty (f i) ▸ inf_le_right
-  exact le_ciInf fun j ↦ inf_le_of_left_le <| h ⟨_, ⟨i, rfl⟩, ⟨j, rfl⟩⟩
+  simp only [mem_lowerBounds, mem_iUnion] at h
+  exact le_ciInf fun j ↦ inf_le_of_left_le <| h _ ⟨i, j, rfl⟩
 
 theorem ciInf₂_le {κ : ι → Sort*} {f : ∀ i, κ i → α} (H : BddBelow <| ⋃ i, range (f i)) (i : ι)
     (j : κ i) : ⨅ (i) (j), f i j ≤ f i j :=
@@ -389,13 +391,13 @@ theorem ciInf_lt_iff [Nonempty ι] {f : ι → α} (hb : BddBelow (range f)) :
 
 theorem cbiSup_of_not_bddAbove {p : ι → Prop} {f : ∀ i, p i → α}
     (h : ¬BddAbove (range fun i : Subtype p ↦ f i i.prop)) :
-    ⨆ (i : ι), ⨆ (h : p i), f i h = sSup ∅ :=
-  ciSup_of_not_bddAbove fun ⟨u, hu⟩ ↦ h ⟨u, fun _ ⟨x, hx⟩ ↦ hx ▸ hu ⟨x, ciSup_pos x.prop⟩⟩
+    ⨆ (i : ι), ⨆ (h : p i), f i h = Classical.arbitrary α :=
+  iSup_of_not_bddAbove fun ⟨u, hu⟩ ↦ h ⟨u, fun _ ⟨x, hx⟩ ↦ hx ▸ hu ⟨x, ciSup_pos x.prop⟩⟩
 
 theorem cbiInf_of_not_bddBelow {p : ι → Prop} {f : ∀ i, p i → α}
     (h : ¬BddBelow (range fun i : Subtype p ↦ f i i.prop)) :
-    ⨅ (i : ι), ⨅ (h : p i), f i h = sInf ∅ :=
-  ciInf_of_not_bddBelow fun ⟨u, hu⟩ ↦ h ⟨u, fun _ ⟨x, hx⟩ ↦ hx ▸ hu ⟨x, ciInf_pos x.prop⟩⟩
+    ⨅ (i : ι), ⨅ (h : p i), f i h = Classical.arbitrary α :=
+  iInf_of_not_bddBelow fun ⟨u, hu⟩ ↦ h ⟨u, fun _ ⟨x, hx⟩ ↦ hx ▸ hu ⟨x, ciInf_pos x.prop⟩⟩
 
 theorem cbiSup_eq_of_not_forall {p : ι → Prop} {f : Subtype p → α} (hp : ¬ (∀ i, p i)) :
     ⨆ (i) (h : p i), f ⟨i, h⟩ = iSup f ⊔ sSup ∅ := by
@@ -403,10 +405,11 @@ theorem cbiSup_eq_of_not_forall {p : ι → Prop} {f : Subtype p → α} (hp : �
   · rw [max_eq_left le]
     by_cases bdd : BddAbove (range f)
     · rw [← ciSup_subtype bdd le]
-    · rw [ciSup_of_not_bddAbove bdd, cbiSup_of_not_bddAbove bdd]
+    · rw [iSup_of_not_bddAbove bdd, cbiSup_of_not_bddAbove bdd]
   have ⟨i, hi⟩ := not_forall.mp hp
   have : Nonempty ι := ⟨i⟩
-  have bdd : BddAbove (range f) := not_not.mp fun h ↦ gt.ne (ciSup_of_not_bddAbove h)
+  have : NoBotOrder α := (botOrderOrNoBotOrder α).rec (fun h ↦ by simp at gt) id
+  have bdd : BddAbove (range f) := by contrapose! gt; simp [gt]
   rw [max_eq_right gt.le]
   refine ciSup_eq_of_forall_le_of_forall_lt_exists_gt (fun j ↦ ?_) ?_
   · by_cases hj : p j
@@ -455,7 +458,7 @@ variable [ConditionallyCompleteLinearOrderBot α] {f : ι → α} {a : α}
 
 @[simp]
 theorem ciSup_of_empty [IsEmpty ι] (f : ι → α) : ⨆ i, f i = ⊥ := by
-  rw [iSup_of_empty', csSup_empty]
+  rw [iSup_of_empty', sSup_empty]
 
 theorem ciSup_false (f : False → α) : ⨆ i, f i = ⊥ :=
   ciSup_of_empty f
@@ -474,10 +477,10 @@ lemma ciInf_le_of_le' (c : ι) : f c ≤ a → iInf f ≤ a := ciInf_le_of_le (O
 from `ciSup_le_iff`. -/
 theorem ciSup_le_iff' {f : ι → α} (h : BddAbove (range f)) {a : α} :
     ⨆ i, f i ≤ a ↔ ∀ i, f i ≤ a :=
-  (csSup_le_iff' h).trans forall_mem_range
+  (OrderBot.csSup_le_iff h).trans forall_mem_range
 
 theorem ciSup_le' {f : ι → α} {a : α} (h : ∀ i, f i ≤ a) : ⨆ i, f i ≤ a :=
-  csSup_le' <| forall_mem_range.2 h
+  OrderBot.csSup_le <| forall_mem_range.2 h
 
 @[simp]
 theorem ciSup_bot : ⨆ _ : ι, (⊥ : α) = ⊥ := le_bot_iff.mp (ciSup_le' fun _ ↦ bot_le)
@@ -585,14 +588,11 @@ section ConditionallyCompleteLinearOrderBot
 variable [ConditionallyCompleteLinearOrderBot α] [ConditionallyCompleteLinearOrderBot β]
 
 @[simp]
-lemma map_ciSup' (e : α ≃o β) (f : ι → α) : e (⨆ i, f i) = ⨆ i, e (f i) := by
+lemma map_ciSup' (e : α ≃o β) {f : ι → α} (hf : BddAbove (range f)) :
+    e (⨆ i, f i) = ⨆ i, e (f i) := by
   cases isEmpty_or_nonempty ι
   · simp [map_bot]
-  by_cases hf : BddAbove (range f)
-  · exact e.map_ciSup hf
-  · have hfe : ¬ BddAbove (range fun i ↦ e (f i)) := by
-      simpa [Set.Nonempty, BddAbove, upperBounds, e.surjective.forall] using hf
-    simp [map_bot, hf, hfe]
+  exact e.map_ciSup hf
 
 end ConditionallyCompleteLinearOrderBot
 end OrderIso

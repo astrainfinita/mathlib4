@@ -36,7 +36,7 @@ namespace Filter
 variable {l l' la : Filter α} {lb : Filter β}
 
 /-- The filter `l.smallSets` is the largest filter containing all powersets of members of `l`. -/
-def smallSets (l : Filter α) : Filter (Set α) :=
+noncomputable def smallSets (l : Filter α) : Filter (Set α) :=
   l.lift' powerset
 
 theorem smallSets_eq_generate {f : Filter α} : f.smallSets = generate (powerset '' f.sets) := by

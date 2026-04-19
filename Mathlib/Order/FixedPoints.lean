@@ -30,7 +30,7 @@ This file sets up the basic theory of fixed points of a monotone function in a c
 fixed point, complete lattice, monotone function
 -/
 
-@[expose] public section
+@[expose] public noncomputable section
 
 
 universe u v w
@@ -249,20 +249,17 @@ instance : SemilatticeInf (fixedPoints f) where
   __ := OrderDual.instSemilatticeInf (fixedPoints f.dual)
 
 /-- **Knaster-Tarski Theorem**: The fixed points of `f` form a complete lattice. -/
-instance completeLattice : CompleteLattice (fixedPoints f) where
-  sSup s :=
-    f.nextFixed (sSup (Subtype.val '' s))
-      (f.le_map_sSup_subset_fixedPoints (Subtype.val '' s)
-        fun _ ⟨x, hx⟩ => hx.2 ▸ x.2)
-  isLUB_sSup _ :=
-    ⟨fun _ hx ↦ (le_sSup <| Set.mem_image_of_mem _ hx).trans (f.le_nextFixed _),
-      fun _ hx ↦ f.nextFixed_le _ <| sSup_le <| Set.forall_mem_image.2 hx⟩
-  sInf s :=
-    f.prevFixed (sInf (Subtype.val '' s))
-      (f.map_sInf_subset_fixedPoints_le (Subtype.val '' s) fun _ ⟨x, hx⟩ => hx.2 ▸ x.2)
-  isGLB_sInf _ :=
-    ⟨fun _ hx ↦ (f.prevFixed_le _).trans (sInf_le <| Set.mem_image_of_mem _ hx),
-      fun _ hx ↦ f.le_prevFixed _ <| le_sInf <| Set.forall_mem_image.2 hx⟩
+noncomputable instance completeLattice : CompleteLattice (fixedPoints f) where
+  exists_isLUB s :=
+    ⟨f.nextFixed (sSup (Subtype.val '' s))
+      (f.le_map_sSup_subset_fixedPoints (Subtype.val '' s) fun _ ⟨x, hx⟩ => hx.2 ▸ x.2),
+      ⟨fun _ hx ↦ (le_sSup <| Set.mem_image_of_mem _ hx).trans (f.le_nextFixed _),
+        fun _ hx ↦ f.nextFixed_le _ <| sSup_le <| Set.forall_mem_image.2 hx⟩⟩
+  exists_isGLB s :=
+    ⟨f.prevFixed (sInf (Subtype.val '' s))
+      (f.map_sInf_subset_fixedPoints_le (Subtype.val '' s) fun _ ⟨x, hx⟩ => hx.2 ▸ x.2),
+      ⟨fun _ hx ↦ (f.prevFixed_le _).trans (sInf_le <| Set.mem_image_of_mem _ hx),
+        fun _ hx ↦ f.le_prevFixed _ <| le_sInf <| Set.forall_mem_image.2 hx⟩⟩
 
 open OmegaCompletePartialOrder fixedPoints
 

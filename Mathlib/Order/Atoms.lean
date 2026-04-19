@@ -704,7 +704,8 @@ Representation theorem for complete atomic boolean algebras:
 For a complete atomic Boolean algebra `α`, `toSetOfIsAtom` is an order isomorphism
 between `α` and the set of subsets of its atoms.
 -/
-def toSetOfIsAtom {α} [CompleteAtomicBooleanAlgebra α] : α ≃o (Set {a : α // IsAtom a}) where
+noncomputable def toSetOfIsAtom {α} [CompleteAtomicBooleanAlgebra α] :
+    α ≃o (Set {a : α // IsAtom a}) where
   toFun A := {a | a ≤ A}
   invFun S := sSup (Subtype.val '' S)
   left_inv A := by simp [Subtype.coe_image]
@@ -897,10 +898,8 @@ open Classical in
 protected noncomputable def completeLattice : CompleteLattice α :=
   { (inferInstance : Lattice α),
     (inferInstance : BoundedOrder α) with
-    sSup := fun s => if ⊤ ∈ s then ⊤ else ⊥
-    sInf := fun s => if ⊥ ∈ s then ⊥ else ⊤
-    isLUB_sSup s := by
-      refine ⟨fun x h ↦ ?_, fun x h ↦ ?_⟩
+    exists_isLUB s := by
+      refine ⟨if ⊤ ∈ s then ⊤ else ⊥, fun x h ↦ ?_, fun x h ↦ ?_⟩
       · rcases eq_bot_or_eq_top x with (rfl | rfl)
         · exact bot_le
         · rw [if_pos h]
@@ -909,8 +908,8 @@ protected noncomputable def completeLattice : CompleteLattice α :=
           intro con
           exact bot_ne_top (eq_top_iff.2 (h con))
         · exact le_top
-    isGLB_sInf s := by
-      refine ⟨fun x h ↦ ?_, fun x h ↦ ?_⟩
+    exists_isGLB s := by
+      refine ⟨if ⊥ ∈ s then ⊥ else ⊤, fun x h ↦ ?_, fun x h ↦ ?_⟩
       · rcases eq_bot_or_eq_top x with (rfl | rfl)
         · rw [if_pos h]
         · exact le_top

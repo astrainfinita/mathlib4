@@ -107,7 +107,7 @@ open scoped IsMulCommutative
 @[to_additive (attr := deprecated isMulCommutative_closure (since := "2026-03-09"))
 /-- If all the elements of a set `s` commute, then `closure s` forms an additive
 commutative monoid. -/]
-abbrev closureCommMonoidOfComm {s : Set M} (hcomm : ∀ a ∈ s, ∀ b ∈ s, a * b = b * a) :
+noncomputable abbrev closureCommMonoidOfComm {s : Set M} (hcomm : ∀ a ∈ s, ∀ b ∈ s, a * b = b * a) :
     CommMonoid (closure s) :=
   haveI := isMulCommutative_closure _ hcomm
   inferInstance

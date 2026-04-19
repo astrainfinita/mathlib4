@@ -45,12 +45,14 @@ structure Subfunctor (F : C ⥤ Type w) where
 
 @[deprecated (since := "2025-12-11")] alias Subpresheaf := Subfunctor
 
+namespace Subfunctor
+
 variable {F F' F'' : C ⥤ Type w} (G G' : Subfunctor F)
 
 instance : PartialOrder (Subfunctor F) :=
   PartialOrder.lift Subfunctor.obj (fun _ _ => Subfunctor.ext)
 
-instance : CompleteLattice (Subfunctor F) where
+instance : Lattice (Subfunctor F) where
   sup F G :=
     { obj U := F.obj U ⊔ G.obj U
       map _ _ := by
@@ -69,20 +71,8 @@ instance : CompleteLattice (Subfunctor F) where
   inf_le_left _ _ _ _ h := h.1
   inf_le_right _ _ _ _ h := h.2
   le_inf _ _ _ h₁ h₂ _ _ h := ⟨h₁ _ h, h₂ _ h⟩
-  sSup S :=
-    { obj U := sSup (Set.image (fun T ↦ T.obj U) S)
-      map f x hx := by
-        obtain ⟨_, ⟨F, h, rfl⟩, h'⟩ := hx
-        simp only [Set.sSup_eq_sUnion, Set.sUnion_image, Set.preimage_iUnion,
-          Set.mem_iUnion, Set.mem_preimage, exists_prop]
-        exact ⟨_, h, F.map f h'⟩ }
-  isLUB_sSup _ := ⟨fun _ _ _ _ ↦ by aesop, fun _ _ _ ↦ by aesop⟩
-  sInf S :=
-    { obj U := sInf (Set.image (fun T ↦ T.obj U) S)
-      map f x hx := by
-        rintro _ ⟨F, h, rfl⟩
-        exact F.map f (hx _ ⟨_, h, rfl⟩) }
-  isGLB_sInf _ := ⟨fun _ _ _ _ ↦ by aesop, fun _ _ _ ↦ by aesop⟩
+
+instance : BoundedOrder (Subfunctor F) where
   bot :=
     { obj U := ⊥
       map := by simp }
@@ -92,7 +82,33 @@ instance : CompleteLattice (Subfunctor F) where
       map := by simp }
   le_top _ _ := le_top
 
-namespace Subfunctor
+@[simps]
+def sSup' (S : Set (Subfunctor F)) : Subfunctor F where
+  obj U := ⋃₀ ((fun T ↦ T.obj U) '' S)
+  map f x hx := by
+    rw [Set.mem_sUnion] at hx
+    obtain ⟨_, ⟨F, h, rfl⟩, h'⟩ := hx
+    simp only [Set.sUnion_image, Set.preimage_iUnion, Set.mem_iUnion, Set.mem_preimage, exists_prop]
+    exact ⟨_, h, F.map f h'⟩
+
+lemma isLUB_sSup' (S : Set (Subfunctor F)) : IsLUB S (sSup' S) :=
+  ⟨fun _ _ _ _ ↦ by aesop, fun _ _ _ ↦ by aesop⟩
+
+@[simps]
+def sInf' (S : Set (Subfunctor F)) : Subfunctor F where
+  obj U := ⋂₀ ((fun T ↦ T.obj U) '' S)
+  map f x hx := by
+    rw [Set.mem_sInter] at hx
+    simp only [Set.sInter_image, Set.mem_preimage, Set.mem_iInter]
+    intro F h
+    exact F.map f (hx _ ⟨_, h, rfl⟩)
+
+lemma isGLB_sInf' (S : Set (Subfunctor F)) : IsGLB S (sInf' S) :=
+  ⟨fun _ _ _ _ ↦ by aesop, fun _ _ _ ↦ by aesop⟩
+
+instance : CompleteLattice (Subfunctor F) where
+  exists_isLUB _ := ⟨_, isLUB_sSup' _⟩
+  exists_isGLB _ := ⟨_, isGLB_sInf' _⟩
 
 lemma le_def (S T : Subfunctor F) : S ≤ T ↔ ∀ U, S.obj U ≤ T.obj U := Iff.rfl
 
@@ -104,10 +120,12 @@ variable (F)
 variable {F}
 
 lemma sSup_obj (S : Set (Subfunctor F)) (U : C) :
-    (sSup S).obj U = sSup (Set.image (fun T ↦ T.obj U) S) := rfl
+    (sSup S).obj U = sSup (Set.image (fun T ↦ T.obj U) S) :=
+  (isLUB_sSup' S).sSup_eq ▸ rfl
 
 lemma sInf_obj (S : Set (Subfunctor F)) (U : C) :
-    (sInf S).obj U = sInf (Set.image (fun T ↦ T.obj U) S) := rfl
+    (sInf S).obj U = sInf (Set.image (fun T ↦ T.obj U) S) :=
+  (isGLB_sInf' S).sInf_eq ▸ rfl
 
 @[simp]
 lemma iSup_obj {ι : Sort*} (S : ι → Subfunctor F) (U : C) :

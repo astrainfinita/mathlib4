@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Lattice
 public import Mathlib.Order.ConditionallyCompleteLattice.Defs
 public import Mathlib.Order.ConditionallyCompletePartialOrder.Basic
+public import Mathlib.Order.Bounds.WithBot
 
 /-!
 # Theory of conditionally complete lattices
@@ -37,92 +38,6 @@ open Function OrderDual Set
 
 variable {α β γ : Type*} {ι : Sort*}
 
-section
-
-/-!
-Extension of `sSup` and `sInf` from a preorder `α` to `WithTop α` and `WithBot α`
--/
-
-variable [Preorder α]
-
-open Classical in
-noncomputable instance WithTop.instSupSet [SupSet α] :
-    SupSet (WithTop α) :=
-  ⟨fun S =>
-    if ⊤ ∈ S then ⊤ else if BddAbove ((fun (a : α) ↦ ↑a) ⁻¹' S : Set α) then
-      ↑(sSup ((fun (a : α) ↦ (a : WithTop α)) ⁻¹' S : Set α)) else ⊤⟩
-
-open Classical in
-noncomputable instance WithTop.instInfSet [InfSet α] : InfSet (WithTop α) :=
-  ⟨fun S => if S ⊆ {⊤} ∨ ¬BddBelow S then ⊤ else ↑(sInf ((fun (a : α) ↦ ↑a) ⁻¹' S : Set α))⟩
-
-noncomputable instance WithBot.instSupSet [SupSet α] : SupSet (WithBot α) :=
-  ⟨(WithTop.instInfSet (α := αᵒᵈ)).sInf⟩
-
-noncomputable instance WithBot.instInfSet [InfSet α] :
-    InfSet (WithBot α) :=
-  ⟨(WithTop.instSupSet (α := αᵒᵈ)).sSup⟩
-
-theorem WithTop.sSup_eq [SupSet α] {s : Set (WithTop α)} (hs : ⊤ ∉ s)
-    (hs' : BddAbove ((↑) ⁻¹' s : Set α)) : sSup s = ↑(sSup ((↑) ⁻¹' s) : α) :=
-  (if_neg hs).trans <| if_pos hs'
-
-theorem WithTop.sInf_eq [InfSet α] {s : Set (WithTop α)} (hs : ¬s ⊆ {⊤}) (h's : BddBelow s) :
-    sInf s = ↑(sInf ((↑) ⁻¹' s) : α) :=
-  if_neg <| by simp [hs, h's]
-
-theorem WithBot.sInf_eq [InfSet α] {s : Set (WithBot α)} (hs : ⊥ ∉ s)
-    (hs' : BddBelow ((↑) ⁻¹' s : Set α)) : sInf s = ↑(sInf ((↑) ⁻¹' s) : α) :=
-  (if_neg hs).trans <| if_pos hs'
-
-theorem WithBot.sSup_eq [SupSet α] {s : Set (WithBot α)} (hs : ¬s ⊆ {⊥}) (h's : BddAbove s) :
-    sSup s = ↑(sSup ((↑) ⁻¹' s) : α) :=
-  WithTop.sInf_eq (α := αᵒᵈ) hs h's
-
-@[simp]
-theorem WithTop.sInf_empty [InfSet α] : sInf (∅ : Set (WithTop α)) = ⊤ :=
-  if_pos <| by simp
-
-theorem WithTop.coe_sInf' [InfSet α] {s : Set α} (hs : s.Nonempty) (h's : BddBelow s) :
-    ↑(sInf s) = (sInf ((fun (a : α) ↦ ↑a) '' s) : WithTop α) := by
-  classical
-  obtain ⟨x, hx⟩ := hs
-  change _ = ite _ _ _
-  split_ifs with h
-  · rcases h with h1 | h2
-    · cases h1 (mem_image_of_mem _ hx)
-    · exact (h2 (Monotone.map_bddBelow coe_mono h's)).elim
-  · rw [preimage_image_eq]
-    exact Option.some_injective _
-
-theorem WithTop.coe_sSup' [SupSet α] {s : Set α} (hs : BddAbove s) :
-    ↑(sSup s) = (sSup ((fun (a : α) ↦ ↑a) '' s) : WithTop α) := by
-  classical
-  change _ = ite _ _ _
-  rw [if_neg, preimage_image_eq, if_pos hs]
-  · exact Option.some_injective _
-  · rintro ⟨x, _, ⟨⟩⟩
-
-@[simp]
-theorem WithBot.sSup_empty [SupSet α] : sSup (∅ : Set (WithBot α)) = ⊥ :=
-  WithTop.sInf_empty (α := αᵒᵈ)
-
-theorem WithBot.sInf_empty (α : Type*) [CompleteLattice α] : (sInf ∅ : WithBot α) = ⊤ := by
-  rw [WithBot.sInf_eq (by simp) (OrderBot.bddBelow _), Set.preimage_empty, _root_.sInf_empty,
-    WithBot.coe_top]
-
-@[norm_cast]
-theorem WithBot.coe_sSup' [SupSet α] {s : Set α} (hs : s.Nonempty) (h's : BddAbove s) :
-    ↑(sSup s) = (sSup ((fun (a : α) ↦ ↑a) '' s) : WithBot α) :=
-  WithTop.coe_sInf' (α := αᵒᵈ) hs h's
-
-@[norm_cast]
-theorem WithBot.coe_sInf' [InfSet α] {s : Set α} (hs : BddBelow s) :
-    ↑(sInf s) = (sInf ((fun (a : α) ↦ ↑a) '' s) : WithBot α) :=
-  WithTop.coe_sSup' (α := αᵒᵈ) hs
-
-end
-
 instance ConditionallyCompleteLinearOrder.toLinearOrder [h : ConditionallyCompleteLinearOrder α] :
     LinearOrder α where
   min_def a b := by
@@ -147,15 +62,12 @@ attribute [instance 100] ConditionallyCompleteLinearOrderBot.toOrderBot
 on the properties of sInf and sSup in a complete lattice. -/
 instance (priority := 100) CompleteLattice.toConditionallyCompleteLattice [CompleteLattice α] :
     ConditionallyCompleteLattice α where
-  isLUB_csSup _ _ _ := isLUB_sSup _
-  isGLB_csInf _ _ _ := isGLB_sInf _
+  exists_isLUB_cond _ _ _ := ⟨_, isLUB_sSup _⟩
+  exists_isGLB_cond _ _ _ := ⟨_, isGLB_sInf _⟩
 
 -- see Note [lower instance priority]
 instance (priority := 100) CompleteLinearOrder.toConditionallyCompleteLinearOrderBot {α : Type*}
     [h : CompleteLinearOrder α] : ConditionallyCompleteLinearOrderBot α where
-  csSup_empty := sSup_empty
-  csSup_of_not_bddAbove := fun s H ↦ (H (OrderTop.bddAbove s)).elim
-  csInf_of_not_bddBelow := fun s H ↦ (H (OrderBot.bddBelow s)).elim
   __ := CompleteLattice.toConditionallyCompleteLattice
   __ := h
 
@@ -163,13 +75,11 @@ namespace OrderDual
 
 instance instConditionallyCompleteLattice (α : Type*) [ConditionallyCompleteLattice α] :
     ConditionallyCompleteLattice αᵒᵈ where
-  isLUB_csSup := ConditionallyCompleteLattice.isGLB_csInf (α := α)
-  isGLB_csInf := ConditionallyCompleteLattice.isLUB_csSup (α := α)
+  exists_isLUB_cond := ConditionallyCompleteLattice.exists_isGLB_cond (α := α)
+  exists_isGLB_cond := ConditionallyCompleteLattice.exists_isLUB_cond (α := α)
 
 instance (α : Type*) [ConditionallyCompleteLinearOrder α] :
     ConditionallyCompleteLinearOrder αᵒᵈ where
-  csSup_of_not_bddAbove := ConditionallyCompleteLinearOrder.csInf_of_not_bddBelow (α := α)
-  csInf_of_not_bddBelow := ConditionallyCompleteLinearOrder.csSup_of_not_bddAbove (α := α)
   __ := OrderDual.instConditionallyCompleteLattice α
   __ := OrderDual.instLinearOrder α
 
@@ -181,19 +91,22 @@ variable [ConditionallyCompleteLattice α] {s t : Set α} {a b : α}
 
 @[to_dual]
 theorem isLUB_csSup (hn : s.Nonempty) (hb : BddAbove s := by bddDefault) : IsLUB s (sSup s) :=
-  ConditionallyCompleteLattice.isLUB_csSup _ hn hb
+  isLUB_sSup_of_exists (ConditionallyCompleteLattice.exists_isLUB_cond s hn hb)
 
+@[to_dual]
+theorem exists_isLUB_of_nonempty_of_bddAbove (hn : s.Nonempty) (hb : BddAbove s := by bddDefault) :
+    ∃ a, IsLUB s a := by
+  obtain _ | _ := isEmpty_or_nonempty α
+  · exact hn.elim fun a _ ↦ isEmptyElim a
+  · exact ⟨sSup s, isLUB_csSup hn hb⟩
+
+@[to_dual csInf_le]
 theorem le_csSup (h₁ : BddAbove s) (h₂ : a ∈ s) : a ≤ sSup s :=
   (isLUB_csSup (nonempty_of_mem h₂) h₁).1 h₂
 
+@[to_dual le_csInf]
 theorem csSup_le (h₁ : s.Nonempty) (h₂ : ∀ b ∈ s, b ≤ a) : sSup s ≤ a :=
   (isLUB_csSup h₁ ⟨a, h₂⟩).2 h₂
-
-theorem csInf_le (h₁ : BddBelow s) (h₂ : a ∈ s) : sInf s ≤ a :=
-  (isGLB_csInf (nonempty_of_mem h₂) h₁).1 h₂
-
-theorem le_csInf (h₁ : s.Nonempty) (h₂ : ∀ b ∈ s, a ≤ b) : a ≤ sInf s :=
-  (isGLB_csInf h₁ ⟨a, h₂⟩).2 h₂
 
 theorem le_csSup_of_le (hs : BddAbove s) (hb : b ∈ s) (h : a ≤ b) : a ≤ sSup s :=
   le_trans h (le_csSup hs hb)
@@ -222,8 +135,8 @@ theorem IsLUB.csSup_eq (H : IsLUB s a) (ne : s.Nonempty) : sSup s = a :=
 
 instance (priority := 100) ConditionallyCompleteLattice.toConditionallyCompletePartialOrder :
     ConditionallyCompletePartialOrder α where
-  isGLB_csInf_of_directed _ _ := isGLB_csInf _
-  isLUB_csSup_of_directed _ _ := isLUB_csSup _
+  exists_isLUB_cond_of_directed _ _ hn hb := ⟨_, isLUB_csSup hn hb⟩
+  exists_isGLB_cond_of_directed _ _ hn hb := ⟨_, isGLB_csInf hn hb⟩
 
 theorem subset_Icc_csInf_csSup (hb : BddBelow s) (ha : BddAbove s) : s ⊆ Icc (sInf s) (sSup s) :=
   fun _ hx => ⟨csInf_le hb hx, le_csSup ha hx⟩
@@ -379,16 +292,18 @@ theorem csSup_eq_of_is_forall_le_of_forall_le_imp_ge (hs : s.Nonempty) (h_is_ub 
     (h_b_le_ub : ∀ ub, (∀ a ∈ s, a ≤ ub) → b ≤ ub) : sSup s = b :=
   (csSup_le hs h_is_ub).antisymm ((h_b_le_ub _) fun _ => le_csSup ⟨b, h_is_ub⟩)
 
+@[to_dual]
+theorem csInf_eq_bot_of_bot_mem [OrderBot α] {s : Set α} (hs : ⊥ ∈ s) : sInf s = ⊥ :=
+  eq_bot_iff.2 <| csInf_le (OrderBot.bddBelow s) hs
+
 end ConditionallyCompleteLattice
 
 instance Pi.conditionallyCompleteLattice {ι : Type*} {α : ι → Type*}
     [∀ i, ConditionallyCompleteLattice (α i)] : ConditionallyCompleteLattice (∀ i, α i) where
-  isLUB_csSup _ hn hb := isLUB_pi.mpr fun _ ↦ by
-    rw [sSup_apply_eq_sSup_image]
-    exact isLUB_csSup (image_nonempty.mpr hn) ((monotone_eval _).map_bddAbove hb)
-  isGLB_csInf _ hn hb := isGLB_pi.mpr fun _ ↦ by
-    rw [sInf_apply_eq_sInf_image]
-    exact isGLB_csInf (image_nonempty.mpr hn) ((monotone_eval _).map_bddBelow hb)
+  exists_isLUB_cond _ hn hb := ⟨_,
+    isLUB_pi.mpr fun _ ↦ isLUB_csSup (image_nonempty.mpr hn) ((monotone_eval _).map_bddAbove hb)⟩
+  exists_isGLB_cond _ hn hb := ⟨_,
+    isGLB_pi.mpr fun _ ↦ isGLB_csInf (image_nonempty.mpr hn) ((monotone_eval _).map_bddBelow hb)⟩
 
 section ConditionallyCompleteLinearOrder
 
@@ -411,25 +326,19 @@ theorem lt_csSup_iff (hb : BddAbove s) (hs : s.Nonempty) : a < sSup s ↔ ∃ b 
 theorem csInf_lt_iff (hb : BddBelow s) (hs : s.Nonempty) : sInf s < a ↔ ∃ b ∈ s, b < a :=
   isGLB_lt_iff <| isGLB_csInf hs hb
 
-@[simp] lemma csSup_of_not_bddAbove (hs : ¬BddAbove s) : sSup s = sSup ∅ :=
-  ConditionallyCompleteLinearOrder.csSup_of_not_bddAbove s hs
-
-@[simp] lemma ciSup_of_not_bddAbove (hf : ¬BddAbove (range f)) : ⨆ i, f i = sSup ∅ :=
-  csSup_of_not_bddAbove hf
+@[deprecated (since := "2026-03-30")] alias csSup_of_not_bddAbove := sSup_of_not_bddAbove
+@[deprecated (since := "2026-03-30")] alias ciSup_of_not_bddAbove := iSup_of_not_bddAbove
 
 lemma csSup_eq_univ_of_not_bddAbove (hs : ¬BddAbove s) : sSup s = sSup univ := by
-  rw [csSup_of_not_bddAbove hs, csSup_of_not_bddAbove (s := univ)]
+  rw [sSup_of_not_bddAbove hs, sSup_of_not_bddAbove (s := univ)]
   contrapose hs
   exact hs.mono (subset_univ _)
 
 lemma ciSup_eq_univ_of_not_bddAbove (hf : ¬BddAbove (range f)) : ⨆ i, f i = sSup univ :=
   csSup_eq_univ_of_not_bddAbove hf
 
-@[simp] lemma csInf_of_not_bddBelow (hs : ¬BddBelow s) : sInf s = sInf ∅ :=
-  ConditionallyCompleteLinearOrder.csInf_of_not_bddBelow s hs
-
-@[simp] lemma ciInf_of_not_bddBelow (hf : ¬BddBelow (range f)) : ⨅ i, f i = sInf ∅ :=
-  csInf_of_not_bddBelow hf
+@[deprecated (since := "2026-03-30")] alias csInf_of_not_bddBelow := sInf_of_not_bddBelow
+@[deprecated (since := "2026-03-30")] alias ciInf_of_not_bddBelow := iInf_of_not_bddBelow
 
 lemma csInf_eq_univ_of_not_bddBelow (hs : ¬BddBelow s) : sInf s = sInf univ :=
   csSup_eq_univ_of_not_bddAbove (α := αᵒᵈ) hs
@@ -468,7 +377,7 @@ theorem csSup_eq_csSup_of_forall_exists_le {s t : Set α}
     · apply csSup_le t_ne (fun y hy ↦ ?_)
       rcases ht y hy with ⟨x, xs, hyx⟩
       exact hyx.trans (le_csSup Bs xs)
-  · simp [csSup_of_not_bddAbove, (not_or.1 B).1, (not_or.1 B).2]
+  · simp [sSup_of_not_bddAbove, (not_or.1 B).1, (not_or.1 B).2]
 
 /-- When every element of a set `s` is bounded by an element of a set `t`, and conversely, then
 `s` and `t` have the same infimum. This holds even when the sets may be empty or unbounded. -/
@@ -479,19 +388,14 @@ theorem csInf_eq_csInf_of_forall_exists_le {s t : Set α}
 
 lemma sSup_iUnion_Iic (f : ι → α) : sSup (⋃ (i : ι), Iic (f i)) = ⨆ i, f i := by
   apply csSup_eq_csSup_of_forall_exists_le
-  · rintro x ⟨-, ⟨i, rfl⟩, hi⟩
+  · simp only [mem_iUnion]
+    rintro x ⟨i, hi⟩
     exact ⟨f i, mem_range_self _, hi⟩
   · rintro x ⟨i, rfl⟩
     exact ⟨f i, mem_iUnion_of_mem i le_rfl, le_rfl⟩
 
 lemma sInf_iUnion_Ici (f : ι → α) : sInf (⋃ (i : ι), Ici (f i)) = ⨅ i, f i :=
   sSup_iUnion_Iic (α := αᵒᵈ) f
-
-theorem csInf_eq_bot_of_bot_mem [OrderBot α] {s : Set α} (hs : ⊥ ∈ s) : sInf s = ⊥ :=
-  eq_bot_iff.2 <| csInf_le (OrderBot.bddBelow s) hs
-
-theorem csSup_eq_top_of_top_mem [OrderTop α] {s : Set α} (hs : ⊤ ∈ s) : sSup s = ⊤ :=
-  csInf_eq_bot_of_bot_mem (α := αᵒᵈ) hs
 
 open Function
 
@@ -530,55 +434,67 @@ theorem Monotone.map_csInf {β : Type*} [ConditionallyCompleteLattice β] {f : �
 end ConditionallyCompleteLinearOrder
 
 /-!
-### Lemmas about a conditionally complete linear order with bottom element
+### Lemmas about a conditionally complete lattice with bottom element
 
 In this case we have `Sup ∅ = ⊥`, so we can drop some `Nonempty`/`Set.Nonempty` assumptions.
 -/
 
 
+section
+
+variable [ConditionallyCompleteLattice α] [OrderBot α] {s : Set α} {a : α}
+
+@[to_dual]
+theorem OrderBot.isLUB_csSup {s : Set α} (hs : BddAbove s) : IsLUB s (sSup s) := by
+  rcases eq_empty_or_nonempty s with (rfl | hne)
+  · simp only [sSup_empty, isLUB_empty]
+  · exact _root_.isLUB_csSup hne hs
+
+/-- In conditionally complete lattices with a bottom element, the nonempty condition can be omitted
+from `csSup_le_iff`. -/
+@[to_dual OrderTop.le_csInf_iff]
+theorem OrderBot.csSup_le_iff {s : Set α} (hs : BddAbove s) {a : α} : sSup s ≤ a ↔ ∀ x ∈ s, x ≤ a :=
+  isLUB_le_iff (isLUB_csSup hs)
+
+@[to_dual OrderTop.le_csInf]
+theorem OrderBot.csSup_le {s : Set α} {a : α} (h : a ∈ upperBounds s) : sSup s ≤ a :=
+  (csSup_le_iff ⟨a, h⟩).2 h
+
+@[to_dual OrderTop.le_csSup]
+theorem OrderBot.csInf_le (h : a ∈ s) : sInf s ≤ a := _root_.csInf_le (OrderBot.bddBelow _) h
+
+end
+
 section ConditionallyCompleteLinearOrderBot
 
-@[simp]
-theorem csInf_univ [ConditionallyCompleteLattice α] [OrderBot α] : sInf (univ : Set α) = ⊥ :=
-  isLeast_univ.csInf_eq
+@[deprecated (since := "2026-02-26")] alias csInf_univ := sInf_univ
 
 variable [ConditionallyCompleteLinearOrderBot α] {s : Set α} {a : α}
 
-@[simp]
-theorem csSup_empty : (sSup ∅ : α) = ⊥ :=
-  ConditionallyCompleteLinearOrderBot.csSup_empty
+@[deprecated (since := "2026-02-26")] alias csSup_empty := sSup_empty
 
-theorem isLUB_csSup' {s : Set α} (hs : BddAbove s) : IsLUB s (sSup s) := by
-  rcases eq_empty_or_nonempty s with (rfl | hne)
-  · simp only [csSup_empty, isLUB_empty]
-  · exact isLUB_csSup hne hs
-
-/-- In conditionally complete orders with a bottom element, the nonempty condition can be omitted
-from `csSup_le_iff`. -/
-theorem csSup_le_iff' {s : Set α} (hs : BddAbove s) {a : α} : sSup s ≤ a ↔ ∀ x ∈ s, x ≤ a :=
-  isLUB_le_iff (isLUB_csSup' hs)
-
-theorem csSup_le' {s : Set α} {a : α} (h : a ∈ upperBounds s) : sSup s ≤ a :=
-  (csSup_le_iff' ⟨a, h⟩).2 h
+@[deprecated (since := "2026-03-31")] alias isLUB_csSup' := OrderBot.isLUB_csSup
+@[deprecated (since := "2026-03-31")] alias csSup_le_iff' := OrderBot.csSup_le_iff
+@[deprecated (since := "2026-03-31")] alias csSup_le' := OrderBot.csSup_le
 
 /-- In conditionally complete orders with a bottom element, the nonempty condition can be omitted
 from `lt_csSup_iff`. -/
 theorem lt_csSup_iff' (hb : BddAbove s) : a < sSup s ↔ ∃ b ∈ s, a < b := by
-  simpa only [not_le, not_forall₂, exists_prop] using (csSup_le_iff' hb).not
+  simpa only [not_le, not_forall₂, exists_prop] using (OrderBot.csSup_le_iff hb).not
 
 theorem le_csSup_iff' {s : Set α} {a : α} (h : BddAbove s) :
     a ≤ sSup s ↔ ∀ b, b ∈ upperBounds s → a ≤ b :=
-  ⟨fun h _ hb => le_trans h (csSup_le' hb), fun hb => hb _ fun _ => le_csSup h⟩
+  ⟨fun h _ hb => le_trans h (OrderBot.csSup_le hb), fun hb => hb _ fun _ => le_csSup h⟩
 
 theorem le_csInf_iff'' {s : Set α} {a : α} (ne : s.Nonempty) :
     a ≤ sInf s ↔ ∀ b : α, b ∈ s → a ≤ b :=
   le_csInf_iff (OrderBot.bddBelow _) ne
 
-theorem csInf_le' (h : a ∈ s) : sInf s ≤ a := csInf_le (OrderBot.bddBelow _) h
+@[deprecated (since := "2026-03-31")] alias csInf_le' := OrderBot.csInf_le
 
 theorem exists_lt_of_lt_csSup' {s : Set α} {a : α} (h : a < sSup s) : ∃ b ∈ s, a < b := by
   contrapose! h
-  exact csSup_le' h
+  exact OrderBot.csSup_le h
 
 theorem notMem_of_lt_csInf' {x : α} {s : Set α} (h : x < sInf s) : x ∉ s :=
   notMem_of_lt_csInf h (OrderBot.bddBelow s)
@@ -590,124 +506,175 @@ theorem csInf_le_csInf' {s t : Set α} (h₁ : t.Nonempty) (h₂ : t ⊆ s) : sI
 @[gcongr mid]
 theorem csSup_le_csSup' {s t : Set α} (h₁ : BddAbove t) (h₂ : s ⊆ t) : sSup s ≤ sSup t := by
   rcases eq_empty_or_nonempty s with rfl | h
-  · rw [csSup_empty]
+  · rw [sSup_empty]
     exact bot_le
   · exact csSup_le_csSup h₁ h h₂
 
 end ConditionallyCompleteLinearOrderBot
 
+instance [ConditionallyCompleteLattice α] [BoundedOrder α] : CompleteLattice α where
+  exists_isLUB s := by
+    rw [exists_isLUB_iff_isLUB_sSup]
+    obtain rfl | hn := s.eq_empty_or_nonempty
+    · simp
+    · exact isLUB_csSup hn (OrderTop.bddAbove s)
+  exists_isGLB s := by
+    rw [exists_isGLB_iff_isGLB_sInf]
+    obtain rfl | hn := s.eq_empty_or_nonempty
+    · simp
+    · exact isGLB_csInf hn (OrderBot.bddBelow s)
+
+instance [ConditionallyCompleteLinearOrder α] [BoundedOrder α] : CompleteLinearOrder α where
+  __ := ‹ConditionallyCompleteLinearOrder α›
+  __ := instCompleteLatticeOfBoundedOrder
+  __ := LinearOrder.toBiheytingAlgebra α
+
 namespace WithTop
+
+@[to_dual]
+lemma exists_isLUB_cond_of_exists_isLUB_cond [Preorder α]
+    (h : ∀ {s : Set α}, s.Nonempty → BddAbove s → ∃ a, IsLUB s a)
+    {s : Set (WithTop α)} (hn : s.Nonempty) (hb : BddAbove s) : ∃ a, IsLUB s a := by
+  rw [exists_isLUB_iff, ← imp_iff_not_or, or_iff_not_imp_left]
+  intro hs hb
+  lift s to Set α
+  · rintro _ hs' rfl
+    exact hs hs'
+  rw [preimage_image_eq _ coe_injective] at hb ⊢
+  exact h (.of_image hn) hb
+
+@[to_dual]
+lemma exists_isGLB_cond_of_exists_isGLB_cond [Preorder α] [Nonempty α]
+    (h : ∀ {s : Set α}, s.Nonempty → BddBelow s → ∃ a, IsGLB s a)
+    {s : Set (WithTop α)} (hb : BddBelow s) : ∃ a, IsGLB s a := by
+  rw [exists_isGLB_iff, or_iff_not_imp_left, ← nonempty_preimage_coe]
+  intro hn'
+  exact h hn' (bddBelow_preimage_coe.mpr hb)
+
+@[to_dual]
+instance [ConditionallyCompleteLattice α] : ConditionallyCompleteLattice (WithTop α) where
+  exists_isLUB_cond _ := exists_isLUB_cond_of_exists_isLUB_cond (⟨_, isLUB_csSup · ·⟩)
+  exists_isGLB_cond _ _ := exists_isGLB_cond_of_exists_isGLB_cond (⟨_, isGLB_csInf · ·⟩)
+
+instance [ConditionallyCompleteLinearOrder α] : ConditionallyCompleteLinearOrder (WithTop α) where
+  __ := instConditionallyCompleteLattice
+  __ := linearOrder
+
+@[to_dual existing]
+instance _root_.WithBot.instConditionallyCompleteLinearOrder [ConditionallyCompleteLinearOrder α] :
+    ConditionallyCompleteLinearOrder (WithBot α) where
+  __ := WithBot.instConditionallyCompleteLattice
+  __ := WithBot.linearOrder
+
+section
 
 variable [ConditionallyCompleteLinearOrderBot α]
 
 /-- The `sSup` of a non-empty set is its least upper bound for a conditionally
 complete lattice with a top. -/
+@[deprecated isLUB_csSup (since := "2026-03-31")]
 theorem isLUB_sSup' {β : Type*} [ConditionallyCompleteLattice β] {s : Set (WithTop β)}
-    (hs : s.Nonempty) : IsLUB s (sSup s) := by
-  classical
-  constructor
-  · change ite _ _ _ ∈ _
-    split_ifs with h₁ h₂
-    · intro _ _
-      exact le_top
-    · rintro (⟨⟩ | a) ha
-      · contradiction
-      apply coe_le_coe.2
-      exact le_csSup h₂ ha
-    · intro _ _
-      exact le_top
-  · change ite _ _ _ ∈ _
-    split_ifs with h₁ h₂
-    · rintro (⟨⟩ | a) ha
-      · exact le_rfl
-      · exact False.elim (not_top_le_coe a (ha h₁))
-    · rintro (⟨⟩ | b) hb
-      · exact le_top
-      refine coe_le_coe.2 (csSup_le ?_ ?_)
-      · rcases hs with ⟨⟨⟩ | b, hb⟩
-        · exact absurd hb h₁
-        · exact ⟨b, hb⟩
-      · intro a ha
-        exact coe_le_coe.1 (hb ha)
-    · rintro (⟨⟩ | b) hb
-      · exact le_rfl
-      · exfalso
-        apply h₂
-        use b
-        intro a ha
-        exact coe_le_coe.1 (hb ha)
+    (hs : s.Nonempty) : IsLUB s (sSup s) :=
+  isLUB_csSup hs
 
-theorem isLUB_sSup (s : Set (WithTop α)) : IsLUB s (sSup s) := by
-  rcases s.eq_empty_or_nonempty with rfl | hs
-  · simp [sSup]
-  · exact isLUB_sSup' hs
+@[deprecated _root_.isLUB_sSup (since := "2026-03-31")]
+protected theorem isLUB_sSup (s : Set (WithTop α)) : IsLUB s (sSup s) :=
+  _root_.isLUB_sSup s
 
 /-- The `sInf` of a bounded-below set is its greatest lower bound for a conditionally
 complete lattice with a top. -/
+@[deprecated OrderTop.isGLB_csInf (since := "2026-03-31")]
 theorem isGLB_sInf' {β : Type*} [ConditionallyCompleteLattice β] {s : Set (WithTop β)}
-    (hs : BddBelow s) : IsGLB s (sInf s) := by
-  classical
-  constructor
-  · change ite _ _ _ ∈ _
-    simp only [hs, not_true_eq_false, or_false]
-    split_ifs with h
-    · intro a ha
-      exact top_le_iff.2 (Set.mem_singleton_iff.1 (h ha))
-    · rintro (⟨⟩ | a) ha
-      · exact le_top
-      refine coe_le_coe.2 (csInf_le ?_ ha)
-      rcases hs with ⟨⟨⟩ | b, hb⟩
-      · exfalso
-        apply h
-        intro c hc
-        rw [mem_singleton_iff, ← top_le_iff]
-        exact hb hc
-      use b
-      intro c hc
-      exact coe_le_coe.1 (hb hc)
-  · change ite _ _ _ ∈ _
-    simp only [hs, not_true_eq_false, or_false]
-    split_ifs with h
-    · intro _ _
-      exact le_top
-    · rintro (⟨⟩ | a) ha
-      · exfalso
-        apply h
-        intro b hb
-        exact Set.mem_singleton_iff.2 (top_le_iff.1 (ha hb))
-      · refine coe_le_coe.2 (le_csInf ?_ ?_)
-        · classical
-            contrapose! h
-            rintro (⟨⟩ | a) ha
-            · exact mem_singleton ⊤
-            · exact (not_nonempty_iff_eq_empty.2 h ⟨a, ha⟩).elim
-        · intro b hb
-          rw [← coe_le_coe]
-          exact ha hb
+    (hs : BddBelow s) : IsGLB s (sInf s) :=
+  OrderTop.isGLB_csInf hs
 
-theorem isGLB_sInf (s : Set (WithTop α)) : IsGLB s (sInf s) := by
-  by_cases hs : BddBelow s
-  · exact isGLB_sInf' hs
-  · exact isGLB_sInf' (OrderBot.bddBelow _)
+@[deprecated _root_.isGLB_sInf (since := "2026-03-31")]
+protected theorem isGLB_sInf (s : Set (WithTop α)) : IsGLB s (sInf s) :=
+  _root_.isGLB_sInf s
 
-noncomputable instance : CompleteLinearOrder (WithTop α) where
-  __ := linearOrder
-  __ := linearOrder.toBiheytingAlgebra
-  isLUB_sSup := isLUB_sSup
-  isGLB_sInf := isGLB_sInf
+end
 
-/-- A version of `WithTop.coe_sSup'` with a more convenient but less general statement. -/
-@[norm_cast]
-theorem coe_sSup {s : Set α} (hb : BddAbove s) : ↑(sSup s) = (⨆ a ∈ s, ↑a : WithTop α) := by
+variable [ConditionallyCompleteLattice α]
+
+@[to_dual]
+theorem sSup_eq [OrderBot α] {s : Set (WithTop α)} (hs : ⊤ ∉ s)
+    (hb : BddAbove ((↑) ⁻¹' s : Set α)) : sSup s = ↑(sSup ((↑) ⁻¹' s) : α) :=
+  IsLUB.sSup_eq <| by
+    lift s to Set α
+    · rintro _ h rfl
+      exact hs h
+    rw [WithTop.isLUB_image_coe]
+    rw [preimage_image_eq _ coe_injective] at hb ⊢
+    exact OrderBot.isLUB_csSup hb
+
+@[to_dual]
+theorem sSup_ind [OrderBot α] {motive : WithTop α → Prop} {s : Set (WithTop α)}
+    (top : ⊤ ∈ s ∨ ¬BddAbove ((↑) ⁻¹' s : Set α) → motive ⊤)
+    (coe : ⊤ ∉ s → BddAbove ((↑) ⁻¹' s : Set α) → motive (sSup ((↑) ⁻¹' s) : α)) :
+    motive (sSup s) := by
+  by_cases h1 : ⊤ ∈ s
+  · rw [csSup_eq_top_of_top_mem h1]
+    exact top (.inl h1)
+  by_cases h2 : BddAbove ((↑) ⁻¹' s : Set α)
+  · rw [sSup_eq h1 h2]
+    exact coe h1 h2
+  · specialize top (.inr h2)
+    rw [← isLUB_image_top, image_preimage_eq_of_subset (fun x ↦ by cases x <;> simp [h1])] at h2
+    rwa [h2.sSup_eq]
+
+@[to_dual]
+theorem sSup_eq_of_nonempty {s : Set (WithTop α)}
+    (hs : ⊤ ∉ s) (hn : ((↑) ⁻¹' s : Set α).Nonempty)
+    (hb : BddAbove ((↑) ⁻¹' s : Set α)) : sSup s = ↑(sSup ((↑) ⁻¹' s) : α) :=
+  IsLUB.sSup_eq <| by
+    lift s to Set α
+    · rintro _ h rfl
+      exact hs h
+    rw [WithTop.isLUB_image_coe]
+    rw [preimage_image_eq _ coe_injective] at hn hb ⊢
+    exact isLUB_csSup hn hb
+
+@[to_dual]
+theorem sInf_eq {s : Set (WithTop α)} (hs : ¬s ⊆ {⊤}) (h's : BddBelow s) :
+    sInf s = ↑(sInf ((↑) ⁻¹' s) : α) :=
+  IsGLB.sInf_eq <| (isGLB_preimage hs).mp <|
+    isGLB_csInf (nonempty_preimage_coe.mpr hs) (bddBelow_preimage_coe.mpr h's)
+
+@[to_dual]
+theorem coe_sInf' {s : Set α} (hs : s.Nonempty) (h's : BddBelow s) :
+    ↑(sInf s) = (sInf ((↑) '' s) : WithTop α) := by
+  rw [sInf_eq _ (coe_mono.map_bddBelow h's), preimage_image_eq _ coe_injective]
+  rwa [← nonempty_preimage_coe, preimage_image_eq _ coe_injective]
+
+@[to_dual]
+theorem coe_sSup' [OrderBot α] {s : Set α} (hs : BddAbove s) :
+    ↑(sSup s) = (sSup ((↑) '' s) : WithTop α) := by
+  rw [sSup_eq (by simp), preimage_image_eq _ coe_injective]
+  rwa [preimage_image_eq _ coe_injective]
+
+@[to_dual]
+theorem coe_sSup_of_nonempty' {s : Set α} (hs : BddAbove s) (hn : s.Nonempty) :
+    ↑(sSup s) = (sSup ((↑) '' s) : WithTop α) := by
+  rw [sSup_eq_of_nonempty (by simp), preimage_image_eq _ coe_injective]
+  all_goals rwa [preimage_image_eq _ coe_injective]
+
+/-- A version of `WithTop.coe_sSup'` with a more convenient statement. -/
+@[to_dual (attr := norm_cast)]
+theorem coe_sSup [OrderBot α] {s : Set α} (hb : BddAbove s) :
+    ↑(sSup s) = (⨆ a ∈ s, ↑a : WithTop α) := by
   rw [coe_sSup' hb, sSup_image]
 
-/-- A version of `WithTop.coe_sInf'` with a more convenient but less general statement. -/
-@[norm_cast]
-theorem coe_sInf {s : Set α} (hs : s.Nonempty) (h's : BddBelow s) :
+/-- A version of `WithTop.coe_sInf'` with a more convenient statement. -/
+@[to_dual (attr := norm_cast)]
+theorem coe_sInf [OrderBot α] {s : Set α} (hs : s.Nonempty) (h's : BddBelow s) :
     ↑(sInf s) = (⨅ a ∈ s, ↑a : WithTop α) := by
   rw [coe_sInf' hs h's, sInf_image]
 
 end WithTop
+
+@[deprecated _root_.sInf_empty (since := "2026-03-31")]
+theorem WithBot.sInf_empty (α : Type*) [CompleteLattice α] : (sInf ∅ : WithBot α) = ⊤ :=
+  _root_.sInf_empty
 
 namespace Monotone
 
@@ -850,83 +817,3 @@ theorem csInf_image2_eq_csSup_csSup (h₁ : ∀ b, GaloisConnection (toDual ∘ 
   csInf_image2_eq_csInf_csInf (α := αᵒᵈ) (β := βᵒᵈ) h₁ h₂
 
 end
-
-section WithTopBot
-
-/-!
-### Complete lattice structure on `WithTop (WithBot α)`
-
-If `α` is a `ConditionallyCompleteLattice`, then we show that `WithTop α` and `WithBot α`
-also inherit the structure of conditionally complete lattices. Furthermore, we show
-that `WithTop (WithBot α)` and `WithBot (WithTop α)` naturally inherit the structure of a
-complete lattice. Note that for `α` a conditionally complete lattice, `sSup` and `sInf` both return
-junk values for sets which are empty or unbounded. The extension of `sSup` to `WithTop α` fixes
-the unboundedness problem and the extension to `WithBot α` fixes the problem with
-the empty set.
-
-This result can be used to show that the extended reals `[-∞, ∞]` are a complete linear order.
--/
-
-
-/-- Adding a top element to a conditionally complete lattice
-gives a conditionally complete lattice -/
-noncomputable instance WithTop.conditionallyCompleteLattice {α : Type*}
-    [ConditionallyCompleteLattice α] : ConditionallyCompleteLattice (WithTop α) where
-  isLUB_csSup _ hS _ := WithTop.isLUB_sSup' hS
-  isGLB_csInf _ _ hS := WithTop.isGLB_sInf' hS
-
-/-- Adding a bottom element to a conditionally complete lattice
-gives a conditionally complete lattice -/
-noncomputable instance WithBot.conditionallyCompleteLattice {α : Type*}
-    [ConditionallyCompleteLattice α] : ConditionallyCompleteLattice (WithBot α) where
-  isLUB_csSup := (WithTop.conditionallyCompleteLattice (α := αᵒᵈ)).isGLB_csInf
-  isGLB_csInf := (WithTop.conditionallyCompleteLattice (α := αᵒᵈ)).isLUB_csSup
-
-noncomputable instance [CompleteLattice α] : CompleteLattice (WithBot α) where
-  isLUB_sSup s := ⟨fun _ ↦ le_csSup (OrderTop.bddAbove _), fun _ hsa ↦
-    s.eq_empty_or_nonempty.elim (by rw [·, WithBot.sSup_empty]; exact bot_le) (csSup_le · hsa)⟩
-  isGLB_sInf s := ⟨fun _ ↦ csInf_le (OrderBot.bddBelow _), fun _ has ↦
-    s.eq_empty_or_nonempty.elim (by rw [·, WithBot.sInf_empty]; exact le_top) (le_csInf · has)⟩
-
-open Classical in
-noncomputable instance WithTop.WithBot.completeLattice {α : Type*}
-    [ConditionallyCompleteLattice α] : CompleteLattice (WithTop (WithBot α)) where
-  isLUB_sSup S := ⟨fun a haS ↦ (WithTop.isLUB_sSup' ⟨a, haS⟩).1 haS, fun a ha ↦ by
-    rcases S.eq_empty_or_nonempty with h | h
-    · change ite _ _ _ ≤ a
-      simp [h]
-    · exact (WithTop.isLUB_sSup' h).2 ha⟩
-  isGLB_sInf S := ⟨fun a haS ↦
-    show ite _ _ _ ≤ a by
-      simp only [OrderBot.bddBelow, not_true_eq_false, or_false]
-      split_ifs with h₁
-      · cases a
-        · exact le_rfl
-        cases h₁ haS
-      · cases a
-        · exact le_top
-        · apply WithTop.coe_le_coe.2
-          refine csInf_le ?_ haS
-          use ⊥
-          intro b _
-          exact bot_le,
-    fun a haS ↦ (WithTop.isGLB_sInf' ⟨a, haS⟩).2 haS⟩
-
-noncomputable instance WithTop.WithBot.completeLinearOrder {α : Type*}
-    [ConditionallyCompleteLinearOrder α] : CompleteLinearOrder (WithTop (WithBot α)) where
-  __ := completeLattice
-  __ := linearOrder
-  __ := linearOrder.toBiheytingAlgebra
-
-noncomputable instance WithBot.WithTop.completeLattice {α : Type*}
-    [ConditionallyCompleteLattice α] : CompleteLattice (WithBot (WithTop α)) where
-  isLUB_sSup := (WithTop.WithBot.completeLattice (α := αᵒᵈ)).isGLB_sInf
-  isGLB_sInf := (WithTop.WithBot.completeLattice (α := αᵒᵈ)).isLUB_sSup
-
-noncomputable instance WithBot.WithTop.completeLinearOrder {α : Type*}
-    [ConditionallyCompleteLinearOrder α] : CompleteLinearOrder (WithBot (WithTop α)) where
-  __ := completeLattice
-  __ := linearOrder
-  __ := linearOrder.toBiheytingAlgebra
-
-end WithTopBot

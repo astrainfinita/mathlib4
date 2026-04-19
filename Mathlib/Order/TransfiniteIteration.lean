@@ -10,7 +10,7 @@ public import Mathlib.Order.SuccPred.Limit
 /-!
 # Transfinite iteration of a function `I → I`
 
-Given `φ : I → I` where `[SupSet I]`, we define the `j`th transfinite iteration of `φ`
+Given `φ : I → I` where `[LE I] [Nonempty I]`, we define the `j`th transfinite iteration of `φ`
 for any `j : J`, with `J` a well-ordered type: this is `transfiniteIterate φ j : I → I`.
 If `i₀ : I`, then `transfiniteIterate φ ⊥ i₀ = i₀`; if `j` is a non-maximal element,
 then `transfiniteIterate φ (Order.succ j) i₀ = φ (transfiniteIterate φ j i₀)`; and
@@ -38,8 +38,8 @@ universe w u
 
 section
 
-variable {I : Type u} [SupSet I] (φ : I → I)
-  {J : Type w} [LinearOrder J] [SuccOrder J] [WellFoundedLT J]
+variable {I : Type u} [LE I] [Nonempty I] (φ : I → I)
+variable {J : Type w} [LinearOrder J] [SuccOrder J] [WellFoundedLT J]
 
 /-- The `j`th-iteration of a function `φ : I → I` when `j : J` belongs to
 a well-ordered type. -/
@@ -60,19 +60,20 @@ lemma transfiniteIterate_succ (i₀ : I) (j : J) (hj : ¬ IsMax j) :
   rw [SuccOrder.limitRecOn_succ_of_not_isMax _ _ _ hj]
   rfl
 
-lemma transfiniteIterate_limit (i₀ : I) (j : J) (hj : Order.IsSuccLimit j) :
-    transfiniteIterate φ j i₀ =
-      ⨆ (x : Set.Iio j), transfiniteIterate φ x.1 i₀ := by
-  dsimp [transfiniteIterate]
-  rw [SuccOrder.limitRecOn_of_isSuccLimit _ _ _ hj]
-  simp only [iSup_apply]
-
 end
 
 section
 
 variable {I : Type u} [CompleteLattice I] (φ : I → I) (i₀ : I)
   {J : Type w} [LinearOrder J] [OrderBot J] [SuccOrder J] [WellFoundedLT J]
+
+omit [OrderBot J] in
+lemma transfiniteIterate_limit (i₀ : I) (j : J) (hj : Order.IsSuccLimit j) :
+    transfiniteIterate φ j i₀ =
+      ⨆ (x : Set.Iio j), transfiniteIterate φ x.1 i₀ := by
+  dsimp [transfiniteIterate]
+  rw [SuccOrder.limitRecOn_of_isSuccLimit _ _ _ hj]
+  simp only [iSup_apply]
 
 lemma monotone_transfiniteIterate (hφ : ∀ (i : I), i ≤ φ i) :
     Monotone (fun (j : J) ↦ transfiniteIterate φ j i₀) := by

@@ -153,12 +153,15 @@ instance instInf : Min (Sublattice α) where
                infClosed' := L.infClosed.inter M.infClosed }
 
 /-- The inf of sublattices is their intersection. -/
-instance instInfSet : InfSet (Sublattice α) where
-  sInf S := { carrier := ⨅ L ∈ S, L
-              supClosed' := supClosed_sInter <| forall_mem_range.2 fun L ↦ supClosed_sInter <|
-                forall_mem_range.2 fun _ ↦ L.supClosed
-              infClosed' := infClosed_sInter <| forall_mem_range.2 fun L ↦ infClosed_sInter <|
-                forall_mem_range.2 fun _ ↦ L.infClosed }
+def sInf' (S : Set (Sublattice α)) : Sublattice α where
+  carrier := ⨅ L ∈ S, L
+  supClosed' := supClosed_sInter <| forall_mem_range.2 fun L ↦ supClosed_sInter <|
+    forall_mem_range.2 fun _ ↦ L.supClosed
+  infClosed' := infClosed_sInter <| forall_mem_range.2 fun L ↦ infClosed_sInter <|
+    forall_mem_range.2 fun _ ↦ L.infClosed
+
+lemma isGLB_sInf' (S : Set (Sublattice α)) : IsGLB S (sInf' S) :=
+  .of_image SetLike.coe_subset_coe isGLB_biInf
 
 instance instInhabited : Inhabited (Sublattice α) := ⟨⊥⟩
 
@@ -172,7 +175,8 @@ def topEquiv : (⊤ : Sublattice α) ≃o α where
 @[simp, norm_cast] lemma coe_top : (⊤ : Sublattice α) = (univ : Set α) := rfl
 @[simp, norm_cast] lemma coe_bot : (⊥ : Sublattice α) = (∅ : Set α) := rfl
 @[simp, norm_cast] lemma coe_inf' (L M : Sublattice α) : L ⊓ M = (L : Set α) ∩ M := rfl
-@[simp, norm_cast] lemma coe_sInf (S : Set (Sublattice α)) : sInf S = ⋂ L ∈ S, (L : Set α) := rfl
+@[simp, norm_cast] lemma coe_sInf (S : Set (Sublattice α)) : sInf S = ⋂ L ∈ S, (L : Set α) :=
+  (isGLB_sInf' S).sInf_eq ▸ rfl
 @[simp, norm_cast] lemma coe_iInf (f : ι → Sublattice α) : ⨅ i, f i = ⋂ i, (f i : Set α) := by
   simp [iInf]
 
@@ -197,8 +201,7 @@ instance instCompleteLattice : CompleteLattice (Sublattice α) where
   le_inf := fun _L _M _N hM hN _a ha ↦ ⟨hM ha, hN ha⟩
   inf_le_left := fun _L _M _a ↦ And.left
   inf_le_right := fun _L _M _a ↦ And.right
-  __ := completeLatticeOfInf (Sublattice α)
-      fun _s ↦ IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf
+  __ := completeLatticeOfInf (Sublattice α) _ isGLB_sInf'
 
 lemma subsingleton_iff : Subsingleton (Sublattice α) ↔ IsEmpty α :=
   ⟨fun _ ↦ univ_eq_empty_iff.1 <| coe_inj.2 <| Subsingleton.elim ⊤ ⊥,

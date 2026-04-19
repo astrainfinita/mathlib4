@@ -723,10 +723,8 @@ lemma pairwise_disjoint_supp_connectedComponent (G : SimpleGraph V) :
 
 -- TODO: Extract as lemma about general equivalence relation
 lemma iUnion_connectedComponentSupp (G : SimpleGraph V) :
-    ⋃ c : G.ConnectedComponent, c.supp = Set.univ := by
-  refine Set.eq_univ_of_forall fun v ↦ ⟨G.connectedComponentMk v, ?_⟩
-  simp only [Set.mem_range, SetLike.mem_coe]
-  exact ⟨⟨G.connectedComponentMk v, rfl⟩, rfl⟩
+    ⋃ c : G.ConnectedComponent, c.supp = Set.univ :=
+  Set.eq_univ_of_forall fun v ↦ Set.mem_iUnion.mpr ⟨G.connectedComponentMk v, by simp⟩
 
 theorem Preconnected.set_univ_walk_nonempty (hconn : G.Preconnected) (u v : V) :
     (Set.univ : Set (G.Walk u v)).Nonempty := by

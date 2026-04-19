@@ -54,6 +54,9 @@ def DirectedOn (s : Set α) :=
 
 variable {r r'}
 
+lemma directedOn_empty : DirectedOn r (∅ : Set α) :=
+  fun _ hx => hx.elim
+
 theorem directedOn_iff_directed {s} : @DirectedOn α r s ↔ Directed r (Subtype.val : s → α) := by
   simp only [DirectedOn, Directed, Subtype.exists, exists_and_left, exists_prop, Subtype.forall]
   exact forall₂_congr fun x _ => by simp [And.comm, and_assoc]

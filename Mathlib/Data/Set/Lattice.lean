@@ -755,11 +755,11 @@ theorem iInter₂_union (s : ∀ i, κ i → Set α) (t : Set α) :
 
 theorem mem_sUnion_of_mem {x : α} {t : Set α} {S : Set (Set α)} (hx : x ∈ t) (ht : t ∈ S) :
     x ∈ ⋃₀ S :=
-  ⟨t, ht, hx⟩
+  sUnion_eq_setOf _ ▸ ⟨t, ht, hx⟩
 
 -- is this theorem really necessary?
 theorem notMem_of_notMem_sUnion {x : α} {t : Set α} {S : Set (Set α)} (hx : x ∉ ⋃₀ S)
-    (ht : t ∈ S) : x ∉ t := fun h => hx ⟨t, ht, h⟩
+    (ht : t ∈ S) : x ∉ t := fun h => hx (mem_sUnion_of_mem h ht)
 
 theorem sInter_subset_of_mem {S : Set (Set α)} {t : Set α} (tS : t ∈ S) : ⋂₀ S ⊆ t :=
   sInf_le tS
@@ -780,14 +780,16 @@ theorem sUnion_subset_iff {s : Set (Set α)} {t : Set α} : ⋃₀ s ⊆ t ↔ �
 
 /-- `sUnion` is monotone under taking a subset of each set. -/
 lemma sUnion_mono_subsets {s : Set (Set α)} {f : Set α → Set α} (hf : ∀ t : Set α, t ⊆ f t) :
-    ⋃₀ s ⊆ ⋃₀ (f '' s) :=
-  fun _ ⟨t, htx, hxt⟩ ↦ ⟨f t, mem_image_of_mem f htx, hf t hxt⟩
+    ⋃₀ s ⊆ ⋃₀ (f '' s) := by
+  rw [sUnion_eq_setOf, sUnion_eq_setOf]
+  exact fun _ ⟨t, htx, hxt⟩ ↦ ⟨f t, mem_image_of_mem f htx, hf t hxt⟩
 
 /-- `sUnion` is monotone under taking a superset of each set. -/
 lemma sUnion_mono_supsets {s : Set (Set α)} {f : Set α → Set α} (hf : ∀ t : Set α, f t ⊆ t) :
-    ⋃₀ (f '' s) ⊆ ⋃₀ s :=
+    ⋃₀ (f '' s) ⊆ ⋃₀ s := by
+  rw [sUnion_eq_setOf, sUnion_eq_setOf]
   -- If t ∈ f '' s is arbitrary; t = f u for some u : Set α.
-  fun _ ⟨_, ⟨u, hus, hut⟩, hxt⟩ ↦ ⟨u, hus, (hut ▸ hf u) hxt⟩
+  exact fun _ ⟨_, ⟨u, hus, hut⟩, hxt⟩ ↦ ⟨u, hus, (hut ▸ hf u) hxt⟩
 
 theorem subset_sInter {S : Set (Set α)} {t : Set α} (h : ∀ t' ∈ S, t ⊆ t') : t ⊆ ⋂₀ S :=
   le_sInf h
@@ -837,7 +839,7 @@ theorem sUnion_powerset_gc :
   gc_sSup_Iic
 
 /-- `⋃₀` and `𝒫` form a Galois insertion. -/
-def sUnionPowersetGI :
+noncomputable def sUnionPowersetGI :
     GaloisInsertion (⋃₀ · : Set (Set α) → Set α) (𝒫 · : Set α → Set (Set α)) :=
   gi_sSup_Iic
 
@@ -985,8 +987,7 @@ theorem iUnion_image_preimage_sigma_mk_eq_self {ι : Type*} {σ : ι → Type*} 
   grind
 
 theorem Sigma.univ (X : α → Type*) : (Set.univ : Set (Σ a, X a)) = ⋃ a, range (Sigma.mk a) :=
-  Set.ext fun x =>
-    iff_of_true trivial ⟨range (Sigma.mk x.1), Set.mem_range_self _, x.2, Sigma.eta x⟩
+  Set.ext fun x => iff_of_true trivial <| mem_iUnion_of_mem _ ⟨x.2, Sigma.eta x⟩
 
 alias sUnion_mono := sUnion_subset_sUnion
 
@@ -1056,13 +1057,13 @@ theorem sInter_iUnion (s : ι → Set (Set α)) : ⋂₀ ⋃ i, s i = ⋂ i, ⋂
 
 theorem iUnion_range_eq_sUnion {α β : Type*} (C : Set (Set α)) {f : ∀ s : C, β → (s : Type _)}
     (hf : ∀ s : C, Surjective (f s)) : ⋃ y : β, range (fun s : C => (f s y).val) = ⋃₀ C := by
-  ext x; constructor
-  · rintro ⟨s, ⟨y, rfl⟩, ⟨s, hs⟩, rfl⟩
+  ext x; rw [mem_sUnion, mem_iUnion]; constructor
+  · rintro ⟨y, ⟨s, hs⟩, _, rfl⟩
     refine ⟨_, hs, ?_⟩
     exact (f ⟨s, hs⟩ y).2
   · rintro ⟨s, hs, hx⟩
     obtain ⟨y, hy⟩ := hf ⟨s, hs⟩ ⟨x, hx⟩
-    refine ⟨_, ⟨y, rfl⟩, ⟨s, hs⟩, ?_⟩
+    refine ⟨y, ⟨s, hs⟩, ?_⟩
     exact congr_arg Subtype.val hy
 
 theorem iUnion_range_eq_iUnion (C : ι → Set α) {f : ∀ x : ι, β → C x}

@@ -6,9 +6,8 @@ Authors: Johannes Hölzl, Jeremy Avigad
 module
 
 public import Mathlib.Data.Set.Insert
-public import Mathlib.Order.SetNotation
 public import Mathlib.Order.BooleanAlgebra.Set
-public import Mathlib.Order.Bounds.Defs
+public import Mathlib.Order.Bounds.Basic
 
 /-!
 # Definitions about filters
@@ -188,25 +187,25 @@ instance : PartialOrder (Filter α) where
 theorem le_def : f ≤ g ↔ ∀ x ∈ g, x ∈ f :=
   Iff.rfl
 
-instance instSupSet : SupSet (Filter α) where
-  sSup S := join (𝓟 S)
+instance : Nonempty (Filter α) := ⟨𝓟 ∅⟩
 
-@[simp] theorem mem_sSup {S : Set (Filter α)} : s ∈ sSup S ↔ ∀ f ∈ S, s ∈ f := .rfl
+theorem isLUB_join_principal (S : Set (Filter α)) : IsLUB S (join (𝓟 S)) :=
+  ⟨fun _ hf _ hs ↦ hs hf, fun _ h _ hs _ hg ↦ h hg hs⟩
+
+@[simp] theorem mem_sSup {S : Set (Filter α)} : s ∈ sSup S ↔ ∀ f ∈ S, s ∈ f := by
+  rw [(isLUB_join_principal _).sSup_eq]; rfl
 
 /-- Infimum of a set of filters.
 This definition is marked as irreducible
 so that Lean doesn't try to unfold it when unifying expressions. -/
-@[irreducible]
-protected def sInf (s : Set (Filter α)) : Filter α := sSup (lowerBounds s)
+@[irreducible, deprecated sInf (since := "2026-03-29")]
+protected noncomputable def sInf (s : Set (Filter α)) : Filter α := sSup (lowerBounds s)
 
-instance instInfSet : InfSet (Filter α) where
-  sInf := Filter.sInf
-
-protected theorem sSup_lowerBounds (s : Set (Filter α)) : sSup (lowerBounds s) = sInf s := by
-  simp [sInf, Filter.sInf]
+protected theorem sSup_lowerBounds (s : Set (Filter α)) : sSup (lowerBounds s) = sInf s :=
+  (isLUB_lowerBounds.mp (isLUB_join_principal _).isLUB_sSup).sInf_eq.symm
 
 instance : Top (Filter α) where
-  top := .copy (sSup (Set.range pure)) {s | ∀ x, x ∈ s} <| by simp
+  top := .copy (𝓟 univ) {s | ∀ x, x ∈ s} <| by simp [Set.eq_univ_iff_forall]
 
 theorem mem_top_iff_forall {s : Set α} : s ∈ (⊤ : Filter α) ↔ ∀ x, x ∈ s :=
   Iff.rfl
@@ -216,7 +215,7 @@ theorem mem_top {s : Set α} : s ∈ (⊤ : Filter α) ↔ s = univ := by
   rw [mem_top_iff_forall, eq_univ_iff_forall]
 
 instance : Bot (Filter α) where
-  bot := .copy (sSup ∅) univ <| by simp
+  bot := .copy (𝓟 ∅) univ <| by simp
 
 @[simp]
 theorem mem_bot {s : Set α} : s ∈ (⊥ : Filter α) :=
@@ -240,7 +239,7 @@ instance instInf : Min (Filter α) :=
 
 /-- The supremum of two filters is the filter that contains sets that belong to both filters. -/
 instance instSup : Max (Filter α) where
-  max f g := .copy (sSup {f, g}) {s | s ∈ f ∧ s ∈ g} <| by simp
+  max f g := .copy (join (𝓟 {f, g})) {s | s ∈ f ∧ s ∈ g} <| by simp [subset_def]
 
 /-- The relative complement of two filters `f \ g` contains sets
 whose union with any set in `g` lies in `f`. -/
@@ -349,7 +348,7 @@ theorem prod_eq_inf (f : Filter α) (g : Filter β) : f ×ˢ g = f.comap Prod.fs
   rfl
 
 /-- The product of an indexed family of filters. -/
-def pi {ι : Type*} {α : ι → Type*} (f : ∀ i, Filter (α i)) : Filter (∀ i, α i) :=
+noncomputable def pi {ι : Type*} {α : ι → Type*} (f : ∀ i, Filter (α i)) : Filter (∀ i, α i) :=
   ⨅ i, comap (Function.eval i) (f i)
 
 /-- The monadic bind operation on filter is defined the usual way in terms of `map` and `join`.
@@ -383,12 +382,12 @@ instance : Functor Filter where map := @Filter.map
 
 /-- A variant on `bind` using a function `g` taking a set instead of a member of `α`.
 This is essentially a push-forward along a function mapping each set to a filter. -/
-protected def lift (f : Filter α) (g : Set α → Filter β) :=
+protected noncomputable def lift (f : Filter α) (g : Set α → Filter β) :=
   ⨅ s ∈ f, g s
 
 /-- Specialize `lift` to functions `Set α → Set β`. This can be viewed as a generalization of `map`.
 This is essentially a push-forward along a function mapping each set to a set. -/
-protected def lift' (f : Filter α) (h : Set α → Set β) :=
+protected noncomputable def lift' (f : Filter α) (h : Set α → Set β) :=
   f.lift (𝓟 ∘ h)
 
 /-- `f.IsBounded r`: the filter `f` is eventually bounded w.r.t. the relation `r`,

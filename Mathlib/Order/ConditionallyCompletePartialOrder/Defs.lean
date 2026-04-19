@@ -47,21 +47,26 @@ variable {ι : Sort*} {α : Type*}
 /-- Conditionally complete partial orders (with infima) are partial orders
 where every nonempty, directed set which is bounded below has a greatest lower bound. -/
 class ConditionallyCompletePartialOrderInf (α : Type*)
-    extends PartialOrder α, InfSet α where
+    extends PartialOrder α where
+  [toNonempty : Nonempty α]
   /-- For each nonempty, directed set `s` which is bounded below, `sInf s` is
   the greatest lower bound of `s`. -/
-  isGLB_csInf_of_directed :
-    ∀ s, DirectedOn (· ≥ ·) s → s.Nonempty → BddBelow s → IsGLB s (sInf s)
+  exists_isGLB_cond_of_directed :
+    ∀ s : Set α, DirectedOn (· ≥ ·) s → s.Nonempty → BddBelow s → ∃ a, IsGLB s a
 
 /-- Conditionally complete partial orders (with suprema) are partial orders
 where every nonempty, directed set which is bounded above has a least upper bound. -/
 @[to_dual existing]
 class ConditionallyCompletePartialOrderSup (α : Type*)
-    extends PartialOrder α, SupSet α where
+    extends PartialOrder α where
+  [toNonempty : Nonempty α]
   /-- For each nonempty, directed set `s` which is bounded above, `sSup s` is
   the least upper bound of `s`. -/
-  isLUB_csSup_of_directed :
-    ∀ s, DirectedOn (· ≤ ·) s → s.Nonempty → BddAbove s → IsLUB s (sSup s)
+  exists_isLUB_cond_of_directed :
+    ∀ s : Set α, DirectedOn (· ≤ ·) s → s.Nonempty → BddAbove s → ∃ a, IsLUB s a
+
+attribute [instance 50] ConditionallyCompletePartialOrderInf.toNonempty
+attribute [instance 50] ConditionallyCompletePartialOrderSup.toNonempty
 
 /-- Conditionally complete partial orders (with suprema and infima) are partial orders
 where every nonempty, directed set which is bounded above (respectively, below) has a
@@ -78,7 +83,8 @@ variable {f : ι → α} {s : Set α} {a : α}
 @[to_dual]
 protected lemma DirectedOn.isLUB_csSup (h_dir : DirectedOn (· ≤ ·) s)
     (h_non : s.Nonempty) (h_bdd : BddAbove s) : IsLUB s (sSup s) :=
-  ConditionallyCompletePartialOrderSup.isLUB_csSup_of_directed s h_dir h_non h_bdd
+  isLUB_sSup_of_exists
+    (ConditionallyCompletePartialOrderSup.exists_isLUB_cond_of_directed s h_dir h_non h_bdd)
 
 @[to_dual csInf_le]
 protected lemma DirectedOn.le_csSup (hs : DirectedOn (· ≤ ·) s)

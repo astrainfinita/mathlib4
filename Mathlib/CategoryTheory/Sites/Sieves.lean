@@ -520,6 +520,12 @@ theorem arrows_ext : ∀ {R S : Sieve X}, R.arrows = S.arrows → R = S := by
 protected theorem ext {R S : Sieve X} (h : ∀ ⦃Y⦄ (f : Y ⟶ X), R f ↔ S f) : R = S :=
   arrows_ext <| funext fun _ => funext fun f => propext <| h f
 
+instance : PartialOrder (Sieve X) where
+  le S R := ∀ ⦃Y⦄ (f : Y ⟶ X), S f → R f
+  le_refl _ _ _ := id
+  le_trans _ _ _ S₁₂ S₂₃ _ _ h := S₂₃ _ (S₁₂ _ h)
+  le_antisymm _ _ p q := Sieve.ext fun _ _ => ⟨p _, q _⟩
+
 open Lattice
 
 /-- The supremum of a collection of sieves: the union of them all. -/
@@ -529,10 +535,16 @@ protected def sup (𝒮 : Set (Sieve X)) : Sieve X where
     obtain ⟨S, hS, hf⟩ := hf
     exact ⟨S, hS, S.downward_closed hf _⟩
 
+protected lemma isLUB_sup (𝒮 : Set (Sieve X)) : IsLUB 𝒮 (Sieve.sup 𝒮) :=
+  ⟨fun S hS _ _ hf ↦ ⟨S, hS, hf⟩, fun _ ha _ _ ⟨_, hb, hf⟩ ↦ ha hb _ hf⟩
+
 /-- The infimum of a collection of sieves: the intersection of them all. -/
 protected def inf (𝒮 : Set (Sieve X)) : Sieve X where
   arrows _ f := ∀ S ∈ 𝒮, Sieve.arrows S f
   downward_closed {_ _ _} hf g S H := S.downward_closed (hf S H) g
+
+protected lemma isGLB_inf (𝒮 : Set (Sieve X)) : IsGLB 𝒮 (Sieve.inf 𝒮) :=
+  ⟨fun _ hS _ _ h ↦ h _ hS, fun _ hS _ _ hf _ hR ↦ hS hR _ hf⟩
 
 /-- The union of two sieves is a sieve. -/
 protected def union (S R : Sieve X) : Sieve X where
@@ -550,10 +562,6 @@ protected def inter (S R : Sieve X) : Sieve X where
 We generate this directly rather than using the Galois insertion for nicer definitional properties.
 -/
 instance : CompleteLattice (Sieve X) where
-  le S R := ∀ ⦃Y⦄ (f : Y ⟶ X), S f → R f
-  le_refl _ _ _ := id
-  le_trans _ _ _ S₁₂ S₂₃ _ _ h := S₂₃ _ (S₁₂ _ h)
-  le_antisymm _ _ p q := Sieve.ext fun _ _ => ⟨p _, q _⟩
   top :=
     { arrows := ⊤
       downward_closed := fun _ _ => ⟨⟩ }
@@ -562,10 +570,8 @@ instance : CompleteLattice (Sieve X) where
       downward_closed := False.elim }
   sup := Sieve.union
   inf := Sieve.inter
-  sSup := Sieve.sup
-  sInf := Sieve.inf
-  isLUB_sSup _ := ⟨fun S hS _ _ hf ↦ ⟨S, hS, hf⟩, fun _ ha _ _ ⟨b, hb, hf⟩ ↦ ha hb _ hf⟩
-  isGLB_sInf _ := ⟨fun S hS _ _ h ↦ h _ hS, fun _ hS _ _ hf _ hR ↦ hS hR _ hf⟩
+  exists_isLUB 𝒮 := ⟨Sieve.sup 𝒮, Sieve.isLUB_sup 𝒮⟩
+  exists_isGLB 𝒮 := ⟨Sieve.inf 𝒮, Sieve.isGLB_inf 𝒮⟩
   le_sup_left _ _ _ _ := Or.inl
   le_sup_right _ _ _ _ := Or.inr
   sup_le _ _ _ h₁ h₂ _ f := by
@@ -584,13 +590,15 @@ instance sieveInhabited : Inhabited (Sieve X) :=
 
 @[simp]
 theorem sInf_apply {Ss : Set (Sieve X)} {Y} (f : Y ⟶ X) :
-    sInf Ss f ↔ ∀ (S : Sieve X) (_ : S ∈ Ss), S f :=
-  Iff.rfl
+    sInf Ss f ↔ ∀ (S : Sieve X) (_ : S ∈ Ss), S f := by
+  rw [(Sieve.isGLB_inf Ss).sInf_eq]
+  simp [Sieve.inf]
 
 @[simp]
 theorem sSup_apply {Ss : Set (Sieve X)} {Y} (f : Y ⟶ X) :
     sSup Ss f ↔ ∃ (S : Sieve X) (_ : S ∈ Ss), S f := by
-  simp [sSup, Sieve.sup]
+  rw [(Sieve.isLUB_sup Ss).sSup_eq]
+  simp [Sieve.sup]
 
 @[simp]
 theorem inter_apply {R S : Sieve X} {Y} (f : Y ⟶ X) : (R ⊓ S) f ↔ R f ∧ S f :=

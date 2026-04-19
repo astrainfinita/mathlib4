@@ -228,7 +228,7 @@ theorem mem_sdiff_iff_union {f g : Filter α} {s : Set α} :
 section CompleteLattice
 
 protected lemma isLUB_sSup (s : Set (Filter α)) : IsLUB s (sSup s) :=
-  ⟨fun _ h₁ _ h₂ ↦ h₂ h₁, fun _ h₁ _ h₂ _ h₃ ↦ h₁ h₃ h₂⟩
+  (isLUB_join_principal s).isLUB_sSup
 
 protected lemma isGLB_sInf (s : Set (Filter α)) : IsGLB s (sInf s) :=
   isLUB_lowerBounds.mp (Filter.sSup_lowerBounds _ ▸ Filter.isLUB_sSup _)
@@ -243,8 +243,8 @@ instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
   inf_le_left _ _ _ := mem_inf_of_left
   inf_le_right _ _ _ := mem_inf_of_right
   le_inf := fun _ _ _ h₁ h₂ _s ⟨_a, ha, _b, hb, hs⟩ => hs.symm ▸ inter_mem (h₁ ha) (h₂ hb)
-  isLUB_sSup := Filter.isLUB_sSup
-  isGLB_sInf := Filter.isGLB_sInf
+  exists_isLUB _ := ⟨_, Filter.isLUB_sSup _⟩
+  exists_isGLB _ := ⟨_, Filter.isGLB_sInf _⟩
   le_top _ _ := univ_mem'
   bot_le _ _ _ := trivial
 
@@ -367,7 +367,8 @@ theorem monotone_principal : Monotone (𝓟 : Set α → Filter α) := fun _ _ =
 @[simp] theorem principal_eq_iff_eq {s t : Set α} : 𝓟 s = 𝓟 t ↔ s = t := by
   simp only [le_antisymm_iff, le_principal_iff, mem_principal]; rfl
 
-@[simp] theorem join_principal_eq_sSup {s : Set (Filter α)} : join (𝓟 s) = sSup s := rfl
+@[simp] theorem join_principal_eq_sSup {s : Set (Filter α)} : join (𝓟 s) = sSup s :=
+  (isLUB_join_principal s).sSup_eq.symm
 
 @[simp] theorem principal_univ : 𝓟 (univ : Set α) = ⊤ :=
   top_unique <| by simp only [le_principal_iff, mem_top]
@@ -717,7 +718,7 @@ theorem eventually_sup {p : α → Prop} {f g : Filter α} :
 @[simp]
 theorem eventually_sSup {p : α → Prop} {fs : Set (Filter α)} :
     (∀ᶠ x in sSup fs, p x) ↔ ∀ f ∈ fs, ∀ᶠ x in f, p x :=
-  Iff.rfl
+  (isLUB_join_principal fs).sSup_eq ▸ Iff.rfl
 
 @[simp]
 theorem eventually_iSup {p : α → Prop} {fs : ι → Filter α} :

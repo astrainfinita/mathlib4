@@ -159,6 +159,8 @@ namespace SimpleGraph
 
 variable {ι : Sort*} {V : Type u} (G : SimpleGraph V) {a b c u v w : V} {e : Sym2 V}
 
+instance : Nonempty (SimpleGraph V) := ⟨{ Adj _ _ := False }⟩
+
 @[simp]
 protected theorem irrefl {v : V} : ¬G.Adj v v :=
   G.loopless.irrefl v
@@ -258,25 +260,30 @@ instance sdiff : SDiff (SimpleGraph V) where
 theorem sdiff_adj (x y : SimpleGraph V) (v w : V) : (x \ y).Adj v w ↔ x.Adj v w ∧ ¬y.Adj v w :=
   Iff.rfl
 
-instance supSet : SupSet (SimpleGraph V) where
-  sSup s :=
-    { Adj := fun a b => ∃ G ∈ s, Adj G a b
-      symm := fun _ _ => Exists.imp fun _ => And.imp_right Adj.symm
-      loopless := ⟨fun _ ⟨_, _, ha⟩ ↦ ha.ne rfl⟩ }
+instance : PartialOrder (SimpleGraph V) :=
+  fast_instance% PartialOrder.lift _ adj_injective
 
-instance infSet : InfSet (SimpleGraph V) where
-  sInf s :=
-    { Adj := fun a b => (∀ ⦃G⦄, G ∈ s → Adj G a b) ∧ a ≠ b
-      symm := fun _ _ => And.imp (forall₂_imp fun _ _ => Adj.symm) Ne.symm
-      loopless := ⟨fun _ h => h.2 rfl⟩ }
+theorem isLUB_mk_exists (s : Set (SimpleGraph V)) :
+    IsLUB s
+      { Adj := fun a b => ∃ G ∈ s, Adj G a b
+        symm := fun _ _ => Exists.imp fun _ => And.imp_right Adj.symm
+        loopless := ⟨fun _ ⟨_, _, ha⟩ ↦ ha.ne rfl⟩ } :=
+  ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
+
+theorem isGLB_mk_forall (s : Set (SimpleGraph V)) :
+    IsGLB s
+      { Adj := fun a b => (∀ ⦃G⦄, G ∈ s → Adj G a b) ∧ a ≠ b
+        symm := fun _ _ => And.imp (forall₂_imp fun _ _ => Adj.symm) Ne.symm
+        loopless := ⟨fun _ h => h.2 rfl⟩ } :=
+  ⟨fun _ hG _ _ hab ↦ hab.1 hG, fun _ hG _ _ hab ↦ ⟨fun _ hH => hG hH hab, hab.ne⟩⟩
 
 @[simp]
-theorem sSup_adj {s : Set (SimpleGraph V)} {a b : V} : (sSup s).Adj a b ↔ ∃ G ∈ s, Adj G a b :=
-  Iff.rfl
+theorem sSup_adj {s : Set (SimpleGraph V)} {a b : V} : (sSup s).Adj a b ↔ ∃ G ∈ s, Adj G a b := by
+  simp [(isLUB_mk_exists _).sSup_eq]
 
 @[simp]
-theorem sInf_adj {s : Set (SimpleGraph V)} : (sInf s).Adj a b ↔ (∀ G ∈ s, Adj G a b) ∧ a ≠ b :=
-  Iff.rfl
+theorem sInf_adj {s : Set (SimpleGraph V)} : (sInf s).Adj a b ↔ (∀ G ∈ s, Adj G a b) ∧ a ≠ b := by
+  simp [(isGLB_mk_forall _).sInf_eq]
 
 @[simp]
 theorem iSup_adj {f : ι → SimpleGraph V} : (⨆ i, f i).Adj a b ↔ ∃ i, (f i).Adj a b := by simp [iSup]
@@ -296,9 +303,6 @@ theorem iInf_adj_of_nonempty [Nonempty ι] {f : ι → SimpleGraph V} :
     (⨅ i, f i).Adj a b ↔ ∀ i, (f i).Adj a b := by
   rw [iInf, sInf_adj_of_nonempty (Set.range_nonempty _), Set.forall_mem_range]
 
-instance : PartialOrder (SimpleGraph V) :=
-  fast_instance% PartialOrder.lift _ adj_injective
-
 instance distribLattice : DistribLattice (SimpleGraph V) :=
   adj_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
 
@@ -317,8 +321,8 @@ instance completeAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (SimpleGrap
     by_cases h : G.Adj v w
     · exact Or.inl h
     · exact Or.inr ⟨hvw, h⟩
-  isLUB_sSup _ := ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
-  isGLB_sInf _ := ⟨fun _ hG _ _ hab ↦ hab.1 hG, fun _ hG _ _ hab ↦ ⟨fun _ hH => hG hH hab, hab.ne⟩⟩
+  exists_isLUB _ := ⟨_, isLUB_mk_exists _⟩
+  exists_isGLB _ := ⟨_, isGLB_mk_forall _⟩
   iInf_iSup_eq f := by ext; simp [Classical.skolem]
 
 /-- The complete graph on a type `V` is the simple graph with all pairs of distinct vertices. -/

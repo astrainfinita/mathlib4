@@ -122,42 +122,47 @@ theorem comap_mono {R' : Type*} [Add R'] [Mul R']
 
 /-- The infimum of a set of congruence relations on a given type with multiplication and
 addition. -/
-instance : InfSet (RingCon R) where
-  sInf S :=
-    { r := fun x y => ∀ c : RingCon R, c ∈ S → c x y
-      iseqv :=
-        ⟨fun x c _hc => c.refl x, fun h c hc => c.symm <| h c hc, fun h1 h2 c hc =>
-          c.trans (h1 c hc) <| h2 c hc⟩
-      add' := fun h1 h2 c hc => c.add (h1 c hc) <| h2 c hc
-      mul' := fun h1 h2 c hc => c.mul (h1 c hc) <| h2 c hc }
+def sInf' (S : Set (RingCon R)) : RingCon R where
+  r := fun x y => ∀ c : RingCon R, c ∈ S → c x y
+  iseqv :=
+    ⟨fun x c _hc => c.refl x, fun h c hc => c.symm <| h c hc, fun h1 h2 c hc =>
+      c.trans (h1 c hc) <| h2 c hc⟩
+  add' := fun h1 h2 c hc => c.add (h1 c hc) <| h2 c hc
+  mul' := fun h1 h2 c hc => c.mul (h1 c hc) <| h2 c hc
 
-/-- The infimum of a set of congruence relations is the same as the infimum of the set's image
-under the map to the underlying equivalence relation. -/
-theorem sInf_toSetoid (S : Set (RingCon R)) : (sInf S).toSetoid = sInf ((·.toSetoid) '' S) :=
-  Setoid.ext fun x y =>
-    ⟨fun h r ⟨c, hS, hr⟩ => by rw [← hr]; exact h c hS, fun h c hS => h c.toSetoid ⟨c, hS, rfl⟩⟩
-
-/-- The infimum of a set of congruence relations is the same as the infimum of the set's image
-under the map to the underlying binary relation. -/
-@[simp, norm_cast]
-theorem coe_sInf (S : Set (RingCon R)) : ⇑(sInf S) = sInf ((⇑) '' S) := by
-  ext; simp only [sInf_image, iInf_apply, iInf_Prop_eq]; rfl
-
-@[simp, norm_cast]
-theorem coe_iInf {ι : Sort*} (f : ι → RingCon R) : ⇑(iInf f) = ⨅ i, ⇑(f i) := by
-  rw [iInf, coe_sInf, ← Set.range_comp, sInf_range, Function.comp_def]
+lemma isGLB_sInf' (s : Set (RingCon R)) : IsGLB s (sInf' s) :=
+  ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : RingCon R) x y) r hr, fun _r hr _x _y h _r' hr' => hr hr' h⟩
 
 instance : PartialOrder (RingCon R) where
   le_refl _c _ _ := id
   le_trans _c1 _c2 _c3 h1 h2 _x _y h := h2 <| h1 h
   le_antisymm _c _d hc hd := ext fun _x _y => ⟨fun h => hc h, fun h => hd h⟩
 
+/-- The infimum of a set of congruence relations is the same as the infimum of the set's image
+under the map to the underlying equivalence relation. -/
+theorem sInf_toSetoid (S : Set (RingCon R)) : (sInf S).toSetoid = sInf ((·.toSetoid) '' S) := by
+  rw [(isGLB_sInf' _).sInf_eq, (Setoid.isGLB_sInf' _).sInf_eq]
+  exact Setoid.ext fun x y =>
+    ⟨fun h r ⟨c, hS, hr⟩ => by rw [← hr]; exact h c hS, fun h c hS => h c.toSetoid ⟨c, hS, rfl⟩⟩
+
+/-- The infimum of a set of congruence relations is the same as the infimum of the set's image
+under the map to the underlying binary relation. -/
+@[simp, norm_cast]
+theorem coe_sInf (S : Set (RingCon R)) : ⇑(sInf S) = sInf ((⇑) '' S) := by
+  ext; simp only [(isGLB_sInf' _).sInf_eq, sInf_image, iInf_apply, iInf_Prop_eq]; rfl
+
+@[simp, norm_cast]
+theorem coe_iInf {ι : Sort*} (f : ι → RingCon R) : ⇑(iInf f) = ⨅ i, ⇑(f i) := by
+  rw [iInf, coe_sInf, ← Set.range_comp, sInf_range, Function.comp_def]
+
+theorem sInf_iff {s : Set (RingCon R)} {x y : R} :
+    sInf s x y ↔ ∀ c ∈ s, c x y :=
+  (isGLB_sInf' s).sInf_eq ▸ Iff.rfl
+
 /-- The complete lattice of congruence relations on a given type with multiplication and
 addition. -/
 instance : CompleteLattice (RingCon R) where
-  __ := completeLatticeOfInf (RingCon R) fun s =>
-    ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : RingCon R) x y) r hr,
-      fun _r hr _x _y h _r' hr' => hr hr' h⟩
+  __ := completeLatticeOfInf (RingCon R) _ isGLB_sInf'
   inf c d :=
     { toSetoid := c.toSetoid ⊓ d.toSetoid
       mul' := fun h1 h2 => ⟨c.mul h1.1 h2.1, d.mul h1.2 h2.2⟩
@@ -220,8 +225,9 @@ the infimum of the set of congruence relations containing `r`. -/
 theorem ringConGen_eq (r : R → R → Prop) :
     ringConGen r = sInf {s : RingCon R | ∀ x y, r x y → s x y} :=
   le_antisymm
-    (fun _x _y H =>
-      RingConGen.Rel.recOn H (fun _ _ h _ hs => hs _ _ h) (RingCon.refl _)
+    (fun _x _y H => by
+      rw [(isGLB_sInf' _).sInf_eq]
+      exact RingConGen.Rel.recOn H (fun _ _ h _ hs => hs _ _ h) (RingCon.refl _)
         (fun _ => RingCon.symm _) (fun _ _ => RingCon.trans _)
         (fun _ _ h1 h2 c hc => c.add (h1 c hc) <| h2 c hc)
         (fun _ _ h1 h2 c hc => c.mul (h1 c hc) <| h2 c hc))
@@ -251,8 +257,8 @@ theorem ringConGen_idem (r : R → R → Prop) : ringConGen (ringConGen r) = rin
 /-- The supremum of congruence relations `c, d` equals the smallest congruence relation containing
 the binary relation '`x` is related to `y` by `c` or `d`'. -/
 theorem sup_eq_ringConGen (c d : RingCon R) : c ⊔ d = ringConGen fun x y => c x y ∨ d x y := by
-  rw [ringConGen_eq]
-  apply congr_arg sInf
+  rw [ringConGen_eq, (isGLB_sInf' _).sInf_eq]
+  apply congr_arg sInf'
   simp only [le_def, or_imp, ← forall_and]
 
 /-- The supremum of two congruence relations equals the smallest congruence relation containing
@@ -264,7 +270,7 @@ theorem sup_def {c d : RingCon R} : c ⊔ d = ringConGen (⇑c ⊔ ⇑d) := by
 containing the binary relation 'there exists `c ∈ S` such that `x` is related to `y` by `c`'. -/
 theorem sSup_eq_ringConGen (S : Set (RingCon R)) :
     sSup S = ringConGen fun x y => ∃ c : RingCon R, c ∈ S ∧ c x y := by
-  rw [ringConGen_eq]
+  rw [ringConGen_eq, ← sInf_upperBounds_eq_sSup]
   apply congr_arg sInf
   ext
   exact ⟨fun h _ _ ⟨r, hr⟩ => h hr.1 hr.2, fun h r hS _ _ hr => h _ _ ⟨r, hS, hr⟩⟩

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Set.Prod
 public import Mathlib.Order.RelIso.Basic
-public import Mathlib.Order.SetNotation
+public import Mathlib.Order.Bounds.Basic
 
 /-!
 # Relations as sets of pairs
@@ -374,7 +374,7 @@ instance IsRefl.comp [R₁.IsRefl] [R₂.IsRefl] : (R₁.comp R₂).IsRefl where
 
 protected lemma IsRefl.sInter {ℛ : Set <| SetRel α α} (hℛ : ∀ R ∈ ℛ, R.IsRefl) :
     SetRel.IsRefl (⋂₀ ℛ) where
-  refl _a R hR := (hℛ R hR).refl _
+  refl _a := Set.sInter_eq_setOf _ ▸ fun R hR ↦ (hℛ R hR).refl _
 
 instance isRefl_iInter {R : ι → SetRel α α} [∀ i, (R i).IsRefl] :
     SetRel.IsRefl (⋂ i, R i) := .sInter <| by simpa
@@ -438,7 +438,7 @@ instance isSymm_inter [R₁.IsSymm] [R₂.IsSymm] : (R₁ ∩ R₂).IsSymm where
 
 protected lemma IsSymm.sInter {ℛ : Set <| SetRel α α} (hℛ : ∀ R ∈ ℛ, R.IsSymm) :
     SetRel.IsSymm (⋂₀ ℛ) where
-  symm _a _b hab R hR := (hℛ R hR).symm _ _ <| hab R hR
+  symm _a _b := Set.sInter_eq_setOf _ ▸ fun hab R hR ↦ (hℛ R hR).symm _ _ <| hab R hR
 
 instance isSymm_iInter {R : ι → SetRel α α} [∀ i, (R i).IsSymm] :
     SetRel.IsSymm (⋂ i, R i) := .sInter <| by simpa
@@ -514,7 +514,8 @@ instance isTrans_inter [R₁.IsTrans] [R₂.IsTrans] : (R₁ ∩ R₂).IsTrans w
 
 protected lemma IsTrans.sInter {ℛ : Set <| SetRel α α} (hℛ : ∀ R ∈ ℛ, R.IsTrans) :
     SetRel.IsTrans (⋂₀ ℛ) where
-  trans _a _b _c hab hbc R hR := (hℛ R hR).trans _ _ _ (hab R hR) <| hbc R hR
+  trans _a _b _c := Set.sInter_eq_setOf _ ▸
+    fun hab hbc R hR ↦ (hℛ R hR).trans _ _ _ (hab R hR) <| hbc R hR
 
 instance isTrans_iInter {R : ι → SetRel α α} [∀ i, (R i).IsTrans] :
     SetRel.IsTrans (⋂ i, R i) := .sInter <| by simpa

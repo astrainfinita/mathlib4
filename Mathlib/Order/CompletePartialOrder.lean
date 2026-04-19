@@ -43,9 +43,9 @@ section CompletePartialOrder
 /--
 Complete partial orders are partial orders where every directed set has a least upper bound.
 -/
-class CompletePartialOrder (α : Type*) extends PartialOrder α, SupSet α, OrderBot α where
-  /-- For each directed set `d`, `sSup d` is the least upper bound of `d`. -/
-  lubOfDirected : ∀ d, DirectedOn (· ≤ ·) d → IsLUB d (sSup d)
+class CompletePartialOrder (α : Type*) extends PartialOrder α, OrderBot α where
+  /-- Every directed set `d` has a least upper bound. -/
+  lubOfDirected : ∀ d : Set α, DirectedOn (· ≤ ·) d → ∃ a, IsLUB d a
 
 /-- Create a `CompletePartialOrder` from a `PartialOrder` and `SupSet`
 such that for every directed set `d`, `sSup d` is the least upper bound of `d`.
@@ -63,20 +63,25 @@ def CompletePartialOrder.ofLubOfDirected (α : Type*) [H1 : PartialOrder α] [H2
 
 variable [CompletePartialOrder α] [Preorder β] {f : ι → α} {d : Set α} {a : α}
 
-protected lemma DirectedOn.isLUB_sSup : DirectedOn (· ≤ ·) d → IsLUB d (sSup d) :=
-CompletePartialOrder.lubOfDirected _
+noncomputable instance (priority := 100) CompletePartialOrder.instNonempty : Nonempty α :=
+  (CompletePartialOrder.lubOfDirected ∅ directedOn_empty).nonempty
+
+variable [Preorder β] {f : ι → α} {d : Set α} {a : α}
+
+protected lemma DirectedOn.isLUB_sSup (hd : DirectedOn (· ≤ ·) d) : IsLUB d (sSup d) :=
+  (CompletePartialOrder.lubOfDirected d hd).isLUB_sSup
 
 protected lemma DirectedOn.le_sSup (hd : DirectedOn (· ≤ ·) d) (ha : a ∈ d) : a ≤ sSup d :=
-hd.isLUB_sSup.1 ha
+  hd.isLUB_sSup.1 ha
 
 protected lemma DirectedOn.sSup_le (hd : DirectedOn (· ≤ ·) d) (ha : ∀ b ∈ d, b ≤ a) : sSup d ≤ a :=
-hd.isLUB_sSup.2 ha
+  hd.isLUB_sSup.2 ha
 
 protected lemma Directed.le_iSup (hf : Directed (· ≤ ·) f) (i : ι) : f i ≤ ⨆ j, f j :=
-hf.directedOn_range.le_sSup <| Set.mem_range_self _
+  hf.directedOn_range.le_sSup <| Set.mem_range_self _
 
 protected lemma Directed.iSup_le (hf : Directed (· ≤ ·) f) (ha : ∀ i, f i ≤ a) : ⨆ i, f i ≤ a :=
-hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
+  hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
 
 --TODO: We could mimic more `sSup`/`iSup` lemmas
 
@@ -93,18 +98,15 @@ open OmegaCompletePartialOrder
 /-- A complete partial order is an ω-complete partial order. -/
 instance (priority := 100) CompletePartialOrder.toOmegaCompletePartialOrder :
     OmegaCompletePartialOrder α where
-  ωSup c := ⨆ n, c n
-  le_ωSup c := c.directed.le_iSup
-  ωSup_le c _ := c.directed.iSup_le
+  exists_isLUB_of_ωchain s hc _hn _hω := CompletePartialOrder.lubOfDirected s hc.directedOn
 
 /-- A complete partial order is an conditionally complete partial order. -/
-instance (priority := 100) [CompletePartialOrder α] : ConditionallyCompletePartialOrderSup α where
-  isLUB_csSup_of_directed _ h_dir _ _ := h_dir.isLUB_sSup
+instance (priority := 100) : ConditionallyCompletePartialOrderSup α where
+  exists_isLUB_cond_of_directed s h_dir _ _ := CompletePartialOrder.lubOfDirected s h_dir
 
 end CompletePartialOrder
 
 /-- A complete lattice is a complete partial order. -/
 instance (priority := 100) CompleteLattice.toCompletePartialOrder [CompleteLattice α] :
     CompletePartialOrder α where
-  sSup := sSup
-  lubOfDirected _ _ := isLUB_sSup _
+  lubOfDirected _ _ := ⟨_, isLUB_sSup _⟩

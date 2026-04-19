@@ -67,11 +67,11 @@ instance : Min (Precoverage C) where
 instance : Max (Precoverage C) where
   max A B := ⟨A.coverings ⊔ B.coverings⟩
 
-instance : SupSet (Precoverage C) where
-  sSup A := ⟨⨆ K ∈ A, K.coverings⟩
+lemma preservesLUB (A : Set (Precoverage C)) : PreservesLUB coverings A :=
+  .of_isLUB_image (f := coverings) .rfl ⟨⟨⨆ K ∈ A, K.coverings⟩, rfl⟩ isLUB_biSup
 
-instance : InfSet (Precoverage C) where
-  sInf A := ⟨⨅ K ∈ A, K.coverings⟩
+lemma preservesGLB (A : Set (Precoverage C)) : PreservesGLB coverings A :=
+  .of_isGLB_image (f := coverings) .rfl ⟨⟨⨅ K ∈ A, K.coverings⟩, rfl⟩ isGLB_biInf
 
 instance : Top (Precoverage C) where
   top.coverings _ := .univ
@@ -81,7 +81,9 @@ instance : Bot (Precoverage C) where
 
 instance : CompleteLattice (Precoverage C) :=
   Function.Injective.completeLattice Precoverage.coverings (fun _ _ hab ↦ Precoverage.ext hab)
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ ↦ ⟨_, (preservesLUB _).map_sSup_eq_biSup⟩)
+    (fun _ ↦ ⟨_, (preservesGLB _).map_sInf_eq_biInf⟩) rfl rfl
 
 /-- A precoverage has isomorphisms if singleton presieves by isomorphisms are covering. -/
 class HasIsos (J : Precoverage C) : Prop where

@@ -150,29 +150,31 @@ end SemilatticeInf
 section CompleteLattice
 variable [CompleteLattice X]
 
-instance : InfSet (Nucleus X) where
-  sInf s :=
-  { toFun x := ⨅ f ∈ s, f x,
-    map_inf' x y := by
-      simp only [InfHomClass.map_inf, le_antisymm_iff, le_inf_iff, le_iInf_iff]
-      refine ⟨⟨?_, ?_⟩, ?_⟩ <;> rintro f hf
-      · exact iInf₂_le_of_le f hf inf_le_left
-      · exact iInf₂_le_of_le f hf inf_le_right
-      · exact ⟨inf_le_of_left_le <| iInf₂_le f hf, inf_le_of_right_le <| iInf₂_le f hf⟩
-    idempotent' x := iInf₂_mono fun f hf ↦ (f.monotone <| iInf₂_le f hf).trans_eq (f.idempotent _)
-    le_apply' x := by simp [le_apply] }
+noncomputable def sInf' (s : Set (Nucleus X)) : Nucleus X where
+  toFun x := ⨅ f ∈ s, f x
+  map_inf' x y := by
+    simp only [InfHomClass.map_inf, le_antisymm_iff, le_inf_iff, le_iInf_iff]
+    refine ⟨⟨?_, ?_⟩, ?_⟩ <;> rintro f hf
+    · exact iInf₂_le_of_le f hf inf_le_left
+    · exact iInf₂_le_of_le f hf inf_le_right
+    · exact ⟨inf_le_of_left_le <| iInf₂_le f hf, inf_le_of_right_le <| iInf₂_le f hf⟩
+  idempotent' x := iInf₂_mono fun f hf ↦ (f.monotone <| iInf₂_le f hf).trans_eq (f.idempotent _)
+  le_apply' x := by simp [le_apply]
 
-@[simp] lemma sInf_apply (s : Set (Nucleus X)) (x : X) : sInf s x = ⨅ j ∈ s, j x := rfl
+lemma isGLB_sInf' (s : Set (Nucleus X)) : IsGLB s (sInf' s) :=
+  ⟨by simp +contextual [sInf', mem_lowerBounds, ← coe_le_coe, Pi.le_def, iInf_le_iff],
+    by simp +contextual [sInf', mem_lowerBounds, mem_upperBounds, ← coe_le_coe, Pi.le_def]⟩
+
+@[simp] lemma sInf_apply (s : Set (Nucleus X)) (x : X) : sInf s x = ⨅ j ∈ s, j x :=
+  (isGLB_sInf' s).sInf_eq ▸ rfl
 
 @[simp] lemma iInf_apply {ι : Type*} (f : ι → (Nucleus X)) (x : X) : iInf f x = ⨅ j, f j x := by
   rw [iInf, sInf_apply, iInf_range]
 
 instance : CompleteSemilatticeInf (Nucleus X) where
-  isGLB_sInf _ :=
-    ⟨by simp +contextual [mem_lowerBounds, ← coe_le_coe, Pi.le_def, iInf_le_iff],
-      by simp +contextual [mem_lowerBounds, mem_upperBounds, ← coe_le_coe, Pi.le_def]⟩
+  exists_isGLB _ := ⟨_, isGLB_sInf' _⟩
 
-instance : CompleteLattice (Nucleus X) where
+noncomputable instance : CompleteLattice (Nucleus X) where
   __ : SemilatticeInf (Nucleus X) := inferInstance
   __ : OrderBot (Nucleus X) := inferInstance
   __ : OrderTop (Nucleus X) := inferInstance
@@ -194,7 +196,7 @@ lemma map_himp_le : n (x ⇨ y) ≤ x ⇨ n y := by
 lemma map_himp_apply (n : Nucleus X) (x y : X) : n (x ⇨ n y) = x ⇨ n y :=
   le_antisymm (map_himp_le.trans_eq <| by rw [n.idempotent]) n.le_apply
 
-instance : HImp (Nucleus X) where
+noncomputable instance : HImp (Nucleus X) where
   himp m n :=
   { toFun x := ⨅ y ≥ x, m y ⇨ n y
     idempotent' x := le_iInf₂ fun y hy ↦
@@ -223,14 +225,14 @@ instance : HImp (Nucleus X) where
 
 @[simp] lemma himp_apply (m n : Nucleus X) (x : X) : (m ⇨ n) x = ⨅ y ≥ x, m y ⇨ n y := rfl
 
-instance : HeytingAlgebra (Nucleus X) where
+noncomputable instance : HeytingAlgebra (Nucleus X) where
   compl m := m ⇨ ⊥
   le_himp_iff _ n _ := by
     simpa [← coe_le_coe, Pi.le_def]
       using ⟨fun h i ↦ h i i le_rfl, fun h i j _ ↦ (h j).trans' <| by gcongr⟩
   himp_bot m := rfl
 
-instance : Order.Frame (Nucleus X) where
+noncomputable instance : Order.Frame (Nucleus X) where
   __ := Nucleus.instHeytingAlgebra
   __ := Nucleus.instCompleteLattice
 
@@ -253,15 +255,16 @@ instance : CompleteLattice (range n) := n.giAux.liftCompleteLattice
 
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
-instance range.instFrameMinimalAxioms : Frame.MinimalAxioms (range n) where
+noncomputable instance range.instFrameMinimalAxioms : Frame.MinimalAxioms (range n) where
   inf_sSup_le_iSup_inf a s := by
-    simp_rw [← Subtype.coe_le_coe, iSup_subtype', iSup, sSup, n.giAux.gc.u_inf]
+    simp_rw [← Subtype.coe_le_coe, iSup_subtype', iSup,
+      (n.giAux.isLUB_of_u_image (isLUB_sSup _)).sSup_eq, n.giAux.gc.u_inf]
     rw [rangeFactorization_coe, ← mem_range.1 a.prop, ← map_inf]
     apply n.monotone
     simp_rw [inf_sSup_eq, sSup_image, iSup_range, iSup_image, iSup_subtype', n.giAux.gc.u_inf,
       le_rfl]
 
-instance : Frame (range n) := .ofMinimalAxioms range.instFrameMinimalAxioms
+noncomputable instance : Frame (range n) := .ofMinimalAxioms range.instFrameMinimalAxioms
 
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in

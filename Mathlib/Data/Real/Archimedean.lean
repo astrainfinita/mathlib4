@@ -114,35 +114,34 @@ theorem exists_isGLB (hne : s.Nonempty) (hbdd : BddBelow s) : ∃ x, IsGLB s x :
   rw [← isLUB_neg]
   exact Classical.choose_spec (Real.exists_isLUB hne' hbdd')
 
-open scoped Classical in
-noncomputable instance : SupSet ℝ :=
-  ⟨fun s => if h : s.Nonempty ∧ BddAbove s then Classical.choose (exists_isLUB h.1 h.2) else 0⟩
-
-open scoped Classical in
-theorem sSup_def (s : Set ℝ) :
-    sSup s = if h : s.Nonempty ∧ BddAbove s then Classical.choose (exists_isLUB h.1 h.2) else 0 :=
-  rfl
-
-protected theorem isLUB_sSup (h₁ : s.Nonempty) (h₂ : BddAbove s) : IsLUB s (sSup s) := by
-  simp only [sSup_def, dif_pos (And.intro h₁ h₂)]
-  apply Classical.choose_spec
-
-noncomputable instance : InfSet ℝ :=
-  ⟨fun s => -sSup (-s)⟩
-
-theorem sInf_def (s : Set ℝ) : sInf s = -sSup (-s) := rfl
-
-protected theorem isGLB_sInf (h₁ : s.Nonempty) (h₂ : BddBelow s) : IsGLB s (sInf s) := by
-  rw [sInf_def, ← isLUB_neg', neg_neg]
-  exact Real.isLUB_sSup h₁.neg h₂.neg
-
 noncomputable instance : ConditionallyCompleteLinearOrder ℝ where
   __ := Real.linearOrder
   __ := Real.lattice
-  isLUB_csSup _ := Real.isLUB_sSup
-  isGLB_csInf _ := Real.isGLB_sInf
-  csSup_of_not_bddAbove s hs := by simp [hs, sSup_def]
-  csInf_of_not_bddBelow s hs := by simp [hs, sInf_def, sSup_def]
+  exists_isLUB_cond _ := exists_isLUB
+  exists_isGLB_cond _ := exists_isGLB
+
+open scoped Classical in
+theorem sSup_def (s : Set ℝ) :
+    sSup s = if h : s.Nonempty ∧ BddAbove s then Classical.choose (exists_isLUB h.1 h.2) else
+      Classical.arbitrary ℝ := by
+  split_ifs with h
+  · generalize_proofs _ h
+    exact (Classical.choose_spec h).sSup_eq
+  push +distrib Not at h
+  obtain rfl | h := h
+  · simp
+  · exact sSup_of_not_bddAbove h
+
+@[deprecated isLUB_csSup (since := "2026-04-10")]
+protected theorem isLUB_sSup (h₁ : s.Nonempty) (h₂ : BddAbove s) : IsLUB s (sSup s) :=
+  isLUB_csSup h₁ h₂
+
+theorem sInf_def {s : Set ℝ} (h₁ : s.Nonempty) (h₂ : BddBelow s) : sInf s = -sSup (-s) := by
+  rw [csSup_neg h₁ h₂, neg_neg]
+
+@[deprecated isGLB_csInf (since := "2026-04-10")]
+theorem isGLB_sInf (h₁ : s.Nonempty) (h₂ : BddBelow s) : IsGLB s (sInf s) :=
+  isGLB_csInf h₁ h₂
 
 theorem lt_sInf_add_pos (h : s.Nonempty) {ε : ℝ} (hε : 0 < ε) : ∃ a ∈ s, a < sInf s + ε :=
   exists_lt_of_csInf_lt h <| lt_add_of_pos_right _ hε
@@ -166,59 +165,58 @@ theorem le_sSup_iff (h : BddAbove s) (h' : s.Nonempty) :
   · rcases H _ (neg_lt_zero.mpr ε_pos) with ⟨x, x_in, hx⟩
     exact sub_lt_iff_lt_add.mp (lt_csSup_of_lt h x_in hx)
 
-@[simp]
-theorem sSup_empty : sSup (∅ : Set ℝ) = 0 :=
-  dif_neg <| by simp
+@[deprecated NoBotOrder.sSup_empty (since := "2026-04-11")]
+theorem sSup_empty : sSup (∅ : Set ℝ) = Classical.arbitrary ℝ :=
+  NoBotOrder.sSup_empty
 
-theorem sInf_univ : sInf (@Set.univ ℝ) = 0 := by
-  simp [sInf_def]
+@[deprecated NoBotOrder.sInf_univ (since := "2026-04-11")]
+theorem sInf_univ : sInf (@Set.univ ℝ) = Classical.arbitrary ℝ :=
+  NoBotOrder.sInf_univ
 
-@[simp] lemma iSup_of_isEmpty [IsEmpty ι] (f : ι → ℝ) : ⨆ i, f i = 0 := by
-  dsimp [iSup]
-  convert Real.sSup_empty
-  rw [Set.range_eq_empty_iff]
-  infer_instance
+@[deprecated NoBotOrder.iSup_of_isEmpty (since := "2026-04-11")]
+lemma iSup_of_isEmpty [IsEmpty ι] (f : ι → ℝ) : ⨆ i, f i = Classical.arbitrary ℝ :=
+  NoBotOrder.iSup_of_isEmpty f
 
-@[simp]
-theorem iSup_const_zero : ⨆ _ : ι, (0 : ℝ) = 0 := by
-  cases isEmpty_or_nonempty ι
-  · exact Real.iSup_of_isEmpty _
-  · exact ciSup_const
+@[deprecated "Use `ciSup_const` instead" (since := "2026-04-11")]
+theorem iSup_const_zero [Nonempty ι] : ⨆ _ : ι, (0 : ℝ) = 0 :=
+  ciSup_const
 
-lemma sSup_of_not_bddAbove (hs : ¬BddAbove s) : sSup s = 0 := dif_neg fun h => hs h.2
-lemma iSup_of_not_bddAbove (hf : ¬BddAbove (Set.range f)) : ⨆ i, f i = 0 := sSup_of_not_bddAbove hf
+@[deprecated _root_.sSup_of_not_bddAbove (since := "2026-04-11")]
+lemma sSup_of_not_bddAbove (hs : ¬BddAbove s) : sSup s = Classical.arbitrary ℝ :=
+  _root_.sSup_of_not_bddAbove hs
 
-theorem sSup_univ : sSup (@Set.univ ℝ) = 0 := Real.sSup_of_not_bddAbove not_bddAbove_univ
+@[deprecated _root_.iSup_of_not_bddAbove (since := "2026-04-11")]
+lemma iSup_of_not_bddAbove (hf : ¬BddAbove (Set.range f)) : ⨆ i, f i = Classical.arbitrary ℝ :=
+  _root_.iSup_of_not_bddAbove hf
 
-@[simp]
-theorem sInf_empty : sInf (∅ : Set ℝ) = 0 := by simp [sInf_def, sSup_empty]
+@[deprecated NoTopOrder.sSup_univ (since := "2026-04-11")]
+theorem sSup_univ : sSup (@Set.univ ℝ) = Classical.arbitrary ℝ := NoTopOrder.sSup_univ
 
-@[simp] nonrec lemma iInf_of_isEmpty [IsEmpty ι] (f : ι → ℝ) : ⨅ i, f i = 0 := by
-  rw [iInf_of_isEmpty, sInf_empty]
+@[deprecated NoTopOrder.sSup_univ (since := "2026-04-11")]
+theorem sInf_empty : sInf (∅ : Set ℝ) = Classical.arbitrary ℝ := NoTopOrder.sInf_empty
 
-@[simp]
-theorem iInf_const_zero : ⨅ _ : ι, (0 : ℝ) = 0 := by
-  cases isEmpty_or_nonempty ι
-  · exact Real.iInf_of_isEmpty _
-  · exact ciInf_const
+@[deprecated NoTopOrder.iInf_of_isEmpty (since := "2026-04-11")]
+lemma iInf_of_isEmpty [IsEmpty ι] (f : ι → ℝ) : ⨅ i, f i = Classical.arbitrary ℝ :=
+  NoTopOrder.iInf_of_isEmpty f
 
-theorem sInf_of_not_bddBelow (hs : ¬BddBelow s) : sInf s = 0 :=
-  neg_eq_zero.2 <| sSup_of_not_bddAbove <| mt bddAbove_neg.1 hs
+@[deprecated "Use `ciInf_const` instead" (since := "2026-04-11")]
+theorem iInf_const_zero [Nonempty ι] : ⨅ _ : ι, (0 : ℝ) = 0 := ciInf_const
 
-theorem iInf_of_not_bddBelow (hf : ¬BddBelow (Set.range f)) : ⨅ i, f i = 0 :=
-  sInf_of_not_bddBelow hf
+@[deprecated _root_.sInf_of_not_bddBelow (since := "2026-04-11")]
+theorem sInf_of_not_bddBelow (hs : ¬BddBelow s) : sInf s = Classical.arbitrary ℝ :=
+  _root_.sInf_of_not_bddBelow hs
 
-@[simp]
-theorem sSup_neg (s : Set ℝ) : sSup (-s) = -sInf s := by
-  obtain rfl | hn := s.eq_empty_or_nonempty; · simp
-  by_cases hb : BddBelow s
-  · rw [csSup_neg hn hb]
-  · rw [csInf_of_not_bddBelow hb, Real.sInf_empty, csSup_of_not_bddAbove (bddAbove_neg.not.2 hb),
-      Real.sSup_empty, neg_zero]
+@[deprecated _root_.iInf_of_not_bddBelow (since := "2026-04-11")]
+theorem iInf_of_not_bddBelow (hf : ¬BddBelow (Set.range f)) : ⨅ i, f i = Classical.arbitrary ℝ :=
+  _root_.iInf_of_not_bddBelow hf
 
-@[simp]
-theorem sInf_neg (s : Set ℝ) : sInf (-s) = -sSup s := by
-  rw [← neg_eq_iff_eq_neg, ← Real.sSup_neg, neg_neg]
+@[deprecated "Use `csSup_neg` instead" (since := "2026-04-11")]
+theorem sSup_neg {s : Set ℝ} (hn : s.Nonempty) (hb : BddBelow s) : sSup (-s) = -sInf s :=
+  csSup_neg hn hb
+
+@[deprecated "Use `csInf_neg` instead" (since := "2026-04-11")]
+theorem sInf_neg {s : Set ℝ} (hn : s.Nonempty) (hb : BddAbove s) : sInf (-s) = -sSup s :=
+  csInf_neg hn hb
 
 /-- As `sSup s = 0` when `s` is an empty set of reals, it suffices to show that all elements of `s`
 are at most some nonnegative number `a` to show that `sSup s ≤ a`.

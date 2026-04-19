@@ -124,10 +124,12 @@ end minimal
 
 section Lattice
 
-theorem iSup_coe [SupSet β] (f : α → β) (s : Finset α) : ⨆ x ∈ (↑s : Set α), f x = ⨆ x ∈ s, f x :=
+theorem iSup_coe [LE β] [Nonempty β] (f : α → β) (s : Finset α) :
+    ⨆ x ∈ (↑s : Set α), f x = ⨆ x ∈ s, f x :=
   rfl
 
-theorem iInf_coe [InfSet β] (f : α → β) (s : Finset α) : ⨅ x ∈ (↑s : Set α), f x = ⨅ x ∈ s, f x :=
+theorem iInf_coe [LE β] [Nonempty β] (f : α → β) (s : Finset α) :
+    ⨅ x ∈ (↑s : Set α), f x = ⨅ x ∈ s, f x :=
   rfl
 
 variable [CompleteLattice β]

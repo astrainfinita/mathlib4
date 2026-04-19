@@ -266,7 +266,7 @@ section CoprodCat
 -- for "Coprod"
 
 /-- Coproduct of filters. -/
-protected def coprodᵢ (f : ∀ i, Filter (α i)) : Filter (∀ i, α i) :=
+protected noncomputable def coprodᵢ (f : ∀ i, Filter (α i)) : Filter (∀ i, α i) :=
   ⨆ i : ι, comap (eval i) (f i)
 
 theorem mem_coprodᵢ_iff {s : Set (∀ i, α i)} :

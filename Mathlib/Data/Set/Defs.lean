@@ -94,6 +94,9 @@ instance : HasSubset (Set α) :=
 instance : EmptyCollection (Set α) :=
   ⟨fun _ ↦ False⟩
 
+instance : Inhabited (Set α) :=
+  ⟨∅⟩
+
 end Set
 
 namespace Mathlib.Meta

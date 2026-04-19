@@ -44,7 +44,7 @@ Note that this is only injective if `M` is cancellative. -/
 /-- The inclusion from an additive commutative monoid `M` to its Grothendieck group.
 
 Note that this is only injective if `M` is cancellative. -/]
-abbrev of : M →* GrothendieckGroup M := (monoidOf ⊤).toMonoidHom
+noncomputable abbrev of : M →* GrothendieckGroup M := (monoidOf ⊤).toMonoidHom
 
 @[to_additive]
 lemma of_injective [IsCancelMul M] : Injective (of (M := M)) :=

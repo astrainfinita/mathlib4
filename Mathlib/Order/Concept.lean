@@ -536,25 +536,41 @@ instance instBoundedOrderConcept : BoundedOrder (Concept α β r) where
   bot := ofIsIntent _ _ .univ
   bot_le _ := intent_subset_intent_iff.1 <| subset_univ _
 
-@[simps!]
-instance : InfSet (Concept α β r) where
-  sInf S := ofIsExtent _ _ (.iInter₂ _ fun c (_ : c ∈ S) ↦ c.isExtent_extent)
+lemma isLUB_ofIsIntent_biInter (S : Set (Concept α β r)) :
+    IsLUB S (ofIsIntent _ _ (.iInter₂ _ fun c (_ : c ∈ S) ↦ c.isIntent_intent)) := by
+  refine .of_image (f := toDual ∘ intent) (toDual_le_toDual.trans intent_subset_intent_iff) ?_
+  rw [image_comp, comp_def, isLUB_image_toDual]
+  exact isGLB_biInf
 
-@[simps!]
-instance : SupSet (Concept α β r) where
-  sSup S := ofIsIntent _ _ (.iInter₂ _ fun c (_ : c ∈ S) ↦ c.isIntent_intent)
+lemma isGLB_ofIsExtent_biInter (S : Set (Concept α β r)) :
+    IsGLB S (ofIsExtent _ _ (.iInter₂ _ fun c (_ : c ∈ S) ↦ c.isExtent_extent)) :=
+  .of_image extent_subset_extent_iff isGLB_biInf
 
 /-- One half of the **fundamental theorem of concept lattices**: every concept lattice is a complete
 lattice.
 
 See `DedekindCut.principalIso` for the second half. -/
 instance : CompleteLattice (Concept α β r) where
-  isLUB_sSup s := by
-    refine ⟨fun _ hc ↦ ?_, fun _ hc ↦ ?_⟩
-    · exact intent_subset_intent_iff.1 <| biInter_subset_of_mem hc
-    · exact intent_subset_intent_iff.1 <|
-        subset_iInter₂ fun a ha ↦ intent_subset_intent_iff.2 (hc ha)
-  isGLB_sInf s := ⟨fun _ ↦ biInter_subset_of_mem, fun _ ↦ subset_iInter₂⟩
+  exists_isLUB _ := ⟨_, isLUB_ofIsIntent_biInter _⟩
+  exists_isGLB _ := ⟨_, isGLB_ofIsExtent_biInter _⟩
+
+@[simp]
+theorem extent_sSup (S : Set (Concept α β r)) :
+    (sSup S).extent = lowerPolar r (⋂ i ∈ S, i.intent) :=
+  (isLUB_ofIsIntent_biInter _).sSup_eq ▸ rfl
+
+@[simp]
+theorem intent_sSup (S : Set (Concept α β r)) : (sSup S).intent = ⋂ i ∈ S, i.intent :=
+  (isLUB_ofIsIntent_biInter _).sSup_eq ▸ rfl
+
+@[simp]
+theorem extent_sInf (S : Set (Concept α β r)) : (sInf S).extent = ⋂ i ∈ S, i.extent :=
+  (isGLB_ofIsExtent_biInter _).sInf_eq ▸ rfl
+
+@[simp]
+theorem intent_sInf (S : Set (Concept α β r)) :
+    (sInf S).intent = upperPolar r (⋂ i ∈ S, i.extent) :=
+  (isGLB_ofIsExtent_biInter _).sInf_eq ▸ rfl
 
 @[simp]
 theorem extent_iSup (f : ι → Concept α β r) :

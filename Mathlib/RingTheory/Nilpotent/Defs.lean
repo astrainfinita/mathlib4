@@ -59,26 +59,25 @@ section ZeroPow
 variable [Zero R] [Pow R ℕ]
 
 variable (x) in
+open scoped Classical in
 /-- If `x` is nilpotent, the nilpotency class is the smallest natural number `k` such that
 `x ^ k = 0`. If `x` is not nilpotent, the nilpotency class takes the junk value `0`. -/
-noncomputable def nilpotencyClass : ℕ := sInf {k | x ^ k = 0}
+noncomputable def nilpotencyClass : ℕ := if IsNilpotent x then sInf {k | x ^ k = 0} else 0
 
 @[simp] lemma nilpotencyClass_eq_zero_of_subsingleton [Subsingleton R] :
     nilpotencyClass x = 0 := by
-  let s : Set ℕ := {k | x ^ k = 0}
-  suffices s = univ by change sInf _ = 0; simp [s] at this; simp [this]
-  exact eq_univ_iff_forall.mpr fun k ↦ Subsingleton.elim _ _
+  rw [nilpotencyClass, if_pos isNilpotent_of_subsingleton, Nat.sInf_eq_zero]
+  exacts [Subsingleton.elim _ _, isNilpotent_of_subsingleton]
 
 lemma isNilpotent_of_pos_nilpotencyClass (hx : 0 < nilpotencyClass x) :
     IsNilpotent x := by
-  let s : Set ℕ := {k | x ^ k = 0}
-  change s.Nonempty
-  change 0 < sInf s at hx
-  by_contra contra
-  simp [not_nonempty_iff_eq_empty.mp contra] at hx
+  have : IsNilpotent x ∧ 0 < sInf {k | x ^ k = 0} := by
+    simpa [nilpotencyClass, apply_ite (0 < ·)] using hx
+  exact this.1
 
-lemma pow_nilpotencyClass (hx : IsNilpotent x) : x ^ (nilpotencyClass x) = 0 :=
-  Nat.sInf_mem hx
+lemma pow_nilpotencyClass (hx : IsNilpotent x) : x ^ (nilpotencyClass x) = 0 := by
+  rw [nilpotencyClass, if_pos hx]
+  exact Nat.sInf_mem hx
 
 end ZeroPow
 
@@ -90,7 +89,12 @@ lemma nilpotencyClass_eq_succ_iff {k : ℕ} :
     nilpotencyClass x = k + 1 ↔ x ^ (k + 1) = 0 ∧ x ^ k ≠ 0 := by
   let s : Set ℕ := {k | x ^ k = 0}
   have : ∀ k₁ k₂ : ℕ, k₁ ≤ k₂ → k₁ ∈ s → k₂ ∈ s := fun k₁ k₂ h_le hk₁ ↦ pow_eq_zero_of_le h_le hk₁
-  simp [s, nilpotencyClass, Nat.sInf_upward_closed_eq_succ_iff this]
+  rw [nilpotencyClass]
+  split_ifs with hx
+  · rw [Nat.sInf_upward_closed_eq_succ_iff (by exact hx) this]
+    simp [s]
+  · simp only [ne_eq, false_iff, not_and, not_not]
+    exact fun h ↦ absurd ⟨_, h⟩ hx
 
 @[simp] lemma nilpotencyClass_zero [Nontrivial R] :
     nilpotencyClass (0 : R) = 1 :=

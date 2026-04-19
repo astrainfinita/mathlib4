@@ -216,12 +216,15 @@ instance orderBot : OrderBot (Pretopology C) where
 theorem toGrothendieck_bot : toGrothendieck (C := C) ⊥ = ⊥ :=
   (gi C).gc.l_bot
 
+variable {C}
+
 @[gcongr]
 lemma toGrothendieck_mono {J K : Pretopology C} (h : J ≤ K) : J.toGrothendieck ≤ K.toGrothendieck :=
   fun _ _ ⟨R, hR, hle⟩ ↦ ⟨R, h _ hR, hle⟩
 
-instance : InfSet (Pretopology C) where
-  sInf T := {
+lemma preservesGLB (T : Set (Pretopology C)) : PreservesGLB (·.coverings) T := by
+  refine .of_isGLB_image (α := Pretopology C) (f := (·.coverings)) .rfl ?_ (isGLB_sInf _)
+  use {
     coverings := sInf ((fun J ↦ J.coverings) '' T)
     has_isos := fun X Y f _ ↦ by
       simp only [sInf_apply, Set.iInf_eq_iInter, Set.iInter_coe_set, Set.mem_image,
@@ -243,8 +246,7 @@ instance : InfSet (Pretopology C) where
 
 lemma mem_sInf (T : Set (Pretopology C)) {X : C} (S : Presieve X) :
     S ∈ sInf T X ↔ ∀ t ∈ T, S ∈ t X := by
-  change S ∈ sInf ((fun J : Pretopology C ↦ J.coverings) '' T) X ↔ _
-  simp
+  simp [(preservesGLB T).map_sInf]
 
 lemma sInf_ofGrothendieck (T : Set (GrothendieckTopology C)) :
     (sInf T).toPretopology = sInf (GrothendieckTopology.toPretopology '' T) := by
@@ -252,7 +254,7 @@ lemma sInf_ofGrothendieck (T : Set (GrothendieckTopology C)) :
   simp [mem_sInf, GrothendieckTopology.mem_toPretopology, GrothendieckTopology.mem_sInf]
 
 lemma isGLB_sInf (T : Set (Pretopology C)) : IsGLB T (sInf T) :=
-  IsGLB.of_image (f := fun J ↦ J.coverings) Iff.rfl (_root_.isGLB_sInf _)
+  (preservesGLB T).isGLB_sInf
 
 /-- The complete lattice structure on pretopologies. This is induced by the `InfSet` instance, but
 with good definitional equalities for `⊥`, `⊤` and `⊓`. -/
@@ -272,7 +274,7 @@ instance : CompleteLattice (Pretopology C) where
   inf_le_left _ _ _ _ hS := hS.left
   inf_le_right _ _ _ _ hS := hS.right
   le_inf _ _ _ hts htr X _ hS := ⟨hts X hS, htr X hS⟩
-  __ := completeLatticeOfInf _ (isGLB_sInf C)
+  __ := completeLatticeOfInf _ _ isGLB_sInf
 
 lemma mem_inf (t₁ t₂ : Pretopology C) {X : C} (S : Presieve X) :
     S ∈ (t₁ ⊓ t₂) X ↔ S ∈ t₁ X ∧ S ∈ t₂ X :=

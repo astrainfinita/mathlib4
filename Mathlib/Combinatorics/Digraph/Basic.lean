@@ -48,6 +48,7 @@ In this treatment, a digraph may have self-loops.
 structure Digraph (V : Type*) where
   /-- The adjacency relation of a digraph. -/
   Adj : V → V → Prop
+deriving Nonempty
 
 /--
 Constructor for digraphs using a Boolean function.
@@ -149,27 +150,30 @@ instance sdiff : SDiff (Digraph V) where
 @[simp]
 theorem sdiff_adj (x y : Digraph V) (v w : V) : (x \ y).Adj v w ↔ x.Adj v w ∧ ¬y.Adj v w := Iff.rfl
 
-instance supSet : SupSet (Digraph V) where
-  sSup s := { Adj := fun a b ↦ ∃ G ∈ s, Adj G a b }
+instance : PartialOrder (Digraph V) :=
+  fast_instance% PartialOrder.lift _ adj_injective
 
-instance infSet : InfSet (Digraph V) where
-  sInf s := { Adj := fun a b ↦ (∀ ⦃G⦄, G ∈ s → Adj G a b) }
+theorem isLUB_mk_exists (s : Set (Digraph V)) :
+    IsLUB s { Adj := fun a b ↦ ∃ G ∈ s, Adj G a b } :=
+  ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
+
+theorem isGLB_mk_forall (s : Set (Digraph V)) :
+    IsGLB s { Adj := fun a b ↦ ∀ ⦃G⦄, G ∈ s → Adj G a b } :=
+  ⟨fun _ hG _ _ hab ↦ hab hG, fun _ hG _ _ hab _ hH ↦ hG hH hab⟩
 
 @[simp]
-theorem sSup_adj {s : Set (Digraph V)} : (sSup s).Adj a b ↔ ∃ G ∈ s, Adj G a b := Iff.rfl
+theorem sSup_adj {s : Set (Digraph V)} : (sSup s).Adj a b ↔ ∃ G ∈ s, Adj G a b := by
+  simp [(isLUB_mk_exists _).sSup_eq]
 
 @[simp]
-theorem sInf_adj {s : Set (Digraph V)} : (sInf s).Adj a b ↔ ∀ G ∈ s, Adj G a b := Iff.rfl
+theorem sInf_adj {s : Set (Digraph V)} : (sInf s).Adj a b ↔ ∀ G ∈ s, Adj G a b := by
+  simp [(isGLB_mk_forall _).sInf_eq]
 
 @[simp]
 theorem iSup_adj {f : ι → Digraph V} : (⨆ i, f i).Adj a b ↔ ∃ i, (f i).Adj a b := by simp [iSup]
 
 @[simp]
-theorem iInf_adj {f : ι → Digraph V} : (⨅ i, f i).Adj a b ↔ (∀ i, (f i).Adj a b) := by simp [iInf]
-
-instance : PartialOrder (Digraph V) where
-  __ := PartialOrder.lift _ adj_injective
-  le G H := ∀ ⦃a b⦄, G.Adj a b → H.Adj a b
+theorem iInf_adj {f : ι → Digraph V} : (⨅ i, f i).Adj a b ↔ ∀ i, (f i).Adj a b := by simp [iInf]
 
 instance distribLattice : DistribLattice (Digraph V) :=
   adj_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
@@ -181,8 +185,8 @@ instance completeAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (Digraph V)
   bot_le _ _ _ h := h.elim
   inf_compl_le_bot _ _ _ h := absurd h.1 h.2
   top_le_sup_compl G v w _ := by tauto
-  isLUB_sSup _ := ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
-  isGLB_sInf _ := ⟨fun _ hG _ _ hab ↦ hab hG, fun _ hG _ _ hab _ hH ↦ hG hH hab⟩
+  exists_isLUB _ := ⟨_, isLUB_mk_exists _⟩
+  exists_isGLB _ := ⟨_, isGLB_mk_forall _⟩
   iInf_iSup_eq f := by ext; simp [Classical.skolem]
 
 @[simp] theorem top_adj (v w : V) : (⊤ : Digraph V).Adj v w := trivial

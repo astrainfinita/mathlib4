@@ -276,40 +276,32 @@ instance : PartialOrder (GrothendieckTopology C) :=
     le_trans := fun _ _ _ h₁₂ h₂₃ => le_def.mpr (le_trans h₁₂ h₂₃)
     le_antisymm := fun _ _ h₁₂ h₂₁ => GrothendieckTopology.ext (le_antisymm h₁₂ h₂₁) }
 
-@[stacks 00Z7]
-instance : InfSet (GrothendieckTopology C) where
-  sInf T :=
+lemma preservesGLB (T : Set (GrothendieckTopology C)) : PreservesGLB sieves T := by
+  refine .of_isGLB_image (f := sieves) .rfl ?_ (isGLB_sInf _)
+  use
     { sieves := sInf (sieves '' T)
       top_mem' := by
-        rintro X S ⟨⟨_, J, hJ, rfl⟩, rfl⟩
         simp
       pullback_stable' := by
-        rintro X Y S hS f _ ⟨⟨_, J, hJ, rfl⟩, rfl⟩
-        apply J.pullback_stable _ (f _ ⟨⟨_, _, hJ, rfl⟩, rfl⟩)
+        simp only [sInf_apply, Set.iInf_eq_iInter, Set.iInter_coe_set, Set.mem_image,
+          Set.iInter_exists, Set.biInter_and', Set.iInter_iInter_eq_right, Set.mem_iInter]
+        intro X Y S hS f J hJ
+        apply J.pullback_stable _ (f _ hJ)
       transitive' := by
-        rintro X S hS R h _ ⟨⟨_, J, hJ, rfl⟩, rfl⟩
-        apply
-          J.transitive (hS _ ⟨⟨_, _, hJ, rfl⟩, rfl⟩) _ fun Y f hf => h hf _ ⟨⟨_, _, hJ, rfl⟩, rfl⟩ }
-
-lemma mem_sInf (s : Set (GrothendieckTopology C)) {X : C} (S : Sieve X) :
-    S ∈ sInf s X ↔ ∀ t ∈ s, S ∈ t X := by
-  change S ∈ sInf (sieves '' s) X ↔ _
-  simp
-
-@[stacks 00Z7]
-theorem isGLB_sInf (s : Set (GrothendieckTopology C)) : IsGLB s (sInf s) := by
-  refine @IsGLB.of_image _ _ _ _ sieves ?_ _ _ ?_
-  · rfl
-  · exact _root_.isGLB_sInf _
+        simp only [sInf_apply, Set.iInf_eq_iInter, Set.iInter_coe_set, Set.mem_image,
+          Set.iInter_exists, Set.biInter_and', Set.iInter_iInter_eq_right, Set.mem_iInter]
+        intro X S hS R h J hJ
+        apply J.transitive (hS _ hJ) _ fun Y f hf => h hf _ hJ }
 
 /-- Construct a complete lattice from the `Inf`, but make the trivial and discrete topologies
 definitionally equal to the bottom and top respectively.
 -/
-instance : CompleteLattice (GrothendieckTopology C) :=
-  fast_instance% CompleteLattice.copy (completeLatticeOfInf _ isGLB_sInf) _ rfl (discrete C)
+noncomputable instance : CompleteLattice (GrothendieckTopology C) := fast_instance%
+  have : Nonempty (GrothendieckTopology C) := ⟨discrete C⟩
+  CompleteLattice.copy (completeLatticeOfInf _ _ (preservesGLB · |>.isGLB_sInf)) _ rfl (discrete C)
     (by
       apply le_antisymm
-      · exact (completeLatticeOfInf _ isGLB_sInf).le_top (discrete C)
+      · exact (completeLatticeOfInf _ _ (preservesGLB · |>.isGLB_sInf)).le_top (discrete C)
       · intro X S _
         apply Set.mem_univ)
     (trivial C)
@@ -318,10 +310,15 @@ instance : CompleteLattice (GrothendieckTopology C) :=
       · intro X S hS
         rw [trivial_covering] at hS
         apply covering_of_eq_top _ hS
-      · exact (completeLatticeOfInf _ isGLB_sInf).bot_le (trivial C))
-    _ rfl _ rfl _ rfl sInf rfl
+      · exact (completeLatticeOfInf _ _ (preservesGLB · |>.isGLB_sInf)).bot_le (trivial C))
+    _ rfl _ rfl
 
-instance : Inhabited (GrothendieckTopology C) :=
+lemma mem_sInf (s : Set (GrothendieckTopology C)) {X : C} (S : Sieve X) :
+    S ∈ sInf s X ↔ ∀ t ∈ s, S ∈ t X := by
+  rw [← mem_sieves_iff_coe, (preservesGLB _).map_sInf]
+  simp
+
+noncomputable instance : Inhabited (GrothendieckTopology C) :=
   ⟨⊤⟩
 
 @[simp]

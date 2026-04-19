@@ -80,39 +80,62 @@ instance : Top (UpperSet α) :=
 instance : Bot (UpperSet α) :=
   ⟨⟨univ, isUpperSet_univ⟩⟩
 
-@[to_dual]
-instance : SupSet (UpperSet α) :=
-  ⟨fun S => ⟨⋂ s ∈ S, ↑s, isUpperSet_iInter₂ fun s _ => s.upper⟩⟩
-
-@[to_dual]
-instance : InfSet (UpperSet α) :=
-  ⟨fun S => ⟨⋃ s ∈ S, ↑s, isUpperSet_iUnion₂ fun s _ => s.upper⟩⟩
-
 instance : PartialOrder (UpperSet α) :=
   PartialOrder.lift _ (toDual.injective.comp SetLike.coe_injective)
 
+theorem preservesLUB (S : Set (UpperSet α)) : PreservesLUB (toDual ∘ SetLike.coe) S :=
+  .of_isLUB_image (f := toDual ∘ SetLike.coe) .rfl
+    ⟨⟨⋂ s ∈ S, ↑s, isUpperSet_iInter₂ fun s _ => s.upper⟩, rfl⟩ isLUB_biSup
+
+theorem preservesGLB (S : Set (UpperSet α)) : PreservesGLB (toDual ∘ SetLike.coe) S :=
+  .of_isGLB_image (f := toDual ∘ SetLike.coe) .rfl
+    ⟨⟨⋃ s ∈ S, ↑s, isUpperSet_iUnion₂ fun s _ => s.upper⟩, rfl⟩ isGLB_biInf
+
 instance completeLattice : CompleteLattice (UpperSet α) :=
   (toDual.injective.comp SetLike.coe_injective).completeLattice _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ ↦ ⟨_, (preservesLUB _).map_sSup_eq_biSup⟩)
+    (fun _ ↦ ⟨_, (preservesGLB _).map_sInf_eq_biInf⟩) rfl rfl
 
-instance completelyDistribLattice : CompletelyDistribLattice (UpperSet α) :=
+noncomputable instance completelyDistribLattice : CompletelyDistribLattice (UpperSet α) :=
   .ofMinimalAxioms <|
     (toDual.injective.comp SetLike.coe_injective).completelyDistribLatticeMinimalAxioms .of _
-      .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+      .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+      (fun _ ↦ ⟨_, (preservesLUB _).map_sSup_eq_biSup⟩)
+      (fun _ ↦ ⟨_, (preservesGLB _).map_sInf_eq_biInf⟩)
+      rfl rfl
 
 @[to_dual existing]
 instance _root_.LowerSet.instPartialOrder : PartialOrder (LowerSet α) :=
   PartialOrder.lift _ SetLike.coe_injective
 
+instance _root_.LowerSet.instIsConcreteLE : IsConcreteLE (LowerSet α) α where
+  coe_subset_coe' := .rfl
+
+theorem _root_.LowerSet.preservesLUB (S : Set (LowerSet α)) : PreservesLUB SetLike.coe S :=
+  .of_isLUB_image SetLike.coe_subset_coe
+    ⟨⟨⋃ s ∈ S, ↑s, isLowerSet_iUnion₂ fun s _ => s.lower⟩, rfl⟩ isLUB_biSup
+
+theorem _root_.LowerSet.preservesGLB (S : Set (LowerSet α)) : PreservesGLB SetLike.coe S :=
+  .of_isGLB_image SetLike.coe_subset_coe
+    ⟨⟨⋂ s ∈ S, ↑s, isLowerSet_iInter₂ fun s _ => s.lower⟩, rfl⟩ isGLB_biInf
+
 @[to_dual existing]
 instance _root_.LowerSet.completeLattice : CompleteLattice (LowerSet α) :=
   SetLike.coe_injective.completeLattice _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ ↦ ⟨_, (LowerSet.preservesLUB _).map_sSup_eq_biSup⟩)
+    (fun _ ↦ ⟨_, (LowerSet.preservesGLB _).map_sInf_eq_biInf⟩)
+    rfl rfl
 
 @[to_dual existing]
+noncomputable
 instance _root_.LowerSet.completelyDistribLattice : CompletelyDistribLattice (LowerSet α) :=
   .ofMinimalAxioms <| SetLike.coe_injective.completelyDistribLatticeMinimalAxioms .of _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun _ ↦ ⟨_, (LowerSet.preservesLUB _).map_sSup_eq_biSup⟩)
+    (fun _ ↦ ⟨_, (LowerSet.preservesGLB _).map_sInf_eq_biInf⟩)
+    rfl rfl
 
 @[to_dual]
 instance : Inhabited (UpperSet α) :=
@@ -151,13 +174,19 @@ theorem coe_sup (s t : UpperSet α) : (↑(s ⊔ t) : Set α) = (s : Set α) ∩
 theorem coe_inf (s t : UpperSet α) : (↑(s ⊓ t) : Set α) = (s : Set α) ∪ t :=
   rfl
 
-@[to_dual (attr := simp, norm_cast)]
 theorem coe_sSup (S : Set (UpperSet α)) : (↑(sSup S) : Set α) = ⋂ s ∈ S, ↑s :=
-  rfl
+  (preservesLUB _).map_sSup_eq_biSup
 
-@[to_dual (attr := simp, norm_cast)]
 theorem coe_sInf (S : Set (UpperSet α)) : (↑(sInf S) : Set α) = ⋃ s ∈ S, ↑s :=
-  rfl
+  (preservesGLB _).map_sInf_eq_biInf
+
+@[to_dual existing (attr := simp, norm_cast)]
+theorem _root_.LowerSet.coe_sSup (S : Set (LowerSet α)) : (↑(sSup S) : Set α) = ⋃ s ∈ S, ↑s :=
+  (LowerSet.preservesLUB S).map_sSup_eq_biSup
+
+@[to_dual existing (attr := simp, norm_cast)]
+theorem _root_.LowerSet.coe_sInf (S : Set (LowerSet α)) : (↑(sInf S) : Set α) = ⋂ s ∈ S, ↑s :=
+  (LowerSet.preservesGLB S).map_sInf_eq_biInf
 
 @[to_dual (attr := simp, norm_cast)]
 theorem coe_iSup (f : ι → UpperSet α) : (↑(⨆ i, f i) : Set α) = ⋂ i, f i := by simp [iSup]
@@ -190,12 +219,10 @@ theorem mem_inf_iff : a ∈ s ⊓ t ↔ a ∈ s ∨ a ∈ t :=
   Iff.rfl
 
 @[to_dual (attr := simp)]
-theorem mem_sSup_iff : a ∈ sSup S ↔ ∀ s ∈ S, a ∈ s :=
-  mem_iInter₂
+theorem mem_sSup_iff : a ∈ sSup S ↔ ∀ s ∈ S, a ∈ s := by simp [← SetLike.mem_coe]
 
 @[to_dual (attr := simp)]
-theorem mem_sInf_iff : a ∈ sInf S ↔ ∃ s ∈ S, a ∈ s :=
-  mem_iUnion₂.trans <| by simp only [exists_prop, SetLike.mem_coe]
+theorem mem_sInf_iff : a ∈ sInf S ↔ ∃ s ∈ S, a ∈ s := by simp [← SetLike.mem_coe]
 
 @[to_dual (attr := simp)]
 theorem mem_iSup_iff {f : ι → UpperSet α} : (a ∈ ⨆ i, f i) ↔ ∀ i, a ∈ f i := by

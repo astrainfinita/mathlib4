@@ -51,32 +51,32 @@ variable [ConditionallyCompleteLattice α] {s : Set α} {u : β → α}
 
 /-- The `limsSup` of a filter `f` is the infimum of the `a` such that the inequality
 `x ≤ a` eventually holds for `f`. -/
-def limsSup (f : Filter α) : α :=
+noncomputable def limsSup (f : Filter α) : α :=
   sInf { a | ∀ᶠ n in f, n ≤ a }
 
 /-- The `limsInf` of a filter `f` is the supremum of the `a` such that the inequality
 `x ≥ a` eventually holds for `f`. -/
-def limsInf (f : Filter α) : α :=
+noncomputable def limsInf (f : Filter α) : α :=
   sSup { a | ∀ᶠ n in f, a ≤ n }
 
 /-- The `limsup` of a function `u` along a filter `f` is the infimum of the `a` such that
 the inequality `u x ≤ a` eventually holds for `f`. -/
-def limsup (u : β → α) (f : Filter β) : α :=
+noncomputable def limsup (u : β → α) (f : Filter β) : α :=
   limsSup (map u f)
 
 /-- The `liminf` of a function `u` along a filter `f` is the supremum of the `a` such that
 the inequality `u x ≥ a` eventually holds for `f`. -/
-def liminf (u : β → α) (f : Filter β) : α :=
+noncomputable def liminf (u : β → α) (f : Filter β) : α :=
   limsInf (map u f)
 
 /-- The `blimsup` of a function `u` along a filter `f`, bounded by a predicate `p`, is the infimum
 of the `a` such that the inequality `u x ≤ a` eventually holds for `f`, whenever `p x` holds. -/
-def blimsup (u : β → α) (f : Filter β) (p : β → Prop) :=
+noncomputable def blimsup (u : β → α) (f : Filter β) (p : β → Prop) :=
   sInf { a | ∀ᶠ x in f, p x → u x ≤ a }
 
 /-- The `bliminf` of a function `u` along a filter `f`, bounded by a predicate `p`, is the supremum
 of the `a` such that the inequality `a ≤ u x` eventually holds for `f` whenever `p x` holds. -/
-def bliminf (u : β → α) (f : Filter β) (p : β → Prop) :=
+noncomputable def bliminf (u : β → α) (f : Filter β) (p : β → Prop) :=
   sSup { a | ∀ᶠ x in f, p x → a ≤ u x }
 
 section
@@ -741,10 +741,11 @@ lemma mem_limsup_iff_frequently_mem : (a ∈ limsup s 𝓕) ↔ (∃ᶠ i in �
 
 theorem cofinite.blimsup_set_eq :
     blimsup s cofinite p = { x | { n | p n ∧ x ∈ s n }.Infinite } := by
-  simp only [blimsup_eq, le_eq_subset, eventually_cofinite, not_forall, sInf_eq_sInter, exists_prop]
+  simp only [blimsup_eq, le_eq_subset, eventually_cofinite, not_forall, sInf_eq_sInter, exists_prop,
+    Set.sInter_eq_setOf]
   ext x
   refine ⟨fun h => ?_, fun hx t h => ?_⟩ <;> contrapose h
-  · simp only [mem_sInter, mem_setOf_eq, not_forall, exists_prop]
+  · simp only [mem_setOf_eq, not_forall, exists_prop]
     exact ⟨{x}ᶜ, by simpa using h, by simp⟩
   · exact hx.mono fun i hi => ⟨hi.1, fun hit => h (hit hi.2)⟩
 
@@ -1191,7 +1192,7 @@ theorem limsup_finset_sup [ConditionallyCompleteLinearOrder β] [OrderBot β] {f
     (h₂ : ∀ i ∈ s, f.IsBoundedUnder (· ≤ ·) (F i) := by exact fun _ _ ↦ by isBoundedDefault) :
     limsup (fun a ↦ sup s (fun i ↦ F i a)) f = sup s (fun i ↦ limsup (F i) f) := by
   rcases eq_or_neBot f with (rfl | _)
-  · simp [limsup_eq, csInf_univ]
+  · simp [limsup_eq, sInf_univ]
   rcases Finset.eq_empty_or_nonempty s with (rfl | s_nemp)
   · simp only [sup_empty, limsup_const]
   rw [← Finset.sup'_eq_sup s_nemp fun i ↦ limsup (F i) f, ← limsup_finset_sup' s_nemp h₁ h₂]

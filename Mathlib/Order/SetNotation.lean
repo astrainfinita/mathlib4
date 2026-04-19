@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2017 Johannes Hölzl. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Johannes Hölzl, Patrick Massot, Yury Kudryashov
+Authors: Johannes Hölzl, Patrick Massot, Yury Kudryashov, Yuyang Zhao
 -/
 module
 
 public import Mathlib.Data.Set.Operations
+public import Mathlib.Order.Bounds.Defs
 public import Mathlib.Util.Notation3
 
 /-!
@@ -15,9 +16,7 @@ In this file we introduce notation for indexed suprema, infima, unions, and inte
 
 ## Main definitions
 
-- `SupSet α`: typeclass introducing the operation `SupSet.sSup` (exported to the root namespace);
-  `sSup s` is the supremum of the set `s`;
-- `InfSet`: similar typeclass for infimum of a set;
+- `sSup s`, `sInf s`: supremum and infimum of the set `s`;
 - `iSup f`, `iInf f`: supremum and infimum of an indexed family of elements,
   defined as `sSup (Set.range f)` and `sInf (Set.range f)`, respectively;
 - `Set.sUnion s`, `Set.sInter s`: same as `sSup s` and `sInf s`,
@@ -35,34 +34,37 @@ In this file we introduce notation for indexed suprema, infima, unions, and inte
 
 @[expose] public section
 
+noncomputable section
+
 open Set
 
 universe u v
 variable {α : Type u} {ι : Sort v}
 
+open Classical in
+/-- Supremum of a set -/
+@[to_dual /-- Infimum of a set -/]
+def sSup [LE α] [Nonempty α] (s : Set α) : α :=
+  Classical.epsilon (IsLUB s)
+
+/-- Indexed supremum -/
+@[to_dual /-- Indexed infimum -/]
+def iSup [LE α] [Nonempty α] (s : ι → α) : α :=
+  sSup (range s)
+
 /-- Class for the `sSup` operator -/
-class SupSet (α : Type*) where
+structure SupSet (α : Type*) where
   /-- Supremum of a set -/
   sSup : Set α → α
 
 /-- Class for the `sInf` operator -/
 @[to_dual existing]
-class InfSet (α : Type*) where
+structure InfSet (α : Type*) where
   /-- Infimum of a set -/
   sInf : Set α → α
 
-export SupSet (sSup)
-
-export InfSet (sInf)
-
-/-- Indexed supremum -/
-@[to_dual /-- Indexed infimum -/]
-def iSup [SupSet α] (s : ι → α) : α :=
-  sSup (range s)
-
-@[to_dual]
-instance (priority := 50) infSet_to_nonempty (α) [InfSet α] : Nonempty α :=
-  ⟨sInf ∅⟩
+attribute [deprecated sSup (since := "2026-04-06")] SupSet
+attribute [deprecated sInf (since := "2026-04-06")] InfSet
 
 /-- Indexed supremum. -/
 notation3 "⨆ " (...)", " r:60:(scoped f => iSup f) => r
@@ -131,13 +133,21 @@ meta def iInf_delab : Delab := whenPPOption Lean.getPPNotation <| withOverApp 4 
   return stx
 end delaborators
 
+@[to_dual]
+theorem isLUB_sSup_of_isLUB [LE α] [Nonempty α] {s : Set α} {a : α} (h : IsLUB s a) :
+    IsLUB s (sSup s) :=
+  Classical.epsilon_spec ⟨_, h⟩
+
+@[to_dual] protected alias IsLUB.isLUB_sSup := isLUB_sSup_of_isLUB
+
+@[to_dual]
+theorem exists_isLUB_iff_isLUB_sSup [LE α] [Nonempty α] {s : Set α} :
+    (∃ a, IsLUB s a) ↔ IsLUB s (sSup s) :=
+  ⟨fun ⟨_, h⟩ ↦ h.isLUB_sSup, fun h ↦ ⟨_, h⟩⟩
+
+@[to_dual] alias ⟨isLUB_sSup_of_exists, _⟩ := exists_isLUB_iff_isLUB_sSup
+
 namespace Set
-
-instance : InfSet (Set α) :=
-  ⟨fun s => { a | ∀ t ∈ s, a ∈ t }⟩
-
-instance : SupSet (Set α) :=
-  ⟨fun s => { a | ∃ t ∈ s, a ∈ t }⟩
 
 /-- Intersection of a set of sets. -/
 def sInter (S : Set (Set α)) : Set α :=
@@ -152,14 +162,6 @@ def sUnion (S : Set (Set α)) : Set α :=
 
 /-- Notation for `Set.sUnion`. Union of a set of sets. -/
 prefix:110 "⋃₀ " => sUnion
-
-@[simp, grind =, push]
-theorem mem_sInter {x : α} {S : Set (Set α)} : x ∈ ⋂₀ S ↔ ∀ t ∈ S, x ∈ t :=
-  Iff.rfl
-
-@[simp, grind =, push]
-theorem mem_sUnion {x : α} {S : Set (Set α)} : x ∈ ⋃₀ S ↔ ∃ t ∈ S, x ∈ t :=
-  Iff.rfl
 
 /-- Indexed union of a family of sets -/
 def iUnion (s : ι → Set α) : Set α :=
@@ -236,16 +238,6 @@ meta def sInter_delab : Delab := whenPPOption Lean.getPPNotation do
   return stx
 
 end delaborators
-
-@[simp, push]
-theorem mem_iUnion {x : α} {s : ι → Set α} : (x ∈ ⋃ i, s i) ↔ ∃ i, x ∈ s i :=
-  ⟨fun ⟨_, ⟨⟨a, (t_eq : s a = _)⟩, (h : x ∈ _)⟩⟩ => ⟨a, t_eq.symm ▸ h⟩, fun ⟨a, h⟩ =>
-    ⟨s a, ⟨⟨a, rfl⟩, h⟩⟩⟩
-
-@[simp, push]
-theorem mem_iInter {x : α} {s : ι → Set α} : (x ∈ ⋂ i, s i) ↔ ∀ i, x ∈ s i :=
-  ⟨fun (h : ∀ a ∈ { a : Set α | ∃ i, s i = a }, x ∈ a) a => h (s a) ⟨a, rfl⟩,
-    fun h _ ⟨a, (eq : s a = _)⟩ => eq ▸ h a⟩
 
 @[simp]
 theorem sSup_eq_sUnion (S : Set (Set α)) : sSup S = ⋃₀ S :=

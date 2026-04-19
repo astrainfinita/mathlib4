@@ -15,7 +15,7 @@ public import Mathlib.Order.Bounds.Basic
 In this file we prove various results about the behaviour of bounds under monotone/antitone maps.
 -/
 
-public section
+@[expose] public section
 
 open Function Set
 
@@ -24,6 +24,10 @@ open OrderDual (toDual ofDual)
 universe u v w x
 
 variable {α : Type u} {β : Type v} {γ : Type w} {ι : Sort x}
+
+@[to_dual]
+def PreservesLUB [LE α] [LE β] (f : α → β) (s : Set α) : Prop :=
+  ∃ a, IsLUB s a ∧ IsLUB (f '' s) (f a)
 
 namespace MonotoneOn
 
@@ -117,6 +121,19 @@ theorem image_upperBounds_subset_upperBounds_image :
 See also `BddBelow.image2`. -/]
 theorem map_bddAbove : BddAbove s → BddAbove (f '' s)
   | ⟨C, hC⟩ => ⟨f C, Hf.mem_upperBounds_image hC⟩
+
+@[to_dual]
+theorem isLUB_image_of_isCoinitialFor
+    (h : IsLUB s a) (hfs : IsCoinitialFor (upperBounds (f '' s)) (f '' (upperBounds s))) :
+    IsLUB (f '' s) (f a) := by
+  refine ⟨Hf.mem_upperBounds_image h.1, fun b hb ↦ ?_⟩
+  obtain ⟨-, ⟨a', ha's, rfl⟩, ha'⟩ := hfs hb
+  exact (Hf (h.2 ha's)).trans ha'
+
+@[to_dual]
+theorem isLUB_image_iff_isCoinitialFor (h : IsLUB s a) :
+    IsLUB (f '' s) (f a) ↔ IsCoinitialFor (upperBounds (f '' s)) (f '' (upperBounds s)) :=
+  ⟨fun hf _ hb ↦ ⟨f a, ⟨a, h.1, rfl⟩, hf.2 hb⟩, Hf.isLUB_image_of_isCoinitialFor h⟩
 
 /-- A monotone map sends a least element of a set to a least element of its image. -/
 @[to_dual /-- A monotone map sends a greatest element of a set to a greatest element of its
@@ -420,6 +437,40 @@ theorem IsGLB.of_image [Preorder α] [Preorder β] {f : α → β} (hf : ∀ {x 
     {s : Set α} {x : α} (hx : IsGLB (f '' s) (f x)) : IsGLB s x :=
   ⟨fun _ hy => hf.1 <| hx.1 <| mem_image_of_mem _ hy, fun _ hy =>
     hf.1 <| hx.2 <| Monotone.mem_lowerBounds_image (fun _ _ => hf.2) hy⟩
+
+@[to_dual]
+theorem PreservesLUB.trans [LE α] [PartialOrder β] [LE γ] {f : α → β} {g : β → γ} {s : Set α}
+    (hf : PreservesLUB f s) (hg : PreservesLUB g (f '' s)) : PreservesLUB (g ∘ f) s := by
+  obtain ⟨a, ha, hfa⟩ := hf
+  obtain ⟨b, hb, hfb⟩ := hg
+  obtain rfl := hb.unique hfa
+  rw [image_image] at hfb
+  exact ⟨a, ha, hfb⟩
+
+@[to_dual]
+theorem PreservesLUB.of_isLUB_image [Preorder α] [Preorder β] {f : α → β}
+    (hf : ∀ {x y}, f x ≤ f y ↔ x ≤ y) {s : Set α} {b : β}
+    (hbf : b ∈ range f) (h : IsLUB (f '' s) b) : PreservesLUB f s := by
+  obtain ⟨a, rfl⟩ := hbf; exact ⟨a, .of_image hf h, h⟩
+
+@[to_dual]
+theorem PreservesLUB.isLUB_sSup [LE α] [Nonempty α] [LE β] {f : α → β} {s : Set α}
+    (h : PreservesLUB f s) : IsLUB s (sSup s) := by
+  obtain ⟨a, hsa, hsb⟩ := h
+  exact hsa.isLUB_sSup
+
+@[to_dual]
+theorem PreservesLUB.map_sSup [PartialOrder α] [Nonempty α] [PartialOrder β] [Nonempty β]
+    {f : α → β} {s : Set α} (h : PreservesLUB f s) : f (sSup s) = sSup (f '' s) := by
+  obtain ⟨a, hsa, hsb⟩ := h
+  rw [hsa.sSup_eq, hsb.sSup_eq]
+
+@[to_dual]
+theorem isLUB_image_iff [Preorder α] [Preorder β] {f : α → β} (hf : ∀ {x y}, f x ≤ f y ↔ x ≤ y)
+    {s : Set α} {a : α} : IsLUB (f '' s) (f a) ↔
+      IsLUB s a ∧ IsCoinitialFor (upperBounds (f '' s)) (f '' upperBounds s) :=
+  ⟨fun hfs ↦ have h := IsLUB.of_image hf hfs; ⟨h, fun _ hb ↦ ⟨f a, ⟨a, h.1, rfl⟩, hfs.2 hb⟩⟩,
+    And.rec (Monotone.isLUB_image_of_isCoinitialFor fun _ _ ↦ hf.mpr)⟩
 
 @[to_dual (reorder := f g)]
 lemma BddAbove.range_mono [Preorder β] {f : α → β} (g : α → β) (h : ∀ a, f a ≤ g a)

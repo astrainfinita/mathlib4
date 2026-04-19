@@ -183,14 +183,17 @@ instance instInf : Min (BooleanSubalgebra α) where
                infClosed' := L.infClosed.inter M.infClosed }
 
 /-- The inf of Boolean subalgebras is their intersection. -/
-instance instInfSet : InfSet (BooleanSubalgebra α) where
-  sInf S := { carrier := ⋂ L ∈ S, L
-              bot_mem' := mem_iInter₂.2 fun _ _ ↦ bot_mem
-              compl_mem' := fun ha ↦ mem_iInter₂.2 fun L hL ↦ compl_mem <| mem_iInter₂.1 ha L hL
-              supClosed' := supClosed_sInter <| forall_mem_range.2 fun L ↦ supClosed_sInter <|
-                forall_mem_range.2 fun _ ↦ L.supClosed
-              infClosed' := infClosed_sInter <| forall_mem_range.2 fun L ↦ infClosed_sInter <|
-                forall_mem_range.2 fun _ ↦ L.infClosed }
+noncomputable def sInf' (S : Set (BooleanSubalgebra α)) : BooleanSubalgebra α where
+  carrier := ⋂ L ∈ S, L
+  bot_mem' := mem_iInter₂.2 fun _ _ ↦ bot_mem
+  compl_mem' := fun ha ↦ mem_iInter₂.2 fun L hL ↦ compl_mem <| mem_iInter₂.1 ha L hL
+  supClosed' := supClosed_sInter <| forall_mem_range.2 fun L ↦ supClosed_sInter <|
+    forall_mem_range.2 fun _ ↦ L.supClosed
+  infClosed' := infClosed_sInter <| forall_mem_range.2 fun L ↦ infClosed_sInter <|
+    forall_mem_range.2 fun _ ↦ L.infClosed
+
+lemma isGLB_sInf' (s : Set (BooleanSubalgebra α)) : IsGLB s (sInf' s) :=
+  .of_image SetLike.coe_subset_coe isGLB_biInf
 
 instance instInhabited : Inhabited (BooleanSubalgebra α) := ⟨⊥⟩
 
@@ -206,7 +209,8 @@ def topEquiv : (⊤ : BooleanSubalgebra α) ≃o α where
 @[simp, norm_cast] lemma coe_inf (L M : BooleanSubalgebra α) : L ⊓ M = (L : Set α) ∩ M := rfl
 
 @[simp, norm_cast]
-lemma coe_sInf (S : Set (BooleanSubalgebra α)) : sInf S = ⋂ L ∈ S, (L : Set α) := rfl
+lemma coe_sInf (S : Set (BooleanSubalgebra α)) : sInf S = ⋂ L ∈ S, (L : Set α) :=
+  (isGLB_sInf' S).sInf_eq ▸ rfl
 
 @[simp, norm_cast]
 lemma coe_iInf (f : ι → BooleanSubalgebra α) : ⨅ i, f i = ⋂ i, (f i : Set α) := by simp [iInf]
@@ -222,7 +226,7 @@ lemma coe_iInf (f : ι → BooleanSubalgebra α) : ⨅ i, f i = ⋂ i, (f i : Se
   rw [← SetLike.mem_coe]; simp
 
 /-- BooleanSubalgebras of a lattice form a complete lattice. -/
-instance instCompleteLattice : CompleteLattice (BooleanSubalgebra α) where
+noncomputable instance instCompleteLattice : CompleteLattice (BooleanSubalgebra α) where
   bot := ⊥
   bot_le _S _a := by aesop
   top := ⊤
@@ -231,8 +235,7 @@ instance instCompleteLattice : CompleteLattice (BooleanSubalgebra α) where
   le_inf _L _M _N hM hN _a ha := ⟨hM ha, hN ha⟩
   inf_le_left _L _M _a := And.left
   inf_le_right _L _M _a := And.right
-  __ := completeLatticeOfInf (BooleanSubalgebra α)
-      fun _s ↦ IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf
+  __ := completeLatticeOfInf (BooleanSubalgebra α) _ isGLB_sInf'
 
 instance [IsEmpty α] : Subsingleton (BooleanSubalgebra α) := SetLike.coe_injective.subsingleton
 instance [IsEmpty α] : Unique (BooleanSubalgebra α) := uniqueOfSubsingleton ⊤
@@ -340,7 +343,7 @@ lemma map_top (f : BoundedLatticeHom α β) (h : Surjective f) : BooleanSubalgeb
   SetLike.coe_injective <| by simp [h.range_eq]
 
 /-- The minimum Boolean subalgebra containing a given set. -/
-def closure (s : Set α) : BooleanSubalgebra α := sInf {L | s ⊆ L}
+noncomputable def closure (s : Set α) : BooleanSubalgebra α := sInf {L | s ⊆ L}
 
 variable {s : Set α}
 

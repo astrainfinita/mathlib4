@@ -87,28 +87,27 @@ section ConditionallyCompleteLinearOrderBot
 variable [ConditionallyCompleteLinearOrderBot α] {f : ι → α} {s : Set α} {x : α}
 
 /-- See `csSup_mem_of_not_isSuccPrelimit` for the `ConditionallyCompleteLinearOrder` version. -/
-lemma csSup_mem_of_not_isSuccPrelimit' (hlim : ¬ IsSuccPrelimit (sSup s)) : sSup s ∈ s := by
+lemma csSup_mem_of_not_isSuccPrelimit' (hbdd : BddAbove s) (hlim : ¬ IsSuccPrelimit (sSup s)) :
+    sSup s ∈ s := by
   obtain rfl | hs := s.eq_empty_or_nonempty
   · simp [isSuccPrelimit_bot] at hlim
-  · apply csSup_mem_of_not_isSuccPrelimit hs _ hlim
-    contrapose! hlim
-    rw [csSup_of_not_bddAbove hlim, csSup_empty]
-    exact isSuccPrelimit_bot
+  · exact csSup_mem_of_not_isSuccPrelimit hs hbdd hlim
 
 /-- See `exists_eq_ciSup_of_not_isSuccPrelimit` for the
 `ConditionallyCompleteLinearOrder` version. -/
-lemma exists_eq_ciSup_of_not_isSuccPrelimit' (hf' : ¬ IsSuccPrelimit (⨆ i, f i)) :
+lemma exists_eq_ciSup_of_not_isSuccPrelimit' (hbdd : BddAbove (range f))
+    (hf' : ¬ IsSuccPrelimit (⨆ i, f i)) :
     ∃ i, f i = ⨆ i, f i :=
-  csSup_mem_of_not_isSuccPrelimit' hf'
+  csSup_mem_of_not_isSuccPrelimit' hbdd hf'
 
-lemma csSup_mem_of_not_isSuccLimit (hne : s.Nonempty) (hbbd : BddAbove s)
+lemma csSup_mem_of_not_isSuccLimit (hne : s.Nonempty) (hbdd : BddAbove s)
     (hlim : ¬ IsSuccLimit (sSup s)) : sSup s ∈ s := by
   rw [isSuccLimit_iff_of_orderBot, not_and_or, not_ne_iff] at hlim
-  refine hlim.elim (fun h ↦ ?_) csSup_mem_of_not_isSuccPrelimit'
+  refine hlim.elim (fun h ↦ ?_) (csSup_mem_of_not_isSuccPrelimit' hbdd)
   obtain ⟨a, ha⟩ := hne
   obtain rfl | ha' := eq_or_ne ⊥ a
   · rwa [h]
-  · exact (h ▸ ha'.bot_lt'.trans_le <| le_csSup hbbd ha).false.elim
+  · exact (h ▸ ha'.bot_lt'.trans_le <| le_csSup hbdd ha).false.elim
 
 lemma exists_eq_ciSup_of_not_isSuccLimit [Nonempty ι] (hbbd : BddAbove (range f))
     (hf : ¬ IsSuccLimit (⨆ i, f i)) : ∃ i, f i = ⨆ i, f i :=
@@ -132,7 +131,7 @@ theorem sSup_Iio_eq_self_iff_isSuccPrelimit : sSup (Iio x) = x ↔ IsSuccPrelimi
   refine ⟨fun h ↦ ?_, IsSuccPrelimit.sSup_Iio⟩
   by_contra hx
   rw [← h] at hx
-  simpa [h] using csSup_mem_of_not_isSuccPrelimit' hx
+  simpa [h] using csSup_mem_of_not_isSuccPrelimit' bddAbove_Iio hx
 
 theorem iSup_Iio_eq_self_iff_isSuccPrelimit : ⨆ a : Iio x, a.1 = x ↔ IsSuccPrelimit x := by
   rw [← sSup_eq_iSup', sSup_Iio_eq_self_iff_isSuccPrelimit]

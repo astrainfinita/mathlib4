@@ -148,7 +148,7 @@ theorem principal_sInf_right (A : DedekindCut α) : principal (sInf A.right) = A
 This map is defined so that `factorEmbedding f A = sSup (f '' A.left)`. Although the construction
 `factorEmbedding f A = sInf (f '' A.right)` would also work, these do **not** in general give equal
 embeddings. -/
-def factorEmbedding (f : β ↪o α) : DedekindCut β ↪o α :=
+noncomputable def factorEmbedding (f : β ↪o α) : DedekindCut β ↪o α :=
   .ofMapLEIff (fun A ↦ sSup (f '' A.left)) <| by
     refine fun A B ↦ ⟨fun h x hx ↦ ?_, fun h ↦ sSup_le_sSup (image_mono h)⟩
     simp_rw [← lowerBounds_right]
@@ -182,7 +182,7 @@ lattice is isomorphic to a concept lattice (its own Dedekind completion).
 
 See `Concept.instCompleteLattice` for the first half. -/
 @[simps! apply]
-def principalIso : α ≃o DedekindCut α where
+noncomputable def principalIso : α ≃o DedekindCut α where
   invFun := factorEmbedding (OrderIso.refl α)
   left_inv x := factorEmbedding_principal _ x
   right_inv x := by simp [factorEmbedding]

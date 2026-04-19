@@ -73,13 +73,13 @@ namespace HasProducts
 
 /-- The pi-type gives a cone for a product. -/
 def product {J : Type v} (f : J → ωCPO.{v}) : Fan f :=
-  Fan.mk (of (∀ j, f j)) fun j => .mk (Pi.evalOrderHom j) fun _ => rfl
+  Fan.mk (of (∀ j, f j)) fun j => .mk (Pi.evalOrderHom j) fun _ => ωSup_apply
 
 /-- The pi-type is a limit cone for the product. -/
 def isProduct (J : Type v) (f : J → ωCPO) : IsLimit (product f) where
   lift s :=
     ⟨⟨fun t j => (s.π.app ⟨j⟩) t, fun _ _ h j => (s.π.app ⟨j⟩).monotone h⟩,
-      fun x => funext fun j => (s.π.app ⟨j⟩).continuous x⟩
+      fun x => funext fun j => by convert (s.π.app ⟨j⟩).continuous x; exact ωSup_apply⟩
   uniq s m w := by
     ext t; funext j -- Porting note (https://github.com/leanprover-community/mathlib4/issues/11041): Originally `ext t j`
     change m t j = (s.π.app ⟨j⟩) t
@@ -92,21 +92,24 @@ instance (J : Type v) (f : J → ωCPO.{v}) : HasProduct f :=
 
 end HasProducts
 
+theorem ωSup_eq_of_eq {α β : Type*} [OmegaCompletePartialOrder α] [OmegaCompletePartialOrder β]
+    {f g : α →𝒄 β} {c : Chain α} (hc : ∀ i ∈ c, f i = g i) : f (ωSup c) = g (ωSup c) := by
+  rw [f.continuous, g.continuous]
+  congr 1
+  ext x
+  apply hc _ ⟨_, rfl⟩
+
 instance omegaCompletePartialOrderEqualizer {α β : Type*} [OmegaCompletePartialOrder α]
     [OmegaCompletePartialOrder β] (f g : α →𝒄 β) :
-    OmegaCompletePartialOrder { a : α // f a = g a } :=
-  OmegaCompletePartialOrder.subtype _ fun c hc => by
-    rw [f.continuous, g.continuous]
-    congr 1
-    ext x
-    apply hc _ ⟨_, rfl⟩
+    OmegaCompletePartialOrder { a : α // f a = g a } := fast_instance%
+  OmegaCompletePartialOrder.subtype _ fun _ ↦ ωSup_eq_of_eq
 
 namespace HasEqualizers
 
 /-- The equalizer inclusion function as a `ContinuousHom`. -/
 def equalizerι {α β : Type*} [OmegaCompletePartialOrder α] [OmegaCompletePartialOrder β]
     (f g : α →𝒄 β) : { a : α // f a = g a } →𝒄 α :=
-  .mk (OrderHom.Subtype.val _) fun _ => rfl
+  .mk (OrderHom.Subtype.val _) fun _ => coe_ωSup _ (fun _ ↦ ωSup_eq_of_eq) _
 
 /-- A construction of the equalizer fork. -/
 def equalizer {X Y : ωCPO.{v}} (f g : X ⟶ Y) : Fork f g :=
@@ -118,7 +121,8 @@ def isEqualizer {X Y : ωCPO.{v}} (f g : X ⟶ Y) : IsLimit (equalizer f g) :=
   Fork.IsLimit.mk' _ fun s =>
     ⟨{  toFun := fun x => ⟨s.ι x, by apply ContinuousHom.congr_fun s.condition⟩
         monotone' := fun _ _ h => s.ι.monotone h
-        map_ωSup' := fun x => Subtype.ext (s.ι.continuous x)
+        map_ωSup' := fun x => Subtype.ext <| by
+          convert s.ι.continuous x; exact coe_ωSup _ (fun _ ↦ ωSup_eq_of_eq) _
       }, by ext; rfl, fun hm => by
       ext x : 2; apply Subtype.ext ?_ -- Porting note (https://github.com/leanprover-community/mathlib4/issues/11041): Originally `ext`
       apply ContinuousHom.congr_fun hm⟩

@@ -254,7 +254,8 @@ variable [CompleteLattice α] (c : ClosureOperator α)
 
 /-- Define a closure operator from a predicate that's preserved under infima. -/
 @[simps!]
-def ofCompletePred (p : α → Prop) (hsinf : ∀ s, (∀ a ∈ s, p a) → p (sInf s)) : ClosureOperator α :=
+noncomputable def ofCompletePred (p : α → Prop) (hsinf : ∀ s, (∀ a ∈ s, p a) → p (sInf s)) :
+    ClosureOperator α :=
   ofPred (fun a ↦ ⨅ b : {b // a ≤ b ∧ p b}, b) p
     (fun a ↦ by simp +contextual)
     (fun _ ↦ hsinf _ <| forall_mem_range.2 fun b ↦ b.2.2)

@@ -450,8 +450,9 @@ theorem measurableSet_inf {m₂ m₁ : MeasurableSpace α} {s : Set α} :
 
 @[simp]
 theorem measurableSet_sInf {ms : Set (MeasurableSpace α)} {s : Set α} :
-    MeasurableSet[sInf ms] s ↔ ∀ m ∈ ms, MeasurableSet[m] s :=
-  show s ∈ ⋂₀ _ ↔ _ by simp
+    MeasurableSet[sInf ms] s ↔ ∀ m ∈ ms, MeasurableSet[m] s := by
+  rw [← mem_setOf_eq (p := MeasurableSet[sInf ms]), giGenerateFrom.gc.u_sInf]
+  simp
 
 theorem measurableSet_iInf {ι} {m : ι → MeasurableSpace α} {s : Set α} :
     MeasurableSet[iInf m] s ↔ ∀ i, MeasurableSet[m i] s := by
@@ -465,6 +466,7 @@ theorem measurableSet_sup {m₁ m₂ : MeasurableSpace α} {s : Set α} :
 theorem measurableSet_sSup {ms : Set (MeasurableSpace α)} {s : Set α} :
     MeasurableSet[sSup ms] s ↔
       GenerateMeasurable { s : Set α | ∃ m ∈ ms, MeasurableSet[m] s } s := by
+  rw [← giGenerateFrom.l_sSup_u_image]
   change GenerateMeasurable (⋃₀ _) _ ↔ _
   simp [← setOf_exists]
 

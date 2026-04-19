@@ -75,13 +75,14 @@ instance instTopOrderHom [Preorder β] [OrderTop β] : Top (α →o β) where
 instance orderTop [Preorder β] [OrderTop β] : OrderTop (α →o β) where
   le_top _ _ := le_top
 
-instance [CompleteLattice β] : InfSet (α →o β) where
-  sInf s := ⟨fun x => ⨅ f ∈ s, (f :) x, fun _ _ h => iInf₂_mono fun f _ => f.mono h⟩
+lemma isGLB_mk_iInf [CompleteLattice β] (s : Set (α →o β)) :
+    IsGLB s ⟨fun x ↦ ⨅ f ∈ s, f x, fun _ _ h ↦ iInf₂_mono fun f _ => f.mono h⟩ :=
+  ⟨fun _ hf _ ↦ biInf_le _ hf, fun _ hf x ↦ le_iInf₂ fun _ hg => hf hg x⟩
 
 @[simp]
 theorem sInf_apply [CompleteLattice β] (s : Set (α →o β)) (x : α) :
-    sInf s x = ⨅ f ∈ s, (f :) x :=
-  rfl
+    sInf s x = ⨅ f ∈ s, f x := by
+  rw [(isGLB_mk_iInf s).sInf_eq]; rfl
 
 theorem iInf_apply {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) (x : α) :
     (⨅ i, f i) x = ⨅ i, f i x :=
@@ -92,13 +93,14 @@ theorem coe_iInf {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) :
     ((⨅ i, f i : α →o β) : α → β) = ⨅ i, (f i : α → β) := by
   funext x; simp [iInf_apply]
 
-instance [CompleteLattice β] : SupSet (α →o β) where
-  sSup s := ⟨fun x => ⨆ f ∈ s, (f :) x, fun _ _ h => iSup₂_mono fun f _ => f.mono h⟩
+lemma isLUB_mk_biSup [CompleteLattice β] (s : Set (α →o β)) :
+    IsLUB s ⟨fun x ↦ ⨆ f ∈ s, f x, fun _ _ h => iSup₂_mono fun f _ => f.mono h⟩ :=
+  ⟨fun _ hf x ↦ le_biSup (· x) hf, fun _ hf x ↦ iSup₂_le fun _ hg => hf hg x⟩
 
 @[simp]
 theorem sSup_apply [CompleteLattice β] (s : Set (α →o β)) (x : α) :
-    sSup s x = ⨆ f ∈ s, (f :) x :=
-  rfl
+    sSup s x = ⨆ f ∈ s, f x := by
+  rw [(isLUB_mk_biSup s).sSup_eq]; rfl
 
 theorem iSup_apply {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) (x : α) :
     (⨆ i, f i) x = ⨆ i, f i x :=
@@ -111,10 +113,10 @@ theorem coe_iSup {ι : Sort*} [CompleteLattice β] (f : ι → α →o β) :
 
 instance [CompleteLattice β] : CompleteLattice (α →o β) :=
   { (_ : Lattice (α →o β)), OrderHom.orderTop, OrderHom.orderBot with
-    isLUB_sSup _ :=
-      .of_image (f := (⇑)) coe_le_coe (by simp [isLUB_pi, Set.image_image, isLUB_biSup])
-    isGLB_sInf _ :=
-      .of_image (f := (⇑)) coe_le_coe (by simp [isGLB_pi, Set.image_image, isGLB_biInf]) }
+    exists_isLUB s :=
+      ⟨sSup s, .of_image (f := (⇑)) coe_le_coe (by simp [isLUB_pi, Set.image_image, isLUB_biSup])⟩
+    exists_isGLB s :=
+      ⟨sInf s, .of_image (f := (⇑)) coe_le_coe (by simp [isGLB_pi, Set.image_image, isGLB_biInf])⟩ }
 
 theorem iterate_sup_le_sup_iff {α : Type*} [SemilatticeSup α] (f : α →o α) :
     (∀ n₁ n₂ a₁ a₂, f^[n₁ + n₂] (a₁ ⊔ a₂) ≤ f^[n₁] a₁ ⊔ f^[n₂] a₂) ↔

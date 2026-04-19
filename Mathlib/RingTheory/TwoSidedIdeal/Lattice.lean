@@ -15,7 +15,7 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Basic
 
 namespace TwoSidedIdeal
 
-variable (R : Type*) [NonUnitalNonAssocRing R]
+variable {R : Type*} [NonUnitalNonAssocRing R]
 
 instance : SemilatticeSup (TwoSidedIdeal R) where
   sup I J := { ringCon := I.ringCon ⊔ J.ringCon }
@@ -26,8 +26,6 @@ instance : SemilatticeSup (TwoSidedIdeal R) where
 lemma sup_ringCon (I J : TwoSidedIdeal R) : (I ⊔ J).ringCon = I.ringCon ⊔ J.ringCon := rfl
 
 section sup
-
-variable {R}
 
 lemma mem_sup_left {I J : TwoSidedIdeal R} {x : R} (h : x ∈ I) :
     x ∈ I ⊔ J :=
@@ -71,39 +69,50 @@ lemma mem_inf {I J : TwoSidedIdeal R} {x : R} :
     x ∈ I ⊓ J ↔ x ∈ I ∧ x ∈ J :=
   Iff.rfl
 
-instance : SupSet (TwoSidedIdeal R) where
-  sSup s := { ringCon := sSup <| TwoSidedIdeal.ringCon '' s }
+instance : Nonempty (TwoSidedIdeal R) :=
+  ⟨{ ringCon := ⊤ }⟩
+
+noncomputable def sSup' (S : Set (TwoSidedIdeal R)) : TwoSidedIdeal R where
+  ringCon := sSup (TwoSidedIdeal.ringCon '' S)
+
+lemma isLUB_sSup' (S : Set (TwoSidedIdeal R)) : IsLUB S (sSup' S) :=
+  IsLUB.of_image ringCon_le_iff.symm (isLUB_sSup _)
 
 lemma sSup_ringCon (S : Set (TwoSidedIdeal R)) :
-    (sSup S).ringCon = sSup (TwoSidedIdeal.ringCon '' S) := rfl
+    (sSup S).ringCon = sSup (TwoSidedIdeal.ringCon '' S) :=
+  congr_arg TwoSidedIdeal.ringCon (isLUB_sSup' S).sSup_eq
 
 lemma iSup_ringCon {ι : Type*} (I : ι → TwoSidedIdeal R) :
     (⨆ i, I i).ringCon = ⨆ i, (I i).ringCon := by
   simp only [iSup, sSup_ringCon]; congr; ext; simp
 
 instance : CompleteSemilatticeSup (TwoSidedIdeal R) where
-  isLUB_sSup _ := .of_image ringCon_le_iff.symm (isLUB_sSup _)
+  exists_isLUB S := ⟨_, isLUB_sSup' S⟩
 
-instance : InfSet (TwoSidedIdeal R) where
-  sInf s := { ringCon := sInf <| TwoSidedIdeal.ringCon '' s }
+noncomputable def sInf' (S : Set (TwoSidedIdeal R)) : TwoSidedIdeal R where
+  ringCon := sInf (TwoSidedIdeal.ringCon '' S)
+
+lemma isGLB_sInf' (S : Set (TwoSidedIdeal R)) : IsGLB S (sInf' S) :=
+  IsGLB.of_image ringCon_le_iff.symm (isGLB_sInf _)
 
 lemma sInf_ringCon (S : Set (TwoSidedIdeal R)) :
-    (sInf S).ringCon = sInf (TwoSidedIdeal.ringCon '' S) := rfl
+    (sInf S).ringCon = sInf (TwoSidedIdeal.ringCon '' S) :=
+  (isGLB_sInf' S).sInf_eq ▸ rfl
 
 lemma iInf_ringCon {ι : Type*} (I : ι → TwoSidedIdeal R) :
     (⨅ i, I i).ringCon = ⨅ i, (I i).ringCon := by
   simp only [iInf, sInf_ringCon]; congr!; ext; simp
 
 instance : CompleteSemilatticeInf (TwoSidedIdeal R) where
-  isGLB_sInf _ := .of_image ringCon_le_iff.symm (isGLB_sInf _)
-
-lemma mem_iInf {ι : Type*} {I : ι → TwoSidedIdeal R} {x : R} :
-    x ∈ iInf I ↔ ∀ i, x ∈ I i :=
-  show (∀ _, _) ↔ _ by simp [mem_iff]
+  exists_isGLB S := ⟨_, isGLB_sInf' S⟩
 
 lemma mem_sInf {S : Set (TwoSidedIdeal R)} {x : R} :
-    x ∈ sInf S ↔ ∀ I ∈ S, x ∈ I :=
-  show (∀ _, _) ↔ _ by simp [mem_iff]
+    x ∈ sInf S ↔ ∀ I ∈ S, x ∈ I := by
+  rw [(isGLB_sInf' _).sInf_eq, sInf']; simp [mem_iff]
+
+lemma mem_iInf {ι : Type*} {I : ι → TwoSidedIdeal R} {x : R} :
+    x ∈ iInf I ↔ ∀ i, x ∈ I i := by
+  simp [iInf, mem_sInf]
 
 instance : Top (TwoSidedIdeal R) where
   top := { ringCon := ⊤ }

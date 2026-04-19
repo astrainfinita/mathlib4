@@ -19,7 +19,7 @@ quotients of finitely supported functions.
 
 -/
 
-@[expose] public section
+@[expose] public noncomputable section
 
 universe u' w u v
 

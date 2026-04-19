@@ -90,34 +90,37 @@ instance carrier.instOrderTop : OrderTop S := Subtype.orderTop top_mem
 
 instance carrier.instHImp : HImp S where himp a b := ⟨a ⇨ b, S.himp_mem b.2⟩
 
-instance carrier.instInfSet : InfSet S where
-  sInf x := ⟨sInf (Subtype.val '' x), S.sInf_mem' _
-    (by simp_rw [image_subset_iff, subset_def]; simp)⟩
+noncomputable def carrier.sInf' (x : Set S) : S :=
+  ⟨sInf (Subtype.val '' x), S.sInf_mem' _ (by simp_rw [image_subset_iff, subset_def]; simp)⟩
+
+lemma carrier.isGLB_sInf' (x : Set S) : IsGLB x (sInf' x) := by
+  simp [sInf', isGLB_iff_le_iff, lowerBounds, ← Subtype.coe_le_coe]
 
 @[simp, norm_cast] lemma coe_inf (a b : S) : (a ⊓ b).val = ↑a ⊓ ↑b := rfl
-@[simp, norm_cast] lemma coe_sInf (s : Set S) : (sInf s).val = sInf (Subtype.val '' s) := rfl
+@[simp, norm_cast] lemma coe_sInf (s : Set S) : (sInf s).val = sInf (Subtype.val '' s) :=
+  (carrier.isGLB_sInf' s).sInf_eq ▸ rfl
 @[simp, norm_cast] lemma coe_iInf (f : ι → S) : (⨅ i, f i).val = ⨅ i, (f i).val := by
   simp [iInf, ← range_comp, Function.comp_def]
 
-instance carrier.instCompleteLattice : CompleteLattice S where
+noncomputable instance carrier.instCompleteLattice : CompleteLattice S where
   __ := instSemilatticeInf
   __ := instOrderTop
-  __ := completeLatticeOfInf S <| by simp [isGLB_iff_le_iff, lowerBounds, ← Subtype.coe_le_coe]
+  __ := completeLatticeOfInf S _ carrier.isGLB_sInf'
 
 @[simp, norm_cast] lemma coe_himp (a b : S) : (a ⇨ b).val = a.val ⇨ b.val := rfl
 
-instance carrier.instHeytingAlgebra : HeytingAlgebra S where
+noncomputable instance carrier.instHeytingAlgebra : HeytingAlgebra S where
   le_himp_iff a b c := by simp [← Subtype.coe_le_coe, ← @Sublocale.coe_inf, himp]
   compl a := a ⇨ ⊥
   himp_bot _ := rfl
 
-instance carrier.instFrame : Order.Frame S where
+noncomputable instance carrier.instFrame : Order.Frame S where
   __ := carrier.instHeytingAlgebra
   __ := carrier.instCompleteLattice
 
 set_option backward.privateInPublic true in
 /-- See `Sublocale.restrict` for the public-facing version. -/
-private def restrictAux (S : Sublocale X) (a : X) : S := sInf {s : S | a ≤ s}
+private noncomputable def restrictAux (S : Sublocale X) (a : X) : S := sInf {s : S | a ≤ s}
 
 private lemma le_restrictAux : a ≤ S.restrictAux a := by simp +contextual [restrictAux]
 
@@ -125,7 +128,7 @@ set_option backward.privateInPublic true in
 /-- See `Sublocale.giRestrict` for the public-facing version. -/
 private def giAux (S : Sublocale X) : GaloisInsertion S.restrictAux Subtype.val where
   choice x hx := ⟨x, by
-    rw [le_antisymm le_restrictAux hx]
+    rw [le_antisymm le_restrictAux hx, restrictAux, coe_sInf]
     exact S.sInf_mem <| by simp +contextual [Set.subset_def]⟩
   gc a b := by
     constructor <;> intro h
@@ -135,7 +138,7 @@ private def giAux (S : Sublocale X) : GaloisInsertion S.restrictAux Subtype.val 
   choice_eq a h := by simp [le_antisymm_iff, restrictAux, sInf_le]
 
 /-- The restriction from a locale X into the sublocale S. -/
-def restrict (S : Sublocale X) : FrameHom X S where
+noncomputable def restrict (S : Sublocale X) : FrameHom X S where
   toFun x := sInf {s : S | x ≤ s}
   map_inf' a b := by
     change Sublocale.restrictAux S (a ⊓ b) = Sublocale.restrictAux S a ⊓ Sublocale.restrictAux S b
@@ -156,7 +159,7 @@ def restrict (S : Sublocale X) : FrameHom X S where
     refine le_antisymm le_top ?_
     change _ ≤ restrictAux S ⊤
     rw [← Subtype.coe_le_coe, S.giAux.gc.u_top]
-    simp [restrictAux, sInf]
+    simp [restrictAux]
 
 set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
@@ -168,7 +171,7 @@ def giRestrict (S : Sublocale X) : GaloisInsertion S.restrict Subtype.val := S.g
 
 /-- The restriction from the locale X into a sublocale is a nucleus. -/
 @[simps]
-def toNucleus (S : Sublocale X) : Nucleus X where
+noncomputable def toNucleus (S : Sublocale X) : Nucleus X where
   toFun x := S.restrict x
   map_inf' _ _ := by simp [S.giRestrict.gc.u_inf]
   idempotent' _ := by rw [S.giRestrict.gc.l_u_l_eq_l]
@@ -216,7 +219,7 @@ end Nucleus
 
 /-- The nuclei on a frame corresponds exactly to the sublocales on this frame.
 The sublocales are ordered dually to the nuclei. -/
-def nucleusIsoSublocale : (Nucleus X)ᵒᵈ ≃o Sublocale X where
+noncomputable def nucleusIsoSublocale : (Nucleus X)ᵒᵈ ≃o Sublocale X where
   toFun n := n.ofDual.toSublocale
   invFun s := .toDual s.toNucleus
   left_inv := by simp [Function.LeftInverse, Nucleus.ext_iff]
@@ -227,13 +230,14 @@ lemma nucleusIsoSublocale.eq_toSublocale : Nucleus.toSublocale = @nucleusIsoSubl
 lemma nucleusIsoSublocale.symm_eq_toNucleus :
   Sublocale.toNucleus = (@nucleusIsoSublocale X _).symm := rfl
 
-instance Sublocale.instCompleteLattice : CompleteLattice (Sublocale X) :=
+noncomputable instance Sublocale.instCompleteLattice : CompleteLattice (Sublocale X) :=
   nucleusIsoSublocale.toGaloisInsertion.liftCompleteLattice
 
-instance Sublocale.instCoframeMinimalAxioms : Order.Coframe.MinimalAxioms (Sublocale X) where
+noncomputable instance Sublocale.instCoframeMinimalAxioms :
+    Order.Coframe.MinimalAxioms (Sublocale X) where
   iInf_sup_le_sup_sInf a s := by simp [← toNucleus_le_toNucleus,
     nucleusIsoSublocale.symm_eq_toNucleus, nucleusIsoSublocale.symm.map_sup,
     nucleusIsoSublocale.symm.map_sInf, sup_iInf_eq, nucleusIsoSublocale.symm.map_iInf]
 
-instance Sublocale.instCoframe : Order.Coframe (Sublocale X) :=
+noncomputable instance Sublocale.instCoframe : Order.Coframe (Sublocale X) :=
   .ofMinimalAxioms instCoframeMinimalAxioms

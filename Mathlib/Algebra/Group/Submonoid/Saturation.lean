@@ -150,25 +150,27 @@ variable (M) in
 instance : Min (SaturatedSubmonoid M) where
   min s₁ s₂ := { s₁.toSubmonoid ⊓ s₂.toSubmonoid with mulSaturated := .inf s₁.2 s₂.2 }
 
-variable (M) in
 @[to_additive]
-instance : InfSet (SaturatedSubmonoid M) where
-  sInf f :=
-  { carrier := ⋂ s ∈ f, s
-    mul_mem' hx hy := by rw [Set.mem_iInter₂] at *; exact fun s hs ↦ mul_mem (hx s hs) (hy s hs)
-    one_mem' := Set.mem_iInter₂.mpr fun _ _ ↦ one_mem _
-    mulSaturated := by
-      convert Submonoid.MulSaturated.sInf (f := toSubmonoid '' f) (by simp)
-      ext; simp [Submonoid.mem_sInf] }
+def sInf' (f : Set (SaturatedSubmonoid M)) : SaturatedSubmonoid M where
+  carrier := ⋂ s ∈ f, s
+  mul_mem' hx hy := by rw [Set.mem_iInter₂] at *; exact fun s hs ↦ mul_mem (hx s hs) (hy s hs)
+  one_mem' := Set.mem_iInter₂.mpr fun _ _ ↦ one_mem _
+  mulSaturated := by
+    convert Submonoid.MulSaturated.sInf (f := toSubmonoid '' f) (by simp)
+    ext; simp [Submonoid.mem_sInf]
+
+@[to_additive]
+lemma isGLB_sInf' (f : Set (SaturatedSubmonoid M)) : IsGLB f (sInf' f) :=
+  .of_image SetLike.coe_subset_coe isGLB_biInf
 
 @[to_additive]
 theorem mem_sInf {f : Set (SaturatedSubmonoid M)} {x : M} : x ∈ sInf f ↔ ∀ s ∈ f, x ∈ s :=
-  Set.mem_iInter₂
+  (isGLB_sInf' f).sInf_eq ▸ Set.mem_iInter₂
 
 variable (M) in
 @[to_additive]
 instance : CompleteSemilatticeInf (SaturatedSubmonoid M) where
-  isGLB_sInf _ := .of_image SetLike.coe_subset_coe isGLB_biInf
+  exists_isGLB f := ⟨_, isGLB_sInf' f⟩
 
 end SaturatedSubmonoid
 
@@ -183,7 +185,7 @@ If `M` is a commutative monoid, then this is `{x : M | ∃ y : M, x * y ∈ s}`.
 that contain `s`.
 
 If `M` is a commutative additive monoid, then this is `{x : M | ∃ y : M, x + y ∈ s}`. -/]
-def saturation {M : Type*} [MulOneClass M] (s : Submonoid M) : SaturatedSubmonoid M :=
+noncomputable def saturation {M : Type*} [MulOneClass M] (s : Submonoid M) : SaturatedSubmonoid M :=
   sInf {t | s ≤ t.toSubmonoid}
 
 variable {M : Type*}
@@ -271,7 +273,7 @@ end Submonoid
 namespace SaturatedSubmonoid
 
 @[to_additive]
-instance (M : Type*) [MulOneClass M] :
+noncomputable instance (M : Type*) [MulOneClass M] :
     CompleteLattice (SaturatedSubmonoid M) :=
   { (inferInstance : PartialOrder (SaturatedSubmonoid M)),
     (inferInstance : Top (SaturatedSubmonoid M)),
@@ -293,7 +295,8 @@ theorem sup_def {s₁ s₂ : SaturatedSubmonoid M} :
 
 @[to_additive]
 theorem sSup_def {f : Set (SaturatedSubmonoid M)} :
-    sSup f = (sSup (toSubmonoid '' f)).saturation := rfl
+    sSup f = (sSup (toSubmonoid '' f)).saturation :=
+  ((Submonoid.giSaturation M).l_sSup_u_image f).symm
 
 @[to_additive]
 theorem iSup_def {ι : Sort*} {f : ι → SaturatedSubmonoid M} :

@@ -94,7 +94,7 @@ lemma valueMonoid_eq_closure : valueMonoid f = Submonoid.closure ((↑) ⁻¹' (
 
 /-- For a morphism of monoids with zero `f`, this is the smallest subgroup of the invertible
 elements in the codomain containing the range of `f`. -/
-def valueGroup : Subgroup Bˣ := closure (valueMonoid f)
+noncomputable def valueGroup : Subgroup Bˣ := closure (valueMonoid f)
 
 lemma valueGroup_def : valueGroup f = Subgroup.closure (valueMonoid f) := rfl
 
@@ -308,7 +308,7 @@ theorem zero_or_exists_mk' (x : ValueGroup₀ f) :
 
 end ValueGroup₀
 
-instance : CommGroupWithZero (ValueGroup₀ f) where
+noncomputable instance : CommGroupWithZero (ValueGroup₀ f) where
 
 end CommGroupWithZero
 

@@ -96,6 +96,7 @@ lemma ChainClosure.isChain (hc : ChainClosure r c) : IsChain r c := by
   induction hc with
   | succ _ h => exact h.succ
   | union hs h =>
+    rw [sUnion_eq_setOf]
     exact fun c₁ ⟨t₁, ht₁, (hc₁ : c₁ ∈ t₁)⟩ c₂ ⟨t₂, ht₂, (hc₂ : c₂ ∈ t₂)⟩ hneq =>
       ((hs _ ht₁).total <| hs _ ht₂).elim (fun ht => h t₂ ht₂ (ht hc₁) hc₂ hneq) fun ht =>
         h t₁ ht₁ hc₁ (ht hc₂) hneq

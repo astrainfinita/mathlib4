@@ -48,6 +48,8 @@ attribute [ext] ext
 theorem eq_iff_rel_eq {r₁ r₂ : Setoid α} : r₁ = r₂ ↔ ⇑r₁ = ⇑r₂ :=
   ⟨fun h => h ▸ rfl, fun h => Setoid.ext fun _ _ => h ▸ Iff.rfl⟩
 
+instance : Nonempty (Setoid α) := ⟨trueSetoid⟩
+
 /-- Defining `≤` for equivalence relations. -/
 instance : LE (Setoid α) :=
   ⟨fun r s => ∀ ⦃x y⦄, r x y → s x y⟩
@@ -155,18 +157,13 @@ theorem inf_iff_and {r s : Setoid α} {x y} : (r ⊓ s) x y ↔ r x y ∧ s x y 
   Iff.rfl
 
 /-- The infimum of a set of equivalence relations. -/
-instance : InfSet (Setoid α) :=
-  ⟨fun S =>
-    { r := fun x y => ∀ r ∈ S, r x y
-      iseqv := ⟨fun x r _ => r.refl' x, fun h r hr => r.symm' <| h r hr, fun h1 h2 r hr =>
-        r.trans' (h1 r hr) <| h2 r hr⟩ }⟩
+def sInf' (S : Set (Setoid α)) : Setoid α where
+  r := fun x y => ∀ r ∈ S, r x y
+  iseqv := ⟨fun x r _ => r.refl' x, fun h r hr => r.symm' <| h r hr, fun h1 h2 r hr =>
+    r.trans' (h1 r hr) <| h2 r hr⟩
 
-/-- The underlying binary operation of the infimum of a set of equivalence relations
-is the infimum of the set's image under the map to the underlying binary operation. -/
-theorem sInf_def {s : Set (Setoid α)} : ⇑(sInf s) = sInf ((⇑) '' s) := by
-  ext
-  simp only [sInf_image, iInf_apply, iInf_Prop_eq]
-  rfl
+lemma isGLB_sInf' (S : Set (Setoid α)) : IsGLB S (Setoid.sInf' S) :=
+  ⟨fun _ hr _ _ h => h _ hr, fun _ hr _ _ h _ hr' => hr hr' h⟩
 
 instance : PartialOrder (Setoid α) where
   lt r s := r ≤ s ∧ ¬s ≤ r
@@ -175,11 +172,18 @@ instance : PartialOrder (Setoid α) where
   lt_iff_le_not_ge _ _ := Iff.rfl
   le_antisymm _ _ h1 h2 := Setoid.ext fun _ _ => ⟨fun h => h1 h, fun h => h2 h⟩
 
+/-- The underlying binary operation of the infimum of a set of equivalence relations
+is the infimum of the set's image under the map to the underlying binary operation. -/
+theorem sInf_def {s : Set (Setoid α)} : ⇑(sInf s) = sInf ((⇑) '' s) := by
+  rw [(isGLB_sInf' _).sInf_eq]
+  ext
+  simp only [sInf_image, iInf_apply, iInf_Prop_eq]
+  rfl
+
 /-- The complete lattice of equivalence relations on a type, with bottom element `=`
 and top element the trivial equivalence relation. -/
 instance completeLattice : CompleteLattice (Setoid α) :=
-  { (completeLatticeOfInf (Setoid α)) fun _ =>
-      ⟨fun _ hr _ _ h => h _ hr, fun _ hr _ _ h _ hr' => hr hr' h⟩ with
+  { completeLatticeOfInf (Setoid α) sInf' isGLB_sInf' with
     inf := Min.min
     inf_le_left := fun _ _ _ _ h => h.1
     inf_le_right := fun _ _ _ _ h => h.2
@@ -209,10 +213,10 @@ theorem eq_top_iff {s : Setoid α} : s = (⊤ : Setoid α) ↔ ∀ x y : α, s x
 
 lemma sInf_equiv {S : Set (Setoid α)} {x y : α} :
     letI := sInf S
-    x ≈ y ↔ ∀ s ∈ S, s x y := Iff.rfl
+    x ≈ y ↔ ∀ s ∈ S, s x y := (isGLB_sInf' _).sInf_eq ▸ Iff.rfl
 
 lemma sInf_iff {S : Set (Setoid α)} {x y : α} :
-    sInf S x y ↔ ∀ s ∈ S, s x y := Iff.rfl
+    sInf S x y ↔ ∀ s ∈ S, s x y := (isGLB_sInf' _).sInf_eq ▸ Iff.rfl
 
 lemma quotient_mk_sInf_eq {S : Set (Setoid α)} {x y : α} :
     Quotient.mk (sInf S) x = Quotient.mk (sInf S) y ↔ ∀ s ∈ S, s x y := by
@@ -226,7 +230,7 @@ def map_of_le {s t : Setoid α} (h : s ≤ t) : Quotient s → Quotient t :=
 by an element of this set. -/
 def map_sInf {S : Set (Setoid α)} {s : Setoid α} (h : s ∈ S) :
     Quotient (sInf S) → Quotient s :=
-  Setoid.map_of_le fun _ _ a ↦ a s h
+  (isGLB_sInf' _).sInf_eq ▸ Setoid.map_of_le fun _ _ a ↦ a s h
 
 section EqvGen
 
@@ -237,7 +241,7 @@ of the set of all equivalence relations containing r. -/
 theorem eqvGen_eq (r : α → α → Prop) :
     EqvGen.setoid r = sInf { s : Setoid α | ∀ ⦃x y⦄, r x y → s x y } :=
   le_antisymm
-    (fun _ _ H =>
+    (fun _ _ H => (isGLB_sInf' _).sInf_eq ▸
       EqvGen.rec (fun _ _ h _ hs => hs h) (refl' _) (fun _ _ _ => symm' _)
         (fun _ _ _ _ _ => trans' _) H)
     (sInf_le fun _ _ h => EqvGen.rel _ _ h)
@@ -246,8 +250,8 @@ theorem eqvGen_eq (r : α → α → Prop) :
 relation `x is related to y by r or s`. -/
 theorem sup_eq_eqvGen (r s : Setoid α) :
     r ⊔ s = EqvGen.setoid fun x y => r x y ∨ s x y := by
-  rw [eqvGen_eq]
-  apply congr_arg sInf
+  rw [eqvGen_eq, (isGLB_sInf' _).sInf_eq]
+  apply congr_arg sInf'
   simp only [le_def, or_imp, ← forall_and]
 
 /-- The supremum of 2 equivalence relations r and s is the equivalence closure of the
@@ -259,7 +263,7 @@ theorem sup_def {r s : Setoid α} : r ⊔ s = EqvGen.setoid (⇑r ⊔ ⇑s) := b
 relation `there exists r ∈ S relating x and y`. -/
 theorem sSup_eq_eqvGen (S : Set (Setoid α)) :
     sSup S = EqvGen.setoid fun x y => ∃ r : Setoid α, r ∈ S ∧ r x y := by
-  rw [eqvGen_eq]
+  rw [eqvGen_eq, ← sInf_upperBounds_eq_sSup]
   apply congr_arg sInf
   simp only [upperBounds, le_def, and_imp, exists_imp]
   ext

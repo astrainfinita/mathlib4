@@ -31,7 +31,7 @@ instance Prod.instBornology : Bornology (α × β) where
   le_cofinite :=
     @coprod_cofinite α β ▸ coprod_mono ‹Bornology α›.le_cofinite ‹Bornology β›.le_cofinite
 
-instance Pi.instBornology : Bornology (∀ i, X i) where
+noncomputable instance Pi.instBornology : Bornology (∀ i, X i) where
   cobounded := Filter.coprodᵢ fun i => cobounded (X i)
   le_cofinite := iSup_le fun _ ↦ (comap_mono (Bornology.le_cofinite _)).trans (comap_cofinite_le _)
 

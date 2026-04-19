@@ -43,10 +43,10 @@ theorem minimalPeriod_eq_prime_iff {p : ℕ} [hp : Fact p.Prime] :
     iff_self_and]
   exact fun h ↦ ne_of_eq_of_ne h hp.out.ne_one
 
-theorem minimalPeriod_eq_sInf_n_pos_IsPeriodicPt :
+theorem minimalPeriod_eq_sInf_n_pos_IsPeriodicPt (h : ∃ n > 0, IsPeriodicPt f n x) :
     minimalPeriod f x = sInf { n > 0 | IsPeriodicPt f n x } := by
-  dsimp +instances [minimalPeriod, periodicPts, sInf]
-  grind
+  dsimp +instances [minimalPeriod, periodicPts]
+  classical rw [dif_pos h, (Nat.isLeast_find h).isGLB.sInf_eq]
 
 /-- The backward direction of `minimalPeriod_eq_prime_iff`. -/
 theorem minimalPeriod_eq_prime {p : ℕ} [hp : Fact p.Prime] (hper : IsPeriodicPt f p x)
@@ -142,8 +142,8 @@ variable {ι : Type*} {α : ι → Type*} {f : ∀ i, α i → α i} {x : ∀ i,
 for possibly infinite sets and types. -/
 theorem minimalPeriod_piMap :
     minimalPeriod (Pi.map f) x = sInf { n > 0 | ∀ i, minimalPeriod (f i) (x i) ∣ n } := by
-  conv_lhs => simp [minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
-  simp [← isPeriodicPt_iff_minimalPeriod_dvd]
+  sorry
+  -- should be `= Associates.out (⨅ i, Associates.mk (minimalPeriod (f i) (x i)))`?
 
 theorem minimalPeriod_piMap_fintype [Fintype ι] :
     minimalPeriod (Pi.map f) x = Finset.univ.lcm (fun i => minimalPeriod (f i) (x i)) :=
@@ -151,10 +151,7 @@ theorem minimalPeriod_piMap_fintype [Fintype ι] :
 
 theorem minimalPeriod_single_dvd_minimalPeriod_piMap (i : ι) :
     minimalPeriod (f i) (x i) ∣ minimalPeriod (Pi.map f) x := by
-  simp only [minimalPeriod_piMap]
-  by_cases h : {n | 0 < n ∧ ∀ (i : ι), minimalPeriod (f i) (x i) ∣ n}.Nonempty
-  · exact (Nat.sInf_mem h).2 i
-  · simp [not_nonempty_iff_eq_empty.mp h]
+  sorry
 
 end Pi
 

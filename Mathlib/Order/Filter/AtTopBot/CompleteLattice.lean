@@ -93,7 +93,7 @@ theorem _root_.Monotone.ciSup_comp_tendsto_atTop_of_linearOrder [Preorder β]
   if hb : BddAbove (range f) then
     exact hf.ciSup_comp_tendsto_atTop hb hg
   else
-    rw [iSup, iSup, csSup_of_not_bddAbove, csSup_of_not_bddAbove hb]
+    rw [iSup, iSup, sSup_of_not_bddAbove, sSup_of_not_bddAbove hb]
     rwa [BddAbove, ← Function.comp_def f g, hf.upperBounds_range_comp_tendsto_atTop hg]
 
 /-- If `f` is a monotone function taking values in a conditionally complete linear order

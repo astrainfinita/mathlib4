@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Set.Image
 public import Mathlib.Data.SetLike.Basic
 public import Mathlib.Order.Interval.Set.Defs
-public import Mathlib.Order.SetNotation
+public import Mathlib.Order.Bounds.Basic
 
 /-!
 # Properties of relative upper/lower sets
@@ -88,11 +88,11 @@ lemma IsRelLowerSet.inter (hs : IsRelLowerSet s P) (ht : IsRelLowerSet t P) :
   exact fun _ x y ↦ ⟨(hs bs).2 x y, (ht bt).2 x y⟩
 
 protected lemma IsRelUpperSet.sUnion {S : Set (Set α)} (hS : ∀ s ∈ S, IsRelUpperSet s P) :
-    IsRelUpperSet (⋃₀ S) P := fun _ ⟨s, ms, mb⟩ ↦
+    IsRelUpperSet (⋃₀ S) P := sUnion_eq_setOf _ ▸ fun _ ⟨s, ms, mb⟩ ↦
   ⟨(hS s ms mb).1, fun _ x y ↦ ⟨s, ms, (hS s ms mb).2 x y⟩⟩
 
 protected lemma IsRelLowerSet.sUnion {S : Set (Set α)} (hS : ∀ s ∈ S, IsRelLowerSet s P) :
-    IsRelLowerSet (⋃₀ S) P := fun _ ⟨s, ms, mb⟩ ↦
+    IsRelLowerSet (⋃₀ S) P := sUnion_eq_setOf _ ▸ fun _ ⟨s, ms, mb⟩ ↦
   ⟨(hS s ms mb).1, fun _ x y ↦ ⟨s, ms, (hS s ms mb).2 x y⟩⟩
 
 protected lemma IsRelUpperSet.iUnion {f : ι → Set α} (hf : ∀ i, IsRelUpperSet (f i) P) :
@@ -113,13 +113,13 @@ protected lemma IsRelLowerSet.iUnion₂ {f : ∀ i, κ i → Set α} (hf : ∀ i
 
 protected lemma IsRelUpperSet.sInter
     {S : Set (Set α)} (hS : S.Nonempty) (hf : ∀ s ∈ S, IsRelUpperSet s P) :
-    IsRelUpperSet (⋂₀ S) P := fun b mb ↦ by
+    IsRelUpperSet (⋂₀ S) P := sInter_eq_setOf _ ▸ fun b mb ↦ by
   obtain ⟨s₀, ms₀⟩ := hS
   refine ⟨(hf s₀ ms₀ (mb s₀ ms₀)).1, fun _ x y s ms ↦ (hf s ms (mb s ms)).2 x y⟩
 
 protected lemma IsRelLowerSet.sInter
     {S : Set (Set α)} (hS : S.Nonempty) (hf : ∀ s ∈ S, IsRelLowerSet s P) :
-    IsRelLowerSet (⋂₀ S) P := fun b mb ↦ by
+    IsRelLowerSet (⋂₀ S) P := sInter_eq_setOf _ ▸ fun b mb ↦ by
   obtain ⟨s₀, ms₀⟩ := hS
   refine ⟨(hf s₀ ms₀ (mb s₀ ms₀)).1, fun _ x y s ms ↦ (hf s ms (mb s ms)).2 x y⟩
 

@@ -397,8 +397,9 @@ section SemilatticeSupOrderBot
 
 variable [SemilatticeSup P] [OrderBot P] {x : P}
 
-instance : InfSet (Ideal P) :=
-  ⟨fun S ↦
+theorem preservesGLB_toLowerSet (S : Set (Ideal P)) : PreservesGLB toLowerSet S := by
+  refine .of_isGLB_image (f := toLowerSet) .rfl ?_ isGLB_biInf
+  use
     { toLowerSet := ⨅ s ∈ S, toLowerSet s
       nonempty' :=
         ⟨⊥, by
@@ -408,26 +409,26 @@ instance : InfSet (Ideal P) :=
         ⟨a ⊔ b,
           ⟨by
             rw [LowerSet.carrier_eq_coe, LowerSet.coe_iInf₂, Set.mem_iInter₂] at ha hb ⊢
-            exact fun s hs ↦ sup_mem (ha _ hs) (hb _ hs), le_sup_left, le_sup_right⟩⟩ }⟩
+            exact fun s hs ↦ sup_mem (ha _ hs) (hb _ hs), le_sup_left, le_sup_right⟩⟩ }
+
+theorem preservesGLB_coe (S : Set (Ideal P)) : PreservesGLB SetLike.coe S :=
+  (preservesGLB_toLowerSet S).trans (LowerSet.preservesGLB _)
 
 variable {S : Set (Ideal P)}
 
 @[simp]
 theorem coe_sInf : (↑(sInf S) : Set P) = ⋂ s ∈ S, ↑s :=
-  LowerSet.coe_iInf₂ _
+  (preservesGLB_coe _).map_sInf_eq_biInf
 
 @[simp]
 theorem mem_sInf : x ∈ sInf S ↔ ∀ s ∈ S, x ∈ s := by
   simp_rw [← SetLike.mem_coe, coe_sInf, mem_iInter₂]
 
-instance : CompleteLattice (Ideal P) where
+noncomputable instance : CompleteLattice (Ideal P) where
   __ := (inferInstance : Lattice (Ideal P))
   __ := (inferInstance : OrderTop (Ideal P))
   __ := (inferInstance : OrderBot (Ideal P))
-  __ := completeLatticeOfInf (Ideal P) fun S ↦ by
-      refine ⟨fun s hs ↦ ?_, fun s hs ↦ by rwa [← coe_subset_coe, coe_sInf, subset_iInter₂_iff]⟩
-      rw [← coe_subset_coe, coe_sInf]
-      exact biInter_subset_of_mem hs
+  __ := completeLatticeOfInf (Ideal P) _ fun _ ↦ (preservesGLB_coe _).isGLB_sInf
 
 end SemilatticeSupOrderBot
 

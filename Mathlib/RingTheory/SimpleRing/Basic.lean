@@ -61,7 +61,7 @@ lemma injective_ringHom_or_subsingleton_codomain
     (f : R →+* S) : Function.Injective f ∨ Subsingleton S :=
   simple.eq_bot_or_eq_top (TwoSidedIdeal.ker f) |>.imp (TwoSidedIdeal.ker_eq_bot _ |>.1)
     (fun h => subsingleton_iff_zero_eq_one.1 <| by
-      have mem : 1 ∈ TwoSidedIdeal.ker f := h.symm ▸ TwoSidedIdeal.mem_top _
+      have mem : 1 ∈ TwoSidedIdeal.ker f := h.symm ▸ TwoSidedIdeal.mem_top
       rwa [TwoSidedIdeal.mem_ker, map_one, eq_comm] at mem)
 
 protected theorem _root_.RingHom.injective

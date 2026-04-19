@@ -47,7 +47,7 @@ open Function OrderDual Set
 variable {F α β γ δ : Type*} {ι : Sort*} {κ : ι → Sort*}
 
 /-- The type of `⨆`-preserving functions from `α` to `β`. -/
-structure sSupHom (α β : Type*) [SupSet α] [SupSet β] where
+structure sSupHom (α β : Type*) [LE α] [Nonempty α] [LE β] [Nonempty β] where
   /-- The underlying function of a sSupHom. -/
   toFun : α → β
   /-- The proposition that a `sSupHom` commutes with arbitrary suprema/joins. -/
@@ -55,7 +55,7 @@ structure sSupHom (α β : Type*) [SupSet α] [SupSet β] where
 
 /-- The type of `⨅`-preserving functions from `α` to `β`. -/
 @[to_dual]
-structure sInfHom (α β : Type*) [InfSet α] [InfSet β] where
+structure sInfHom (α β : Type*) [LE α] [Nonempty α] [LE β] [Nonempty β] where
   /-- The underlying function of an `sInfHom`. -/
   toFun : α → β
   /-- The proposition that a `sInfHom` commutes with arbitrary infima/meets -/
@@ -82,7 +82,7 @@ section
 /-- `sSupHomClass F α β` states that `F` is a type of `⨆`-preserving morphisms.
 
 You should extend this class when you extend `sSupHom`. -/
-class sSupHomClass (F α β : Type*) [SupSet α] [SupSet β] [FunLike F α β] : Prop where
+class sSupHomClass (F α β : Type*) [LE α] [Nonempty α] [LE β] [Nonempty β] [FunLike F α β] where
   /-- The proposition that members of `sSupHomClass`s commute with arbitrary suprema/joins. -/
   map_sSup (f : F) (s : Set α) : f (sSup s) = sSup (f '' s)
 
@@ -90,7 +90,7 @@ class sSupHomClass (F α β : Type*) [SupSet α] [SupSet β] [FunLike F α β] :
 
 You should extend this class when you extend `sInfHom`. -/
 @[to_dual]
-class sInfHomClass (F α β : Type*) [InfSet α] [InfSet β] [FunLike F α β] : Prop where
+class sInfHomClass (F α β : Type*) [LE α] [Nonempty α] [LE β] [Nonempty β] [FunLike F α β] where
   /-- The proposition that members of `sInfHomClass`s commute with arbitrary infima/meets. -/
   map_sInf (f : F) (s : Set α) : f (sInf s) = sInf (f '' s)
 
@@ -124,11 +124,12 @@ section Hom
 variable [FunLike F α β]
 
 @[to_dual (attr := simp)]
-theorem map_iSup [SupSet α] [SupSet β] [sSupHomClass F α β] (f : F) (g : ι → α) :
+theorem map_iSup [LE α] [Nonempty α] [LE β] [Nonempty β] [sSupHomClass F α β] (f : F) (g : ι → α) :
     f (⨆ i, g i) = ⨆ i, f (g i) := by simp [iSup, ← Set.range_comp, Function.comp_def]
 
 @[to_dual]
-theorem map_iSup₂ [SupSet α] [SupSet β] [sSupHomClass F α β] (f : F) (g : ∀ i, κ i → α) :
+theorem map_iSup₂ [LE α] [Nonempty α] [LE β] [Nonempty β] [sSupHomClass F α β]
+    (f : F) (g : ∀ i, κ i → α) :
     f (⨆ (i) (j), g i j) = ⨆ (i) (j), f (g i j) := by simp_rw [map_iSup]
 
 -- See note [lower instance priority]
@@ -193,7 +194,7 @@ variable [FunLike F α β]
   map_sSup' := sSupHomClass.map_sSup f
 
 @[to_dual]
-instance [SupSet α] [SupSet β] [sSupHomClass F α β] : CoeTC F (sSupHom α β) :=
+instance [LE α] [Nonempty α] [LE β] [Nonempty β] [sSupHomClass F α β] : CoeTC F (sSupHom α β) :=
   ⟨fun f => ⟨f, map_sSup f⟩⟩
 
 instance [CompleteLattice α] [CompleteLattice β] [FrameHomClass F α β] : CoeTC F (FrameHom α β) :=
@@ -208,11 +209,11 @@ instance [CompleteLattice α] [CompleteLattice β] [CompleteLatticeHomClass F α
 
 namespace sSupHom
 
-variable [SupSet α]
+variable [LE α] [Nonempty α]
 
 section SupSet
 
-variable [SupSet β] [SupSet γ] [SupSet δ]
+variable [LE β] [Nonempty β] [LE γ] [Nonempty γ] [LE δ] [Nonempty δ]
 
 @[to_dual]
 instance : FunLike (sSupHom α β) α β where
@@ -549,7 +550,7 @@ end CompleteLatticeHom
 
 namespace sSupHom
 
-variable [SupSet α] [SupSet β] [SupSet γ]
+variable [LE α] [Nonempty α] [LE β] [Nonempty β] [LE γ] [Nonempty γ]
 
 /-- Reinterpret a `⨆`-homomorphism as an `⨅`-homomorphism between the dual orders. -/
 @[to_dual (attr := simps)

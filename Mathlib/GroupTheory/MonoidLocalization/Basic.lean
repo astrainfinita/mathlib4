@@ -142,7 +142,7 @@ whose quotient is the localization of `M` at `S`, defined as the unique congruen
 `M × S` such that for any other congruence relation `s` on `M × S` where for all `y ∈ S`,
 `(0, 0) ∼ (y, y)` under `s`, we have that `(x₁, y₁) ∼ (x₂, y₂)` by `r` implies
 `(x₁, y₁) ∼ (x₂, y₂)` by `s`. -/]
-def r (S : Submonoid M) : Con (M × S) :=
+noncomputable def r (S : Submonoid M) : Con (M × S) :=
   sInf { c | ∀ y : S, c 1 (y, y) }
 
 /-- An alternate form of the congruence relation on `M × S`, `M` a `CommMonoid` and `S` a
@@ -320,7 +320,7 @@ theorem induction_on₃ {p : Localization S → Localization S → Localization 
   induction_on₂ x y fun x y ↦ induction_on z <| H x y
 
 @[to_additive]
-theorem one_rel (y : S) : r S 1 (y, y) := fun _ hb ↦ hb y
+theorem one_rel (y : S) : r S 1 (y, y) := Con.sInf_iff.mpr fun _ hb ↦ hb y
 
 @[to_additive]
 theorem r_of_eq {x y : M × S} (h : ↑y.2 * x.1 = ↑x.2 * y.1) : r S x y :=
@@ -717,7 +717,7 @@ variable (S) in
 @[to_additive
 /-- Natural homomorphism sending `x : M`, `M` an `AddCommMonoid`, to the equivalence class of
 `(x, 0)` in the Localization of `M` at a Submonoid. -/]
-def monoidOf : Submonoid.LocalizationMap S (Localization S) :=
+noncomputable def monoidOf : Submonoid.LocalizationMap S (Localization S) :=
   { (r S).mk'.comp <| MonoidHom.inl M S with
     toFun := fun x ↦ mk x 1
     map_mul' := fun x y ↦ by rw [mk_mul, mul_one]
@@ -796,7 +796,7 @@ namespace OreLocalization
 variable (R) [CommMonoid R] (S : Submonoid R)
 
 /-- The morphism `numeratorHom` is a monoid localization map in the case of commutative `R`. -/
-protected def localizationMap : S.LocalizationMap R[S⁻¹] := Localization.monoidOf S
+protected noncomputable def localizationMap : S.LocalizationMap R[S⁻¹] := Localization.monoidOf S
 
 /-- If `R` is commutative, Ore localization and monoid localization are isomorphic. -/
 protected noncomputable def equivMonoidLocalization : Localization S ≃* R[S⁻¹] := MulEquiv.refl _

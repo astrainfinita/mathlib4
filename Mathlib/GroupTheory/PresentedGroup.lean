@@ -37,13 +37,15 @@ variable {α : Type*}
 generators `x : α` and relations `rels` as a quotient of `FreeGroup α`. -/
 def PresentedGroup (rels : Set (FreeGroup α)) :=
   FreeGroup α ⧸ Subgroup.normalClosure rels
-deriving Group
 
 namespace PresentedGroup
 
+noncomputable instance (rels : Set (FreeGroup α)) : Group (PresentedGroup rels) :=
+  inferInstanceAs% Group (FreeGroup α ⧸ Subgroup.normalClosure rels)
+
 /-- The canonical map from the free group on `α` to a presented group with generators `x : α`,
 where `x` is mapped to its equivalence class under the given set of relations `rels` -/
-def mk (rels : Set (FreeGroup α)) : FreeGroup α →* PresentedGroup rels :=
+noncomputable def mk (rels : Set (FreeGroup α)) : FreeGroup α →* PresentedGroup rels :=
   ⟨⟨QuotientGroup.mk, rfl⟩, fun _ _ => rfl⟩
 
 theorem mk_surjective (rels : Set (FreeGroup α)) : Function.Surjective <| mk rels :=
@@ -51,7 +53,7 @@ theorem mk_surjective (rels : Set (FreeGroup α)) : Function.Surjective <| mk re
 
 /-- `of` is the canonical map from `α` to a presented group with generators `x : α`. The term `x` is
 mapped to the equivalence class of the image of `x` in `FreeGroup α`. -/
-def of {rels : Set (FreeGroup α)} (x : α) : PresentedGroup rels :=
+noncomputable def of {rels : Set (FreeGroup α)} (x : α) : PresentedGroup rels :=
   mk rels (FreeGroup.of x)
 
 lemma mk_eq_one_iff {rels : Set (FreeGroup α)} {x : FreeGroup α} :
@@ -119,7 +121,7 @@ theorem to_group_eq_one_of_mem_closure (h : ∀ r ∈ rels, FreeGroup.lift f r =
 
 /-- The extension of a map `f : α → G` that satisfies the given relations to a group homomorphism
 from `PresentedGroup rels → G`. -/
-def toGroup (h : ∀ r ∈ rels, FreeGroup.lift f r = 1) : PresentedGroup rels →* G :=
+noncomputable def toGroup (h : ∀ r ∈ rels, FreeGroup.lift f r = 1) : PresentedGroup rels →* G :=
   QuotientGroup.lift (Subgroup.normalClosure rels) F (to_group_eq_one_of_mem_closure h)
 
 @[simp]
@@ -141,7 +143,7 @@ theorem ext {φ ψ : PresentedGroup rels →* G} (hx : ∀ (x : α), φ (.of x) 
 variable {β : Type*}
 
 /-- Presented groups of isomorphic types are isomorphic. -/
-def equivPresentedGroup (rels : Set (FreeGroup α)) (e : α ≃ β) :
+noncomputable def equivPresentedGroup (rels : Set (FreeGroup α)) (e : α ≃ β) :
     PresentedGroup rels ≃* PresentedGroup (FreeGroup.freeGroupCongr e '' rels) :=
   QuotientGroup.congr (Subgroup.normalClosure rels)
     (Subgroup.normalClosure ((FreeGroup.freeGroupCongr e) '' rels)) (FreeGroup.freeGroupCongr e)
@@ -158,7 +160,7 @@ theorem equivPresentedGroup_symm_apply_of (x : β) (rels : Set (FreeGroup α)) (
 
 end ToGroup
 
-instance (rels : Set (FreeGroup α)) : Inhabited (PresentedGroup rels) :=
+noncomputable instance (rels : Set (FreeGroup α)) : Inhabited (PresentedGroup rels) :=
   ⟨1⟩
 
 end PresentedGroup

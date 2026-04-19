@@ -146,7 +146,8 @@ variable (T) in
 In a commutative (possibly non-unital) semiring `R`, `NonUnitalSubsemiring.sumSq R` is
 the (possibly non-unital) subsemiring of sums of squares in `R`.
 -/
-def sumSq : NonUnitalSubsemiring T := (Subsemigroup.square T).nonUnitalSubsemiringClosure
+noncomputable def sumSq : NonUnitalSubsemiring T :=
+  (Subsemigroup.square T).nonUnitalSubsemiringClosure
 
 @[simp] theorem sumSq_toAddSubmonoid : (sumSq T).toAddSubmonoid = .sumSq T := by
   simp [sumSq, ← AddSubmonoid.closure_isSquare,
@@ -190,7 +191,7 @@ variable (T) in
 /--
 In a commutative semiring `R`, `Subsemiring.sumSq R` is the subsemiring of sums of squares in `R`.
 -/
-def sumSq : Subsemiring T where
+noncomputable def sumSq : Subsemiring T where
   __ := NonUnitalSubsemiring.sumSq T
   one_mem' := by simp
 

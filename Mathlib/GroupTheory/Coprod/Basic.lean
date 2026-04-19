@@ -119,7 +119,7 @@ There are several reasons to build an API from scratch.
 group, monoid, coproduct, free product
 -/
 
-@[expose] public section
+@[expose] public noncomputable section
 
 assert_not_exists MonoidWithZero
 
@@ -176,15 +176,15 @@ theorem mk_eq_mk {w₁ w₂ : FreeMonoid (M ⊕ N)} : mk w₁ = mk w₂ ↔ copr
 @[to_additive /-- The natural embedding `M →+ AddMonoid.Coprod M N`. -/]
 def inl : M →* M ∗ N where
   toFun := fun x => mk (of (.inl x))
-  map_one' := mk_eq_mk.2 fun _c hc => hc.2.2.1
-  map_mul' := fun x y => mk_eq_mk.2 fun _c hc => hc.1 x y
+  map_one' := mk_eq_mk.2 <| Con.sInf_iff.mpr fun _c hc => hc.2.2.1
+  map_mul' := fun x y => mk_eq_mk.2 <| Con.sInf_iff.mpr fun _c hc => hc.1 x y
 
 /-- The natural embedding `N →* M ∗ N`. -/
 @[to_additive /-- The natural embedding `N →+ AddMonoid.Coprod M N`. -/]
 def inr : N →* M ∗ N where
   toFun := fun x => mk (of (.inr x))
-  map_one' := mk_eq_mk.2 fun _c hc => hc.2.2.2
-  map_mul' := fun x y => mk_eq_mk.2 fun _c hc => hc.2.1 x y
+  map_one' := mk_eq_mk.2 <| Con.sInf_iff.mpr fun _c hc => hc.2.2.2
+  map_mul' := fun x y => mk_eq_mk.2 <| Con.sInf_iff.mpr fun _c hc => hc.2.1 x y
 
 @[to_additive (attr := simp)]
 theorem mk_of_inl (x : M) : (mk (of (.inl x)) : M ∗ N) = inl x := rfl
