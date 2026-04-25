@@ -18,7 +18,8 @@ dependent functions `Πₗ i, α i` is itself a complete linear order.
 
 @[expose] public section
 
-variable {ι : Type*} {α : ι → Type*} [LinearOrder ι] [∀ i, CompleteLinearOrder (α i)]
+variable {ι : Type*} {α : ι → Type*} [LinearOrder ι]
+  [∀ i, LinearOrder (α i)] [∀ i, CompleteLattice (α i)]
 
 namespace Pi
 
@@ -93,11 +94,6 @@ noncomputable instance completeLattice : CompleteLattice (Πₗ i, α i) where
   isLUB_sSup _ := by exact isLUB_sSup
   isGLB_sInf _ := by exact isGLB_sInf
 
-noncomputable instance : CompleteLinearOrder (Πₗ i, α i) where
-  __ := linearOrder
-  __ := completeLattice
-  __ := LinearOrder.toBiheytingAlgebra _
-
 end Lex
 
 /-! ### Colexicographic ordering -/
@@ -143,11 +139,6 @@ set_option backward.isDefEq.respectTransparency false in
 noncomputable instance completeLattice : CompleteLattice (Colex ((i : ι) → α i)) where
   isLUB_sSup _ := by exact Lex.isLUB_sSup (ι := ιᵒᵈ)
   isGLB_sInf _ := by exact Lex.isGLB_sInf (ι := ιᵒᵈ)
-
-noncomputable instance : CompleteLinearOrder (Colex ((i : ι) → α i)) where
-  __ := linearOrder
-  __ := completeLattice
-  __ := LinearOrder.toBiheytingAlgebra _
 
 end Colex
 end Pi

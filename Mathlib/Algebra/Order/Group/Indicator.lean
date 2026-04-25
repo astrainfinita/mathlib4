@@ -47,14 +47,16 @@ lemma mulSupport_min [LinearOrder M] (f g : α → M) :
     mulSupport (fun x ↦ min (f x) (g x)) ⊆ mulSupport f ∪ mulSupport g := mulSupport_inf f g
 
 @[to_additive]
-lemma mulSupport_iSup [ConditionallyCompleteLattice M] [Nonempty ι] (f : ι → α → M) :
+lemma mulSupport_iSup [PartialOrder M] [ConditionallyCompleteLattice M] [Nonempty ι]
+    (f : ι → α → M) :
     mulSupport (fun x ↦ ⨆ i, f i x) ⊆ ⋃ i, mulSupport (f i) := by
   simp only [mulSupport_subset_iff', mem_iUnion, not_exists, notMem_mulSupport]
   intro x hx
   simp only [hx, ciSup_const]
 
 @[to_additive]
-lemma mulSupport_iInf [ConditionallyCompleteLattice M] [Nonempty ι] (f : ι → α → M) :
+lemma mulSupport_iInf [PartialOrder M] [ConditionallyCompleteLattice M] [Nonempty ι]
+    (f : ι → α → M) :
     mulSupport (fun x ↦ ⨅ i, f i x) ⊆ ⋃ i, mulSupport (f i) := mulSupport_iSup (M := Mᵒᵈ) f
 
 end Function
@@ -153,7 +155,7 @@ lemma indicator_nonpos_le_indicator (s : Set α) (f : α → M) :
 end LinearOrder
 
 section CompleteLattice
-variable [CompleteLattice M] [One M]
+variable [PartialOrder M] [OrderBot M] [CompleteLattice M] [One M]
 
 @[to_additive]
 lemma mulIndicator_iUnion_apply (h1 : (⊥ : M) = 1) (s : ι → Set α) (f : α → M) (x : α) :

@@ -548,7 +548,7 @@ def SemilatticeInf.toCompleteSemilatticeInf [SemilatticeInf α] (sInf : Set α �
 
 
 section ConditionallyCompleteLattice
-variable [ConditionallyCompleteLattice α] {f : ι → α} {s t : Set α}
+variable [PartialOrder α] [ConditionallyCompleteLattice α] {f : ι → α} {s t : Set α}
 
 lemma SupClosed.iSup_mem_of_nonempty [Finite ι] [Nonempty ι] (hs : SupClosed s)
     (hf : ∀ i, f i ∈ s) : ⨆ i, f i ∈ s := by

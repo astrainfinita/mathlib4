@@ -259,16 +259,20 @@ theorem coe_iInf {ι : Sort*} {S : ι → Subgroup G} : (↑(⨅ i, S i) : Set G
 /-- Subgroups of a group form a complete lattice. -/
 @[to_additive /-- The `AddSubgroup`s of an `AddGroup` form a complete lattice. -/]
 instance : CompleteLattice (Subgroup G) :=
-  { completeLatticeOfInf (Subgroup G) fun _s =>
-      IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf with
-    bot := ⊥
-    bot_le := fun S _x hx => (mem_bot.1 hx).symm ▸ S.one_mem
-    top := ⊤
-    le_top := fun _S x _hx => mem_top x
-    inf := (· ⊓ ·)
-    le_inf := fun _a _b _c ha hb _x hx => ⟨ha hx, hb hx⟩
-    inf_le_left := fun _a _b _x => And.left
-    inf_le_right := fun _a _b _x => And.right }
+  completeLatticeOfInf (Subgroup G) fun _s => IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf
+
+@[to_additive]
+instance : BoundedOrder (Subgroup G) where
+  bot_le := fun S _x hx => (mem_bot.1 hx).symm ▸ S.one_mem
+  le_top := fun _S x _hx => mem_top x
+
+@[to_additive]
+instance : Lattice (Subgroup G) where
+  inf := (· ⊓ ·)
+  le_inf := fun _a _b _c ha hb _x hx => ⟨ha hx, hb hx⟩
+  inf_le_left := fun _a _b _x => And.left
+  inf_le_right := fun _a _b _x => And.right
+  toSemilatticeSup := .ofCompleteLattice _
 
 @[to_additive]
 theorem mem_sup_left {S T : Subgroup G} : ∀ {x : G}, x ∈ S → x ∈ S ⊔ T :=

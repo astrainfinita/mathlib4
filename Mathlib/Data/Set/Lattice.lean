@@ -1273,7 +1273,7 @@ lemma nonempty_iInter_Ici_iff [Preorder α] {f : ι → α} :
     (⋂ i, Ici (f i)).Nonempty ↔ BddAbove (range f) :=
   nonempty_iInter_Iic_iff (α := αᵒᵈ)
 
-variable [CompleteLattice α]
+variable [PartialOrder α] [CompleteLattice α]
 
 theorem Ici_iSup (f : ι → α) : Ici (⨆ i, f i) = ⋂ i, Ici (f i) :=
   ext fun _ => by simp only [mem_Ici, iSup_le_iff, mem_iInter]
@@ -1389,7 +1389,7 @@ end Set
 
 open Set
 
-variable [CompleteLattice β]
+variable [PartialOrder β] [CompleteLattice β]
 
 theorem iSup_iUnion (s : ι → Set α) (f : α → β) : ⨆ a ∈ ⋃ i, s i, f a = ⨆ (i) (a ∈ s i), f a := by
   rw [iSup_comm]

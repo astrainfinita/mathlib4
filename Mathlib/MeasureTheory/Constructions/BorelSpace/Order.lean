@@ -882,7 +882,7 @@ end LinearOrder
 section ConditionallyCompleteLattice
 
 @[fun_prop]
-theorem Measurable.iSup_Prop {α} {mα : MeasurableSpace α} [ConditionallyCompleteLattice α]
+theorem Measurable.iSup_Prop {α} {mα : MeasurableSpace α} [PartialOrder α] [ConditionallyCompleteLattice α]
     (p : Prop) {f : δ → α} (hf : Measurable f) : Measurable fun b => ⨆ _ : p, f b := by
   classical
   simp_rw [ciSup_eq_ite]
@@ -891,7 +891,7 @@ theorem Measurable.iSup_Prop {α} {mα : MeasurableSpace α} [ConditionallyCompl
   · exact measurable_const
 
 @[fun_prop]
-theorem Measurable.iInf_Prop {α} {mα : MeasurableSpace α} [ConditionallyCompleteLattice α]
+theorem Measurable.iInf_Prop {α} {mα : MeasurableSpace α} [PartialOrder α] [ConditionallyCompleteLattice α]
     (p : Prop) {f : δ → α} (hf : Measurable f) : Measurable fun b => ⨅ _ : p, f b := by
   classical
   simp_rw [ciInf_eq_ite]

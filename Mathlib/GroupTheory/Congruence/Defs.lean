@@ -356,19 +356,26 @@ instance : PartialOrder (Con M) where
 /-- The complete lattice of congruence relations on a given type with a multiplication. -/
 @[to_additive /-- The complete lattice of additive congruence relations on a given type with
 an addition. -/]
-instance : CompleteLattice (Con M) where
-  __ := completeLatticeOfInf (Con M) fun s =>
-      ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : Con M) x y) r hr, fun r hr x y h r' hr' =>
-        hr hr'
-          h⟩
+instance : CompleteLattice (Con M) :=
+  completeLatticeOfInf (Con M) fun s =>
+    ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : Con M) x y) r hr, fun _ hr _ _ h _ hr' => hr hr' h⟩
+
+@[to_additive]
+instance : BoundedOrder (Con M) where
+  top.toSetoid := ⊤
+  top.mul' := by tauto
+  le_top _ := fun _ _ _ => trivial
+  bot.toSetoid := ⊥
+  bot.mul' := fun h1 h2 => h1 ▸ h2 ▸ rfl
+  bot_le c := fun x _ h => h ▸ c.refl x
+
+@[to_additive]
+instance : Lattice (Con M) where
   inf c d := ⟨c.toSetoid ⊓ d.toSetoid, fun h1 h2 => ⟨c.mul h1.1 h2.1, d.mul h1.2 h2.2⟩⟩
   inf_le_left _ _ := fun _ _ h => h.1
   inf_le_right _ _ := fun _ _ h => h.2
   le_inf _ _ _ hb hc := fun _ _ h => ⟨hb h, hc h⟩
-  top := { Setoid.completeLattice.top with mul' := by tauto }
-  le_top _ := fun _ _ _ => trivial
-  bot := { Setoid.completeLattice.bot with mul' := fun h1 h2 => h1 ▸ h2 ▸ rfl }
-  bot_le c := fun x _ h => h ▸ c.refl x
+  toSemilatticeSup := .ofCompleteLattice _
 
 /-- The infimum of two congruence relations equals the infimum of the underlying binary
 operations. -/
@@ -444,7 +451,7 @@ by `c` or `d`'. -/]
 theorem sup_eq_conGen (c d : Con M) : c ⊔ d = conGen fun x y => c x y ∨ d x y := by
   rw [conGen_eq]
   apply congr_arg sInf
-  simp only [le_def, or_imp, ← forall_and]
+  ext; simp [le_def, or_imp, ← forall_and]
 
 /-- The supremum of two congruence relations equals the smallest congruence relation containing
 the supremum of the underlying binary operations. -/

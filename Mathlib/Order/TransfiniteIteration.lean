@@ -71,7 +71,7 @@ end
 
 section
 
-variable {I : Type u} [CompleteLattice I] (φ : I → I) (i₀ : I)
+variable {I : Type u} [PartialOrder I] [CompleteLattice I] (φ : I → I) (i₀ : I)
   {J : Type w} [LinearOrder J] [OrderBot J] [SuccOrder J] [WellFoundedLT J]
 
 lemma monotone_transfiniteIterate (hφ : ∀ (i : I), i ≤ φ i) :
@@ -96,7 +96,7 @@ lemma monotone_transfiniteIterate (hφ : ∀ (i : I), i ≤ φ i) :
       exact le_iSup (fun (⟨l, hl⟩ : Set.Iio k') ↦ transfiniteIterate φ l i₀) ⟨k, hkj⟩
     · rfl
 
-lemma top_mem_range_transfiniteIterate
+lemma top_mem_range_transfiniteIterate [OrderTop I]
     (hφ' : ∀ i ≠ (⊤ : I), i < φ i) (φtop : φ ⊤ = ⊤)
     (H : ¬ Function.Injective (fun (j : J) ↦ transfiniteIterate φ j i₀)) :
     ∃ (j : J), transfiniteIterate φ j i₀ = ⊤ := by

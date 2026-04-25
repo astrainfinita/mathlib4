@@ -63,14 +63,15 @@ structure sInfHom (α β : Type*) [InfSet α] [InfSet β] where
 
 /-- The type of frame homomorphisms from `α` to `β`. They preserve finite meets and arbitrary joins.
 -/
-structure FrameHom (α β : Type*) [CompleteLattice α] [CompleteLattice β] extends
-  InfTopHom α β where
+structure FrameHom (α β : Type*) [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] extends InfTopHom α β where
   /-- The proposition that frame homomorphisms commute with arbitrary suprema/joins. -/
   map_sSup' (s : Set α) : toFun (sSup s) = sSup (toFun '' s)
 
 
 /-- The type of complete lattice homomorphisms from `α` to `β`. -/
-structure CompleteLatticeHom (α β : Type*) [CompleteLattice α] [CompleteLattice β] extends
+structure CompleteLatticeHom (α β : Type*) [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] extends
   sInfHom α β, sSupHom α β where
 
 attribute [to_dual existing] CompleteLatticeHom.tosSupHom
@@ -97,7 +98,8 @@ class sInfHomClass (F α β : Type*) [InfSet α] [InfSet β] [FunLike F α β] :
 /-- `FrameHomClass F α β` states that `F` is a type of frame morphisms. They preserve `⊓` and `⨆`.
 
 You should extend this class when you extend `FrameHom`. -/
-class FrameHomClass (F α β : Type*) [CompleteLattice α] [CompleteLattice β] [FunLike F α β] : Prop
+class FrameHomClass (F α β : Type*) [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [FunLike F α β] : Prop
   extends InfTopHomClass F α β where
   /-- The proposition that members of `FrameHomClass` commute with arbitrary suprema/joins. -/
   map_sSup (f : F) (s : Set α) : f (sSup s) = sSup (f '' s)
@@ -105,8 +107,8 @@ class FrameHomClass (F α β : Type*) [CompleteLattice α] [CompleteLattice β] 
 /-- `CompleteLatticeHomClass F α β` states that `F` is a type of complete lattice morphisms.
 
 You should extend this class when you extend `CompleteLatticeHom`. -/
-class CompleteLatticeHomClass (F α β : Type*) [CompleteLattice α] [CompleteLattice β]
-    [FunLike F α β] : Prop
+class CompleteLatticeHomClass (F α β : Type*) [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [FunLike F α β] : Prop
   extends sInfHomClass F α β, sSupHomClass F α β where
 
 attribute [to_dual existing] CompleteLatticeHomClass.tosSupHomClass
@@ -133,8 +135,9 @@ theorem map_iSup₂ [SupSet α] [SupSet β] [sSupHomClass F α β] (f : F) (g : 
 
 -- See note [lower instance priority]
 @[to_dual]
-instance (priority := 100) sSupHomClass.toSupBotHomClass [CompleteLattice α]
-    [CompleteLattice β] [sSupHomClass F α β] : SupBotHomClass F α β :=
+instance (priority := 100) sSupHomClass.toSupBotHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [sSupHomClass F α β] : SupBotHomClass F α β :=
   { ‹sSupHomClass F α β› with
     map_sup := fun f a b => by
       rw [← sSup_pair, map_sSup]
@@ -143,23 +146,30 @@ instance (priority := 100) sSupHomClass.toSupBotHomClass [CompleteLattice α]
       rw [← sSup_empty, map_sSup, Set.image_empty, sSup_empty] }
 
 -- See note [lower instance priority]
-instance (priority := 100) FrameHomClass.tosSupHomClass [CompleteLattice α]
-    [CompleteLattice β] [FrameHomClass F α β] : sSupHomClass F α β :=
+instance (priority := 100) FrameHomClass.tosSupHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [FrameHomClass F α β] : sSupHomClass F α β :=
   { ‹FrameHomClass F α β› with }
 
 -- See note [lower instance priority]
-instance (priority := 100) FrameHomClass.toBoundedLatticeHomClass [CompleteLattice α]
-    [CompleteLattice β] [FrameHomClass F α β] : BoundedLatticeHomClass F α β :=
+instance (priority := 100) FrameHomClass.toBoundedLatticeHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [FrameHomClass F α β] :
+    BoundedLatticeHomClass F α β :=
   { ‹FrameHomClass F α β›, sSupHomClass.toSupBotHomClass with }
 
 -- See note [lower instance priority]
-instance (priority := 100) CompleteLatticeHomClass.toFrameHomClass [CompleteLattice α]
-    [CompleteLattice β] [CompleteLatticeHomClass F α β] : FrameHomClass F α β :=
+instance (priority := 100) CompleteLatticeHomClass.toFrameHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [CompleteLatticeHomClass F α β] :
+    FrameHomClass F α β :=
   { ‹CompleteLatticeHomClass F α β›, sInfHomClass.toInfTopHomClass with }
 
 -- See note [lower instance priority]
-instance (priority := 100) CompleteLatticeHomClass.toBoundedLatticeHomClass [CompleteLattice α]
-    [CompleteLattice β] [CompleteLatticeHomClass F α β] : BoundedLatticeHomClass F α β :=
+instance (priority := 100) CompleteLatticeHomClass.toBoundedLatticeHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [CompleteLatticeHomClass F α β] :
+    BoundedLatticeHomClass F α β :=
   { sSupHomClass.toSupBotHomClass, sInfHomClass.toInfTopHomClass with }
 
 end Hom
@@ -170,15 +180,19 @@ variable [EquivLike F α β]
 
 -- See note [lower instance priority]
 @[to_dual]
-instance (priority := 100) OrderIsoClass.tosSupHomClass [CompleteLattice α]
-    [CompleteLattice β] [OrderIsoClass F α β] : sSupHomClass F α β where
+instance (priority := 100) OrderIsoClass.tosSupHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [OrderIsoClass F α β] :
+    sSupHomClass F α β where
   map_sSup := fun f s =>
     eq_of_forall_ge_iff fun c => by
       simp only [← le_map_inv_iff, sSup_le_iff, Set.forall_mem_image]
 
 -- See note [lower instance priority]
-instance (priority := 100) OrderIsoClass.toCompleteLatticeHomClass [CompleteLattice α]
-    [CompleteLattice β] [OrderIsoClass F α β] : CompleteLatticeHomClass F α β :=
+instance (priority := 100) OrderIsoClass.toCompleteLatticeHomClass
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [OrderIsoClass F α β] :
+    CompleteLatticeHomClass F α β :=
   { OrderIsoClass.tosSupHomClass, OrderIsoClass.tosInfHomClass with }
 
 end Equiv
@@ -186,7 +200,9 @@ end Equiv
 variable [FunLike F α β]
 
 /-- Reinterpret an order isomorphism as a morphism of complete lattices. -/
-@[simps] def OrderIso.toCompleteLatticeHom [CompleteLattice α] [CompleteLattice β]
+@[simps] def OrderIso.toCompleteLatticeHom
+    [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β]
     (f : OrderIso α β) : CompleteLatticeHom α β where
   toFun := f
   map_sInf' := sInfHomClass.map_sInf f
@@ -196,10 +212,13 @@ variable [FunLike F α β]
 instance [SupSet α] [SupSet β] [sSupHomClass F α β] : CoeTC F (sSupHom α β) :=
   ⟨fun f => ⟨f, map_sSup f⟩⟩
 
-instance [CompleteLattice α] [CompleteLattice β] [FrameHomClass F α β] : CoeTC F (FrameHom α β) :=
+instance [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [FrameHomClass F α β] :
+    CoeTC F (FrameHom α β) :=
   ⟨fun f => ⟨f, map_sSup f⟩⟩
 
-instance [CompleteLattice α] [CompleteLattice β] [CompleteLatticeHomClass F α β] :
+instance [Lattice α] [BoundedOrder α] [CompleteLattice α]
+    [Lattice β] [BoundedOrder β] [CompleteLattice β] [CompleteLatticeHomClass F α β] :
     CoeTC F (CompleteLatticeHom α β) :=
   ⟨fun f => ⟨f, map_sSup f⟩⟩
 
@@ -310,7 +329,7 @@ theorem cancel_left {g : sSupHom β γ} {f₁ f₂ : sSupHom α β} (hg : Inject
 
 end SupSet
 
-variable {_ : CompleteLattice β}
+variable [Lattice β] [BoundedOrder β] [CompleteLattice β]
 
 @[to_dual]
 instance : PartialOrder (sSupHom α β) :=
@@ -342,7 +361,10 @@ end sSupHom
 
 namespace FrameHom
 
-variable [CompleteLattice α] [CompleteLattice β] [CompleteLattice γ] [CompleteLattice δ]
+variable [Lattice α] [BoundedOrder α] [CompleteLattice α]
+  [Lattice β] [BoundedOrder β] [CompleteLattice β]
+  [Lattice γ] [BoundedOrder γ] [CompleteLattice γ]
+  [Lattice δ] [BoundedOrder δ] [CompleteLattice δ]
 
 instance : FunLike (FrameHom α β) α β where
   coe f := f.toFun
@@ -446,7 +468,10 @@ end FrameHom
 
 namespace CompleteLatticeHom
 
-variable [CompleteLattice α] [CompleteLattice β] [CompleteLattice γ] [CompleteLattice δ]
+variable [Lattice α] [BoundedOrder α] [CompleteLattice α]
+  [Lattice β] [BoundedOrder β] [CompleteLattice β]
+  [Lattice γ] [BoundedOrder γ] [CompleteLattice γ]
+  [Lattice δ] [BoundedOrder δ] [CompleteLattice δ]
 
 instance : FunLike (CompleteLatticeHom α β) α β where
   coe f := f.toFun
@@ -580,7 +605,9 @@ end sSupHom
 
 namespace CompleteLatticeHom
 
-variable [CompleteLattice α] [CompleteLattice β] [CompleteLattice γ]
+variable [Lattice α] [BoundedOrder α] [CompleteLattice α]
+  [Lattice β] [BoundedOrder β] [CompleteLattice β]
+  [Lattice γ] [BoundedOrder γ] [CompleteLattice γ]
 
 /-- Reinterpret a complete lattice homomorphism as a complete lattice homomorphism between the dual
 lattices. -/
@@ -666,7 +693,7 @@ def Equiv.toOrderIsoSet (e : α ≃ β) : Set α ≃o Set β where
   map_rel_iff' :=
     ⟨fun h => by simpa using @monotone_image _ _ e.symm _ _ h, fun h => monotone_image h⟩
 
-variable [CompleteLattice α] (x : α × α)
+variable [Lattice α] [CompleteLattice α] (x : α × α)
 
 /-- The map `(a, b) ↦ a ⊔ b` as a `sSupHom`. -/
 def supsSupHom : sSupHom (α × α) α where

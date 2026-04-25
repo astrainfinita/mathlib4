@@ -64,7 +64,7 @@ variable {α β γ : Type*}
 /-- A language is a set of strings over an alphabet. -/
 def Language (α) :=
   Set (List α)
-deriving CompleteAtomicBooleanAlgebra
+deriving BooleanAlgebra, CompletelyDistribLattice
 
 namespace Language
 

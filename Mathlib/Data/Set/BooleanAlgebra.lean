@@ -16,9 +16,9 @@ Indexed union/intersection are defined in `Mathlib.Order.SetNotation`; lemmas ar
 
 ## Main declarations
 
-* `Set.completeAtomicBooleanAlgebra`: `Set α` is a `CompleteAtomicBooleanAlgebra` with `≤ = ⊆`,
-  `< = ⊂`, `⊓ = ∩`, `⊔ = ∪`, `⨅ = ⋂`, `⨆ = ⋃` and `\` as the set difference.
-  See `Set.instBooleanAlgebra`.
+* `Set.completelyDistribLattice`: `Set α` is a `CompletelyDistribLattice` with `≤ = ⊆`,
+  `< = ⊂`, `⊓ = ∩`, `⊔ = ∪`, `⨅ = ⋂` and `⨆ = ⋃`.
+  See `Set.instDistribLattice`.
 -/
 
 @[expose] public section
@@ -27,9 +27,9 @@ variable {α : Type*}
 
 namespace Set
 
-/-! ### Complete lattice and complete Boolean algebra instances -/
+/-! ### Complete lattice instances -/
 
-instance instCompleteAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (Set α) where
+instance instCompletelyDistribLattice : CompletelyDistribLattice (Set α) where
   isLUB_sSup _ := ⟨fun s hs _ hx ↦ ⟨s, hs, hx⟩, fun _ h _ ⟨_, ⟨hs, hx⟩⟩ => h hs hx⟩
   isGLB_sInf _ := ⟨fun _ hs _ hx ↦ hx _ hs, fun _ h _ hx _ hs => h hs hx⟩
   iInf_iSup_eq := by intros; ext; simp [Classical.skolem]

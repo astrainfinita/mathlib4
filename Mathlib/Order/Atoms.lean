@@ -124,7 +124,7 @@ alias ⟨CovBy.is_atom, IsAtom.bot_covBy⟩ := bot_covBy_iff
 end PartialOrder
 
 section Frame
-variable [Frame α] {f : ι → α} {s : Set α} {a : α}
+variable [Lattice α] [BoundedOrder α] [Frame α] {f : ι → α} {s : Set α} {a : α}
 
 protected lemma IsAtom.le_iSup (ha : IsAtom a) : a ≤ iSup f ↔ ∃ i, a ≤ f i := by
   refine ⟨?_, fun ⟨i, hi⟩ => le_trans hi (le_iSup _ _)⟩
@@ -251,7 +251,7 @@ end SetLike
 end PartialOrder
 
 section Coframe
-variable [Coframe α] {f : ι → α} {s : Set α} {a : α}
+variable [Lattice α] [BoundedOrder α] [Coframe α] {f : ι → α} {s : Set α} {a : α}
 
 protected lemma IsCoatom.iInf_le (ha : IsCoatom a) : iInf f ≤ a ↔ ∃ i, f i ≤ a :=
   IsAtom.le_iSup (α := αᵒᵈ) ha
@@ -539,9 +539,8 @@ namespace CompleteBooleanAlgebra
 
 This is not made an instance to avoid typeclass loops. -/
 -- See note [reducible non-instances]
-abbrev toCompleteAtomicBooleanAlgebra {α} [CompleteBooleanAlgebra α] [IsAtomic α] :
-    CompleteAtomicBooleanAlgebra α where
-  __ := ‹CompleteBooleanAlgebra α›
+abbrev toCompletelyDistribLattice {α} [BooleanAlgebra α] [CompleteLattice α] [IsAtomic α] :
+    CompletelyDistribLattice α where
   iInf_iSup_eq f := BooleanAlgebra.eq_iff_atom_le_iff.2 fun a ha => by
     simp only [le_iInf_iff, ha.le_iSup, Classical.skolem]
 
@@ -638,28 +637,34 @@ end IsCoatomistic
 section CompleteLattice
 
 @[simp]
-theorem sSup_atoms_le_eq {α} [CompleteLattice α] [IsAtomistic α] (b : α) :
+theorem sSup_atoms_le_eq {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] [IsAtomistic α] (b : α) :
     sSup { a : α | IsAtom a ∧ a ≤ b } = b :=
   (isLUB_atoms_le b).sSup_eq
 
 @[simp]
-theorem sSup_atoms_eq_top {α} [CompleteLattice α] [IsAtomistic α] :
+theorem sSup_atoms_eq_top {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] [IsAtomistic α] :
     sSup { a : α | IsAtom a } = ⊤ :=
   isLUB_atoms_top.sSup_eq
 
-nonrec lemma CompleteLattice.isAtomistic_iff {α} [CompleteLattice α] :
+nonrec lemma CompleteLattice.isAtomistic_iff {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] :
     IsAtomistic α ↔ ∀ b : α, ∃ s : Set α, b = sSup s ∧ ∀ a ∈ s, IsAtom a := by
   simp_rw [isAtomistic_iff, isLUB_iff_sSup_eq, eq_comm]
 
-lemma eq_sSup_atoms {α} [CompleteLattice α] [IsAtomistic α] (b : α) :
+lemma eq_sSup_atoms {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] [IsAtomistic α] (b : α) :
     ∃ s : Set α, b = sSup s ∧ ∀ a ∈ s, IsAtom a :=
   CompleteLattice.isAtomistic_iff.1 ‹_› b
 
-nonrec lemma CompleteLattice.isCoatomistic_iff {α} [CompleteLattice α] :
+nonrec lemma CompleteLattice.isCoatomistic_iff {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] :
     IsCoatomistic α ↔ ∀ b : α, ∃ s : Set α, b = sInf s ∧ ∀ a ∈ s, IsCoatom a := by
   simp_rw [isCoatomistic_iff, isGLB_iff_sInf_eq, eq_comm]
 
-lemma eq_sInf_coatoms {α} [CompleteLattice α] [IsCoatomistic α] (b : α) :
+lemma eq_sInf_coatoms {α}
+    [PartialOrder α] [BoundedOrder α] [CompleteLattice α] [IsCoatomistic α] (b : α) :
     ∃ s : Set α, b = sInf s ∧ ∀ a ∈ s, IsCoatom a :=
   CompleteLattice.isCoatomistic_iff.1 ‹_› b
 
@@ -667,7 +672,9 @@ end CompleteLattice
 
 namespace CompleteAtomicBooleanAlgebra
 
-instance {α} [CompleteAtomicBooleanAlgebra α] : IsAtomistic α :=
+variable {α : Type*} [BooleanAlgebra α] [CompletelyDistribLattice α]
+
+instance {α} [BooleanAlgebra α] [CompletelyDistribLattice α] : IsAtomistic α :=
   CompleteLattice.isAtomistic_iff.2 fun b ↦ by
     inhabit α
     refine ⟨{ a | IsAtom a ∧ a ≤ b }, ?_, fun a ha => ha.1⟩
@@ -682,15 +689,17 @@ instance {α} [CompleteAtomicBooleanAlgebra α] : IsAtomistic α :=
     nontriviality α
     cases g c <;> simp
 
-instance {α} [CompleteAtomicBooleanAlgebra α] : IsCoatomistic α :=
+instance {α} [BooleanAlgebra α] [CompletelyDistribLattice α] : IsCoatomistic α :=
   isAtomistic_dual_iff_isCoatomistic.1 inferInstance
 
 @[deprecated "Use `IsAtom.le_sSup` instead" (since := "2025-11-24")]
-theorem exists_mem_le_of_le_sSup_of_isAtom {α} [CompleteAtomicBooleanAlgebra α] {a}
+theorem exists_mem_le_of_le_sSup_of_isAtom
+    {α} [BooleanAlgebra α] [CompletelyDistribLattice α] {a}
     (ha : IsAtom a) {s : Set α} (hs : a ≤ sSup s) : ∃ b ∈ s, a ≤ b :=
   (IsAtom.le_sSup ha).mp hs
 
-lemma eq_setOf_le_sSup_and_isAtom {α} [CompleteAtomicBooleanAlgebra α] {S : Set α}
+lemma eq_setOf_le_sSup_and_isAtom
+    {α} [BooleanAlgebra α] [CompletelyDistribLattice α] {S : Set α}
     (hS : ∀ a ∈ S, IsAtom a) : S = {a | a ≤ sSup S ∧ IsAtom a} := by
   ext a
   refine ⟨fun h => ⟨le_sSup h, hS a h⟩, fun ⟨hale, hatom⟩ => ?_⟩
@@ -704,7 +713,8 @@ Representation theorem for complete atomic boolean algebras:
 For a complete atomic Boolean algebra `α`, `toSetOfIsAtom` is an order isomorphism
 between `α` and the set of subsets of its atoms.
 -/
-def toSetOfIsAtom {α} [CompleteAtomicBooleanAlgebra α] : α ≃o (Set {a : α // IsAtom a}) where
+def toSetOfIsAtom {α} [BooleanAlgebra α] [CompletelyDistribLattice α] :
+    α ≃o (Set {a : α // IsAtom a}) where
   toFun A := {a | a ≤ A}
   invFun S := sSup (Subtype.val '' S)
   left_inv A := by simp [Subtype.coe_image]
@@ -921,14 +931,10 @@ protected noncomputable def completeLattice : CompleteLattice α :=
           exact top_ne_bot (eq_bot_iff.2 (h con)) }
 
 open Classical in
-/-- A simple `BoundedOrder` is also a `CompleteBooleanAlgebra`. -/
-@[implicit_reducible]
-protected noncomputable def completeBooleanAlgebra : CompleteBooleanAlgebra α :=
-  { __ := IsSimpleOrder.completeLattice
-    __ := IsSimpleOrder.booleanAlgebra }
-
 instance : ComplementedLattice α :=
-  letI := IsSimpleOrder.completeBooleanAlgebra (α := α); inferInstance
+  letI := IsSimpleOrder.completeLattice (α := α)
+  letI := IsSimpleOrder.booleanAlgebra (α := α)
+  inferInstance
 
 end IsSimpleOrder
 
@@ -1260,7 +1266,8 @@ instance isAtomistic [∀ i, PartialOrder (π i)] [∀ i, OrderBot (π i)] [∀ 
     · refine fun j hj ↦ (isLUB_atoms_le (s i)).2 fun x ⟨hx₁, hx₂⟩ ↦ ?_
       exact hj ⟨Function.update ⊥ i x, ⟨⟨_, x, hx₁, rfl⟩, by simp [update_le_iff, hx₂]⟩, by simp⟩
 
-instance isCoatomistic [∀ i, CompleteLattice (π i)] [∀ i, IsCoatomistic (π i)] :
+instance isCoatomistic [∀ i, PartialOrder (π i)] [∀ i, BoundedOrder (π i)]
+    [∀ i, CompleteLattice (π i)] [∀ i, IsCoatomistic (π i)] :
     IsCoatomistic (∀ i, π i) :=
   isAtomistic_dual_iff_isCoatomistic.1 <|
     show IsAtomistic (∀ i, (π i)ᵒᵈ) from inferInstance

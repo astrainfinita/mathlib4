@@ -580,19 +580,21 @@ instance [PartialOrder α] : Subsingleton (SuccOrder α) :=
     · exact (@IsMax.succ_eq _ _ h₀ _ ha).trans ha.succ_eq.symm
     · exact @CovBy.succ_eq _ _ h₀ _ _ (covBy_succ_of_not_isMax ha)⟩
 
-theorem succ_eq_sInf [CompleteLattice α] [SuccOrder α] (a : α) :
+theorem succ_eq_sInf [PartialOrder α] [CompleteLattice α] [SuccOrder α] (a : α) :
     succ a = sInf (Set.Ioi a) := by
   apply (le_sInf fun b => succ_le_of_lt).antisymm
+  let : OrderTop α := .ofInfSet _
   obtain rfl | ha := eq_or_ne a ⊤
   · rw [succ_top]
     exact le_top
   · exact sInf_le (lt_succ_iff_ne_top.2 ha)
 
-theorem succ_eq_iInf [CompleteLattice α] [SuccOrder α] (a : α) : succ a = ⨅ b > a, b := by
+theorem succ_eq_iInf [PartialOrder α] [CompleteLattice α] [SuccOrder α] (a : α) :
+    succ a = ⨅ b > a, b := by
   rw [succ_eq_sInf, iInf_subtype', iInf, Subtype.range_coe_subtype, Ioi]
 
-theorem succ_eq_csInf [ConditionallyCompleteLattice α] [SuccOrder α] [NoMaxOrder α] (a : α) :
-    succ a = sInf (Set.Ioi a) := by
+theorem succ_eq_csInf [PartialOrder α] [ConditionallyCompleteLattice α] [SuccOrder α] [NoMaxOrder α]
+    (a : α) : succ a = sInf (Set.Ioi a) := by
   apply (le_csInf nonempty_Ioi fun b => succ_le_of_lt).antisymm
   exact csInf_le ⟨a, fun b => le_of_lt⟩ <| lt_succ a
 
@@ -707,15 +709,16 @@ instance [PartialOrder α] : Subsingleton (PredOrder α) :=
     · exact (@IsMin.pred_eq _ _ h₀ _ ha).trans ha.pred_eq.symm
     · exact @CovBy.pred_eq _ _ h₀ _ _ (pred_covBy_of_not_isMin ha)⟩
 
-theorem pred_eq_sSup [CompleteLattice α] [PredOrder α] :
+theorem pred_eq_sSup [PartialOrder α] [CompleteLattice α] [PredOrder α] :
     ∀ a : α, pred a = sSup (Set.Iio a) :=
   succ_eq_sInf (α := αᵒᵈ)
 
-theorem pred_eq_iSup [CompleteLattice α] [PredOrder α] (a : α) : pred a = ⨆ b < a, b :=
+theorem pred_eq_iSup [PartialOrder α] [CompleteLattice α] [PredOrder α] (a : α) :
+    pred a = ⨆ b < a, b :=
   succ_eq_iInf (α := αᵒᵈ) a
 
-theorem pred_eq_csSup [ConditionallyCompleteLattice α] [PredOrder α] [NoMinOrder α] (a : α) :
-    pred a = sSup (Set.Iio a) :=
+theorem pred_eq_csSup [PartialOrder α] [ConditionallyCompleteLattice α] [PredOrder α] [NoMinOrder α]
+    (a : α) : pred a = sSup (Set.Iio a) :=
   succ_eq_csInf (α := αᵒᵈ) a
 
 /-! ### Successor-predecessor orders -/

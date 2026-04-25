@@ -130,7 +130,7 @@ theorem Ici_sup [SemilatticeSup α] (a b : α) : Ici (a ⊔ b) = Ici a ⊔ Ici b
 
 section CompleteLattice
 
-variable [CompleteLattice α]
+variable [PartialOrder α] [CompleteLattice α]
 
 @[to_dual (attr := simp)]
 theorem Ici_sSup (S : Set α) : Ici (sSup S) = ⨆ a ∈ S, Ici a :=

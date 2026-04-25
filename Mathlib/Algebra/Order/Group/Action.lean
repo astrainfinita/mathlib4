@@ -36,7 +36,8 @@ theorem smul_inf_le [SMul M α] [SemilatticeInf α] [CovariantClass M α HSMul.h
     (m : M) (a₁ a₂ : α) : m • (a₁ ⊓ a₂) ≤ m • a₁ ⊓ m • a₂ :=
   (smul_mono_right _).map_inf_le _ _
 
-theorem smul_iInf_le [SMul M α] [CompleteLattice α] [CovariantClass M α HSMul.hSMul LE.le]
+theorem smul_iInf_le [SMul M α] [PartialOrder α] [CompleteLattice α]
+    [CovariantClass M α HSMul.hSMul LE.le]
     {m : M} {t : ι → α} :
     m • iInf t ≤ ⨅ i, m • t i :=
   le_iInf fun _ => smul_mono_right _ (iInf_le _ _)

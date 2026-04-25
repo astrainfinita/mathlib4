@@ -222,7 +222,7 @@ theorem dirSupClosedOn_singleton (a : α) : DirSupClosedOn D {a} :=
 end PartialOrder
 
 section CompleteLattice
-variable [CompleteLattice α]
+variable [PartialOrder α] [CompleteLattice α]
 
 lemma dirSupClosedOn_iff_forall_sSup : DirSupClosedOn D s ↔
     ∀ ⦃d⦄, d ∈ D → d ⊆ s → d.Nonempty → DirectedOn (· ≤ ·) d → sSup d ∈ s := by

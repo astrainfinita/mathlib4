@@ -203,16 +203,21 @@ theorem sInf_toAddSubmonoid (s : Set (NonUnitalSubsemiring R)) :
 
 /-- Non-unital subsemirings of a non-unital semiring form a complete lattice. -/
 instance : CompleteLattice (NonUnitalSubsemiring R) :=
-  { completeLatticeOfInf (NonUnitalSubsemiring R)
-      fun _ => IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf with
-    bot := ⊥
-    bot_le := fun s _ hx => (mem_bot.mp hx).symm ▸ zero_mem s
-    top := ⊤
-    le_top := fun _ _ _ => trivial
-    inf := (· ⊓ ·)
-    inf_le_left := fun _ _ _ => And.left
-    inf_le_right := fun _ _ _ => And.right
-    le_inf := fun _ _ _ h₁ h₂ _ hx => ⟨h₁ hx, h₂ hx⟩ }
+  completeLatticeOfInf (NonUnitalSubsemiring R)
+    fun _ => IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf
+
+instance : BoundedOrder (NonUnitalSubsemiring R) where
+  bot := ⊥
+  bot_le := fun s _ hx => (mem_bot.mp hx).symm ▸ zero_mem s
+  top := ⊤
+  le_top := fun _ _ _ => trivial
+
+instance : Lattice (NonUnitalSubsemiring R) where
+  inf := (· ⊓ ·)
+  inf_le_left := fun _ _ _ => And.left
+  inf_le_right := fun _ _ _ => And.right
+  le_inf := fun _ _ _ h₁ h₂ _ hx => ⟨h₁ hx, h₂ hx⟩
+  toSemilatticeSup := .ofCompleteLattice _
 
 theorem eq_top_iff' (A : NonUnitalSubsemiring R) : A = ⊤ ↔ ∀ x : R, x ∈ A :=
   eq_top_iff.trans ⟨fun h m => h <| mem_top m, fun h m _ => h m⟩
@@ -539,7 +544,7 @@ theorem map_sup (s t : NonUnitalSubsemiring R) (f : F) :
 
 theorem map_iSup {ι : Sort*} (f : F) (s : ι → NonUnitalSubsemiring R) :
     (map f (iSup s) : NonUnitalSubsemiring S) = ⨆ i, map f (s i) :=
-  @GaloisConnection.l_iSup _ _ _ _ _ _ _ (gc_map_comap f) s
+  GaloisConnection.l_iSup (gc_map_comap f) (f := s)
 
 theorem map_inf (s t : NonUnitalSubsemiring R) (f : F) (hf : Function.Injective f) :
     (map f (s ⊓ t) : NonUnitalSubsemiring S) = map f s ⊓ map f t :=
@@ -557,7 +562,7 @@ theorem comap_inf (s t : NonUnitalSubsemiring S) (f : F) :
 
 theorem comap_iInf {ι : Sort*} (f : F) (s : ι → NonUnitalSubsemiring S) :
     (comap f (iInf s) : NonUnitalSubsemiring R) = ⨅ i, comap f (s i) :=
-  @GaloisConnection.u_iInf _ _ _ _ _ _ _ (gc_map_comap f) s
+  GaloisConnection.u_iInf (gc_map_comap f) (f := s)
 
 @[simp]
 theorem map_bot (f : F) : map f (⊥ : NonUnitalSubsemiring R) = (⊥ : NonUnitalSubsemiring S) :=

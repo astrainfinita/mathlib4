@@ -235,20 +235,23 @@ theorem sInf_toAddSubmonoid (s : Set (Subsemiring R)) :
 
 /-- Subsemirings of a semiring form a complete lattice. -/
 instance : CompleteLattice (Subsemiring R) :=
-  { completeLatticeOfInf (Subsemiring R) fun _ =>
-      IsGLB.of_image
-        (fun {s t : Subsemiring R} => show (s : Set R) ⊆ t ↔ s ≤ t from SetLike.coe_subset_coe)
-        isGLB_biInf with
-    bot := ⊥
-    bot_le := fun s _ hx =>
-      let ⟨n, hn⟩ := mem_bot.1 hx
-      hn ▸ natCast_mem s n
-    top := ⊤
-    le_top := fun _ _ _ => mem_top _
-    inf := (· ⊓ ·)
-    inf_le_left := fun _ _ _ => And.left
-    inf_le_right := fun _ _ _ => And.right
-    le_inf := fun _ _ _ h₁ h₂ _ hx => ⟨h₁ hx, h₂ hx⟩ }
+  completeLatticeOfInf (Subsemiring R) fun _ =>
+    IsGLB.of_image SetLike.coe_subset_coe isGLB_biInf
+
+instance : BoundedOrder (Subsemiring R) where
+  bot := ⊥
+  bot_le := fun s _ hx =>
+    let ⟨n, hn⟩ := mem_bot.1 hx
+    hn ▸ natCast_mem s n
+  top := ⊤
+  le_top := fun _ _ _ => mem_top _
+
+instance : Lattice (Subsemiring R) where
+  inf := (· ⊓ ·)
+  inf_le_left := fun _ _ _ => And.left
+  inf_le_right := fun _ _ _ => And.right
+  le_inf := fun _ _ _ h₁ h₂ _ hx => ⟨h₁ hx, h₂ hx⟩
+  toSemilatticeSup := .ofCompleteLattice _
 
 theorem eq_top_iff' (A : Subsemiring R) : A = ⊤ ↔ ∀ x : R, x ∈ A :=
   eq_top_iff.trans ⟨fun h m => h <| mem_top m, fun h m _ => h m⟩

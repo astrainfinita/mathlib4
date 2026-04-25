@@ -190,7 +190,7 @@ theorem Dense.lowerBounds_image {α : Type*} [TopologicalSpace α] [Preorder α]
 /-- The supremum of a bounded above, continuous function on a dense set is equal to the supremum on
 the universe. -/
 theorem Dense.ciSup {α : Type*} [TopologicalSpace α]
-    [ConditionallyCompleteLattice α] [ClosedIicTopology α] {f : γ → α} [TopologicalSpace γ]
+    [PartialOrder α] [ConditionallyCompleteLattice α] [ClosedIicTopology α] {f : γ → α} [TopologicalSpace γ]
     {S : Set γ} (hS : Dense S) (hf : Continuous f) (h : BddAbove (range f)) :
     ⨆ s : S, f s = ⨆ i, f i := by
   rw [← sSup_range, ← sSup_range]
@@ -203,7 +203,7 @@ theorem Dense.ciSup {α : Type*} [TopologicalSpace α]
 /-- The infimum of a bounded below, continuous function on a dense set is equal to the infimum on
 the universe. -/
 theorem Dense.ciInf {α : Type*} [TopologicalSpace α]
-    [ConditionallyCompleteLattice α] [ClosedIciTopology α] {f : γ → α} [TopologicalSpace γ]
+    [PartialOrder α] [ConditionallyCompleteLattice α] [ClosedIciTopology α] {f : γ → α} [TopologicalSpace γ]
     {S : Set γ} (hS : Dense S) (hf : Continuous f) (h : BddBelow (range f)) :
     ⨅ s : S, f s = ⨅ i, f i :=
   hS.ciSup (α := αᵒᵈ) hf h

@@ -185,7 +185,8 @@ protected theorem Countable.preimage {s : Set β} (hs : s.Countable) {f : α →
     (f ⁻¹' s).Countable :=
   hs.preimage_of_injOn hf.injOn
 
-theorem exists_seq_iSup_eq_top_iff_countable [CompleteLattice α] {p : α → Prop} (h : ∃ x, p x) :
+theorem exists_seq_iSup_eq_top_iff_countable [PartialOrder α] [OrderTop α] [CompleteLattice α]
+    {p : α → Prop} (h : ∃ x, p x) :
     (∃ s : ℕ → α, (∀ n, p (s n)) ∧ ⨆ n, s n = ⊤) ↔
       ∃ S : Set α, S.Countable ∧ (∀ s ∈ S, p s) ∧ sSup S = ⊤ := by
   constructor
@@ -194,7 +195,9 @@ theorem exists_seq_iSup_eq_top_iff_countable [CompleteLattice α] {p : α → Pr
     rwa [sSup_range]
   · rintro ⟨S, hSc, hps, hS⟩
     rcases eq_empty_or_nonempty S with (rfl | hne)
-    · rw [sSup_empty] at hS
+    · let : OrderBot α := .ofSupSet _
+      let : BoundedOrder α := ⟨⟩
+      rw [sSup_empty] at hS
       haveI := subsingleton_of_bot_eq_top hS
       rcases h with ⟨x, hx⟩
       exact ⟨fun _ => x, fun _ => hx, Subsingleton.elim _ _⟩

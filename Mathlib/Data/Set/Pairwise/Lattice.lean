@@ -76,7 +76,7 @@ end PartialOrderBot
 
 section CompleteLattice
 
-variable [CompleteLattice α] {s : Set ι} {t : Set ι'}
+variable [PartialOrder α] [OrderBot α] [CompleteLattice α] {s : Set ι} {t : Set ι'}
 
 /-- Bind operation for `Set.PairwiseDisjoint`. If you want to only consider finsets of indices, you
 can use `Set.PairwiseDisjoint.biUnion_finset`. -/
@@ -113,7 +113,7 @@ end CompleteLattice
 
 section Frame
 
-variable [Frame α]
+variable [Lattice α] [OrderBot α] [Frame α]
 
 theorem pairwiseDisjoint_prod_left {s : Set ι} {t : Set ι'} {f : ι × ι' → α} :
     (s ×ˢ t : Set (ι × ι')).PairwiseDisjoint f ↔

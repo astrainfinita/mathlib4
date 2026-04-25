@@ -157,10 +157,12 @@ instance : PartialOrder (RingCon R) where
 
 /-- The complete lattice of congruence relations on a given type with multiplication and
 addition. -/
-instance : CompleteLattice (RingCon R) where
-  __ := completeLatticeOfInf (RingCon R) fun s =>
+instance : CompleteLattice (RingCon R) :=
+  completeLatticeOfInf (RingCon R) fun s =>
     ⟨fun r hr x y h => (h : ∀ r ∈ s, (r : RingCon R) x y) r hr,
       fun _r hr _x _y h _r' hr' => hr hr' h⟩
+
+instance : Lattice (RingCon R) where
   inf c d :=
     { toSetoid := c.toSetoid ⊓ d.toSetoid
       mul' := fun h1 h2 => ⟨c.mul h1.1 h2.1, d.mul h1.2 h2.2⟩
@@ -168,6 +170,9 @@ instance : CompleteLattice (RingCon R) where
   inf_le_left _ _ := fun _ _ h => h.1
   inf_le_right _ _ := fun _ _ h => h.2
   le_inf _ _ _ hb hc := fun _ _ h => ⟨hb h, hc h⟩
+  toSemilatticeSup := .ofCompleteLattice _
+
+instance : BoundedOrder (RingCon R) where
   top :=
     { (⊤ : Setoid R) with
       mul' := fun _ _ => trivial
@@ -256,7 +261,7 @@ the binary relation '`x` is related to `y` by `c` or `d`'. -/
 theorem sup_eq_ringConGen (c d : RingCon R) : c ⊔ d = ringConGen fun x y => c x y ∨ d x y := by
   rw [ringConGen_eq]
   apply congr_arg sInf
-  simp only [le_def, or_imp, ← forall_and]
+  ext; simp [le_def, or_imp, ← forall_and]
 
 /-- The supremum of two congruence relations equals the smallest congruence relation containing
 the supremum of the underlying binary operations. -/

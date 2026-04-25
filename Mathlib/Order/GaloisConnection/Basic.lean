@@ -93,7 +93,8 @@ end SemilatticeSup
 
 section CompleteLattice
 
-variable [CompleteLattice α] [CompleteLattice β] {l : α → β} {u : β → α} (gc : GaloisConnection l u)
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+  {l : α → β} {u : β → α} (gc : GaloisConnection l u)
 include gc
 
 @[to_dual]
@@ -172,7 +173,8 @@ end LUB_GLB
 
 section CompleteLattice
 
-variable [CompleteLattice α] [CompleteLattice β] [CompleteLattice γ] {s : Set α}
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+  [PartialOrder γ] [CompleteLattice γ] {s : Set α}
   {t : Set β} {l u : α → β → γ} {l₁ u₁ : β → γ → α} {l₂ u₂ : α → γ → β}
 
 @[to_dual]
@@ -255,20 +257,23 @@ theorem l_sup_u [SemilatticeSup α] [SemilatticeSup β] (gi : GaloisInsertion l 
     _ = a ⊔ b := by simp only [gi.l_u_eq]
 
 @[to_dual]
-theorem l_iSup_u [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u) {ι : Sort x}
+theorem l_iSup_u [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+    (gi : GaloisInsertion l u) {ι : Sort x}
     (f : ι → β) : l (⨆ i, u (f i)) = ⨆ i, f i :=
   calc
     l (⨆ i : ι, u (f i)) = ⨆ i : ι, l (u (f i)) := gi.gc.l_iSup
     _ = ⨆ i : ι, f i := congr_arg _ <| funext fun i => gi.l_u_eq (f i)
 
 @[to_dual]
-theorem l_biSup_u [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u) {ι : Sort x}
+theorem l_biSup_u [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+    (gi : GaloisInsertion l u) {ι : Sort x}
     {p : ι → Prop} (f : ∀ i, p i → β) : l (⨆ (i) (hi), u (f i hi)) = ⨆ (i) (hi), f i hi := by
   simp only [iSup_subtype', gi.l_iSup_u]
 
 @[to_dual]
-theorem l_sSup_u_image [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u)
-    (s : Set β) : l (sSup (u '' s)) = sSup s := by rw [sSup_image, gi.l_biSup_u, sSup_eq_iSup]
+theorem l_sSup_u_image [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+    (gi : GaloisInsertion l u) (s : Set β) : l (sSup (u '' s)) = sSup s := by
+  rw [sSup_image, gi.l_biSup_u, sSup_eq_iSup]
 
 @[to_dual]
 theorem l_inf_u [SemilatticeInf α] [SemilatticeInf β] (gi : GaloisInsertion l u) (a b : β) :
@@ -277,35 +282,41 @@ theorem l_inf_u [SemilatticeInf α] [SemilatticeInf β] (gi : GaloisInsertion l 
     l (u a ⊓ u b) = l (u (a ⊓ b)) := congr_arg l gi.gc.u_inf.symm
     _ = a ⊓ b := by simp only [gi.l_u_eq]
 
+section
+
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+
 @[to_dual]
-theorem l_iInf_u [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u) {ι : Sort x}
+theorem l_iInf_u (gi : GaloisInsertion l u) {ι : Sort x}
     (f : ι → β) : l (⨅ i, u (f i)) = ⨅ i, f i :=
   calc
     l (⨅ i : ι, u (f i)) = l (u (⨅ i : ι, f i)) := congr_arg l gi.gc.u_iInf.symm
     _ = ⨅ i : ι, f i := gi.l_u_eq _
 
 @[to_dual]
-theorem l_biInf_u [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u) {ι : Sort x}
+theorem l_biInf_u (gi : GaloisInsertion l u) {ι : Sort x}
     {p : ι → Prop} (f : ∀ (i) (_ : p i), β) : l (⨅ (i) (hi), u (f i hi)) = ⨅ (i) (hi), f i hi := by
   simp only [iInf_subtype', gi.l_iInf_u]
 
 @[to_dual]
-theorem l_sInf_u_image [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u)
+theorem l_sInf_u_image (gi : GaloisInsertion l u)
     (s : Set β) : l (sInf (u '' s)) = sInf s := by rw [sInf_image, gi.l_biInf_u, sInf_eq_iInf]
 
 @[to_dual]
-theorem l_iInf_of_u_l_eq_self [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u)
+theorem l_iInf_of_u_l_eq_self (gi : GaloisInsertion l u)
     {ι : Sort x} (f : ι → α) (hf : ∀ i, u (l (f i)) = f i) : l (⨅ i, f i) = ⨅ i, l (f i) :=
   calc
     l (⨅ i, f i) = l (⨅ i : ι, u (l (f i))) := by simp [hf]
     _ = ⨅ i, l (f i) := gi.l_iInf_u _
 
 @[to_dual]
-theorem l_biInf_of_u_l_eq_self [CompleteLattice α] [CompleteLattice β] (gi : GaloisInsertion l u)
+theorem l_biInf_of_u_l_eq_self (gi : GaloisInsertion l u)
     {ι : Sort x} {p : ι → Prop} (f : ∀ (i) (_ : p i), α) (hf : ∀ i hi, u (l (f i hi)) = f i hi) :
     l (⨅ (i) (hi), f i hi) = ⨅ (i) (hi), l (f i hi) := by
   rw [iInf_subtype', iInf_subtype']
   exact gi.l_iInf_of_u_l_eq_self _ fun _ => hf _ _
+
+end
 
 @[deprecated (since := "2026-04-10")] alias l_iInf_of_ul_eq_self := l_iInf_of_u_l_eq_self
 @[deprecated (since := "2026-04-10")] alias l_biInf_of_ul_eq_self := l_biInf_of_u_l_eq_self
@@ -383,17 +394,17 @@ abbrev liftBoundedOrder [Preorder α] [BoundedOrder α] (gi : GaloisInsertion l 
 -- See note [reducible non-instances]
 /-- Lift all suprema and infima along a Galois insertion -/
 @[to_dual /-- Lift all suprema and infima along a Galois coinsertion -/]
-abbrev liftCompleteLattice [CompleteLattice α] (gi : GaloisInsertion l u) : CompleteLattice β :=
-  { gi.liftBoundedOrder, gi.liftLattice with
-    sSup := fun s => l (sSup (u '' s))
-    isLUB_sSup _ := gi.isLUB_of_u_image (isLUB_sSup _)
-    sInf := fun s =>
-      gi.choice (sInf (u '' s)) <|
-        (isGLB_sInf _).2 <|
-          gi.gc.monotone_u.mem_lowerBounds_image (gi.isGLB_of_u_image <| isGLB_sInf _).1
-    isGLB_sInf _ := by
-      rw [gi.choice_eq]
-      exact gi.isGLB_of_u_image (isGLB_sInf _) }
+abbrev liftCompleteLattice [PartialOrder α] [CompleteLattice α] (gi : GaloisInsertion l u) :
+    CompleteLattice β where
+  sSup := fun s => l (sSup (u '' s))
+  isLUB_sSup _ := gi.isLUB_of_u_image (isLUB_sSup _)
+  sInf := fun s =>
+    gi.choice (sInf (u '' s)) <|
+      (isGLB_sInf _).2 <|
+        gi.gc.monotone_u.mem_lowerBounds_image (gi.isGLB_of_u_image <| isGLB_sInf _).1
+  isGLB_sInf _ := by
+    rw [gi.choice_eq]
+    exact gi.isGLB_of_u_image (isGLB_sInf _)
 
 end lift
 
@@ -407,22 +418,22 @@ namespace GaloisCoinsertion
 end GaloisCoinsertion
 
 /-- `sSup` and `Iic` form a Galois connection. -/
-theorem gc_sSup_Iic [CompleteSemilatticeSup α] :
+theorem gc_sSup_Iic [PartialOrder α] [CompleteLattice α] :
     GaloisConnection (sSup : Set α → α) (Iic : α → Set α) :=
   fun _ _ ↦ sSup_le_iff
 
 /-- `toDual ∘ Ici` and `sInf ∘ ofDual` form a Galois connection. -/
-theorem gc_Ici_sInf [CompleteSemilatticeInf α] :
+theorem gc_Ici_sInf [PartialOrder α] [CompleteLattice α] :
     GaloisConnection (toDual ∘ Ici : α → (Set α)ᵒᵈ) (sInf ∘ ofDual : (Set α)ᵒᵈ → α) :=
   fun _ _ ↦ le_sInf_iff.symm
 
 /-- `sSup` and `Iic` form a Galois insertion. -/
-def gi_sSup_Iic [CompleteSemilatticeSup α] :
+def gi_sSup_Iic [PartialOrder α] [CompleteLattice α] :
     GaloisInsertion (sSup : Set α → α) (Iic : α → Set α) :=
   gc_sSup_Iic.toGaloisInsertion fun _ ↦ le_sSup le_rfl
 
 /-- `toDual ∘ Ici` and `sInf ∘ ofDual` form a Galois coinsertion. -/
-def gci_Ici_sInf [CompleteSemilatticeInf α] :
+def gci_Ici_sInf [PartialOrder α] [CompleteLattice α] :
     GaloisCoinsertion (toDual ∘ Ici : α → (Set α)ᵒᵈ) (sInf ∘ ofDual : (Set α)ᵒᵈ → α) :=
   gc_Ici_sInf.toGaloisCoinsertion fun _ ↦ sInf_le le_rfl
 

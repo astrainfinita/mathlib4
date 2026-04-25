@@ -610,8 +610,9 @@ theorem HasBasis.forall_mem_mem (h : HasBasis l p s) {x : α} :
   simp only [h.mem_iff, exists_imp, and_imp]
   exact ⟨fun h i hi => h (s i) i hi Subset.rfl, fun h t i hi ht => ht (h i hi)⟩
 
-protected theorem HasBasis.biInf_mem [CompleteLattice β] {f : Set α → β} (h : HasBasis l p s)
-    (hf : Monotone f) : ⨅ t ∈ l, f t = ⨅ (i) (_ : p i), f (s i) :=
+protected theorem HasBasis.biInf_mem [PartialOrder β] [CompleteLattice β] {f : Set α → β}
+    (h : HasBasis l p s) (hf : Monotone f) :
+    ⨅ t ∈ l, f t = ⨅ (i) (_ : p i), f (s i) :=
   le_antisymm (le_iInf₂ fun i hi => iInf₂_le (s i) (h.mem_of_mem hi)) <|
     le_iInf₂ fun _t ht =>
       let ⟨i, hpi, hi⟩ := h.mem_iff.1 ht

@@ -24,7 +24,7 @@ variable {α β : Type*}
 
 section CompleteLattice
 
-variable [CompleteLattice α] [CompleteLattice β]
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
 
 /- `f` is Scott continuous if and only if it commutes with `sSup` on directed sets -/
 lemma scottContinuous_iff_map_sSup {f : α → β} :
@@ -45,7 +45,7 @@ In a complete linear order, the Scott Topology coincides with the Upper topology
 
 section CompleteLinearOrder
 
-variable [CompleteLinearOrder β]
+variable [LinearOrder β] [CompleteLattice β]
 
 lemma scottContinuous_inf_right (a : β) : ScottContinuous fun b ↦ a ⊓ b :=
   .of_map_sSup (fun d _ _ ↦ by rw [inf_sSup_eq, sSup_image])

@@ -29,7 +29,7 @@ namespace Encodable
 
 variable {α : Type*} {β : Type*} [Encodable β]
 
-theorem iSup_decode₂ [CompleteLattice α] (f : β → α) :
+theorem iSup_decode₂ [PartialOrder α] [CompleteLattice α] (f : β → α) :
     ⨆ (i : ℕ) (b ∈ decode₂ β i), f b = (⨆ b, f b) := by
   rw [iSup_comm]
   simp only [mem_decode₂, iSup_iSup_eq_right]

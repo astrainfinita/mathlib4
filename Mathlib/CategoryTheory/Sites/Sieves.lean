@@ -40,7 +40,7 @@ variable {X Y Z : C} (f : Y ⟶ X)
 /-- A predicate on arrows with codomain `X`. -/
 def Presieve (X : C) :=
   ∀ ⦃Y⦄, (Y ⟶ X) → Prop
-deriving CompleteLattice, Inhabited
+deriving Lattice, CompleteLattice, BoundedOrder, Inhabited
 
 @[simp]
 lemma top_apply (f : Y ⟶ X) : (⊤ : Presieve X) f :=
@@ -546,26 +546,13 @@ protected def inter (S R : Sieve X) : Sieve X where
     rintro _ _ _ ⟨h₁, h₂⟩ g
     simp [h₁, h₂]
 
-/-- Sieves on an object `X` form a complete lattice.
-We generate this directly rather than using the Galois insertion for nicer definitional properties.
--/
-instance : CompleteLattice (Sieve X) where
+instance : Lattice (Sieve X) where
   le S R := ∀ ⦃Y⦄ (f : Y ⟶ X), S f → R f
   le_refl _ _ _ := id
   le_trans _ _ _ S₁₂ S₂₃ _ _ h := S₂₃ _ (S₁₂ _ h)
   le_antisymm _ _ p q := Sieve.ext fun _ _ => ⟨p _, q _⟩
-  top :=
-    { arrows := ⊤
-      downward_closed := fun _ _ => ⟨⟩ }
-  bot :=
-    { arrows := ⊥
-      downward_closed := False.elim }
   sup := Sieve.union
   inf := Sieve.inter
-  sSup := Sieve.sup
-  sInf := Sieve.inf
-  isLUB_sSup _ := ⟨fun S hS _ _ hf ↦ ⟨S, hS, hf⟩, fun _ ha _ _ ⟨b, hb, hf⟩ ↦ ha hb _ hf⟩
-  isGLB_sInf _ := ⟨fun S hS _ _ h ↦ h _ hS, fun _ hS _ _ hf _ hR ↦ hS hR _ hf⟩
   le_sup_left _ _ _ _ := Or.inl
   le_sup_right _ _ _ _ := Or.inr
   sup_le _ _ _ h₁ h₂ _ f := by
@@ -575,6 +562,23 @@ instance : CompleteLattice (Sieve X) where
   inf_le_left _ _ _ _ := And.left
   inf_le_right _ _ _ _ := And.right
   le_inf _ _ _ p q _ _ z := ⟨p _ z, q _ z⟩
+
+/-- Sieves on an object `X` form a complete lattice.
+We generate this directly rather than using the Galois insertion for nicer definitional properties.
+-/
+instance : CompleteLattice (Sieve X) where
+  sSup := Sieve.sup
+  sInf := Sieve.inf
+  isLUB_sSup _ := ⟨fun S hS _ _ hf ↦ ⟨S, hS, hf⟩, fun _ ha _ _ ⟨_, hb, hf⟩ ↦ ha hb _ hf⟩
+  isGLB_sInf _ := ⟨fun _ hS _ _ h ↦ h _ hS, fun _ hS _ _ hf _ hR ↦ hS hR _ hf⟩
+
+instance : BoundedOrder (Sieve X) where
+  top :=
+    { arrows := ⊤
+      downward_closed := fun _ _ => ⟨⟩ }
+  bot :=
+    { arrows := ⊥
+      downward_closed := False.elim }
   le_top _ _ _ _ := trivial
   bot_le _ _ _ := False.elim
 

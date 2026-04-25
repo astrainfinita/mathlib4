@@ -43,7 +43,7 @@ namespace OrderHom
 
 section Basic
 
-variable [CompleteLattice α] (f : α →o α)
+variable [PartialOrder α] [CompleteLattice α] (f : α →o α)
 
 /-- Least fixed point of a monotone function -/
 def lfp : (α →o α) →o α where
@@ -131,7 +131,8 @@ end Basic
 
 section Eqn
 
-variable [CompleteLattice α] [CompleteLattice β] (f : β →o α) (g : α →o β)
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β] [CompleteLattice β]
+  (f : β →o α) (g : α →o β)
 
 -- Rolling rule
 theorem map_lfp_comp : f (g.comp f).lfp = (f.comp g).lfp :=
@@ -153,13 +154,13 @@ theorem lfp_lfp (h : α →o α →o α) : (lfp.comp h).lfp = h.onDiag.lfp := by
     _ = a := ha
 
 theorem gfp_gfp (h : α →o α →o α) : (gfp.comp h).gfp = h.onDiag.gfp :=
-  @lfp_lfp αᵒᵈ _ <| (OrderHom.dualIso αᵒᵈ αᵒᵈ).symm.toOrderEmbedding.toOrderHom.comp h.dual
+  lfp_lfp (α := αᵒᵈ) <| (OrderHom.dualIso αᵒᵈ αᵒᵈ).symm.toOrderEmbedding.toOrderHom.comp h.dual
 
 end Eqn
 
 section PrevNext
 
-variable [CompleteLattice α] (f : α →o α)
+variable [Lattice α] [CompleteLattice α] (f : α →o α)
 
 theorem gfp_const_inf_le (x : α) : (const α x ⊓ f).gfp ≤ x :=
   (gfp_le _) fun _ hb => hb.trans inf_le_left
@@ -205,11 +206,13 @@ theorem le_prevFixed {x : α} (hx : f x ≤ x) {y : fixedPoints f} (h : ↑y ≤
     y ≤ f.prevFixed x hx :=
   (f.le_prevFixed_iff hx).2 h
 
+omit [CompleteLattice α] in
 theorem le_map_sup_fixedPoints (x y : fixedPoints f) : (x ⊔ y : α) ≤ f (x ⊔ y) :=
   calc
     (x ⊔ y : α) = f x ⊔ f y := congr_arg₂ (· ⊔ ·) x.2.symm y.2.symm
     _ ≤ f (x ⊔ y) := f.mono.le_map_sup x y
 
+omit [CompleteLattice α] in
 -- Porting note: `x ⊓ y` without the `.val`s fails to synthesize `Inf` instance
 theorem map_inf_fixedPoints_le (x y : fixedPoints f) : f (x ⊓ y) ≤ x.val ⊓ y.val :=
   f.dual.le_map_sup_fixedPoints x y
@@ -230,7 +233,7 @@ namespace fixedPoints
 
 open OrderHom
 
-variable [CompleteLattice α] (f : α →o α)
+variable [Lattice α] [CompleteLattice α] (f : α →o α)
 
 instance : BoundedOrder (fixedPoints f) where
   top := ⟨f.gfp, f.isFixedPt_gfp⟩
@@ -269,7 +272,7 @@ open OmegaCompletePartialOrder fixedPoints
 
 /-- **Kleene's fixed point Theorem**: The least fixed point in a complete lattice is
 the supremum of iterating a function on bottom arbitrary often. -/
-theorem lfp_eq_sSup_iterate (h : ωScottContinuous f) :
+theorem lfp_eq_sSup_iterate [OrderBot α] (h : ωScottContinuous f) :
     f.lfp = ⨆ n, f^[n] ⊥ := by
   apply le_antisymm
   · apply lfp_le_fixed
@@ -279,7 +282,7 @@ theorem lfp_eq_sSup_iterate (h : ωScottContinuous f) :
     intro a h_a
     exact ωSup_iterate_le_prefixedPoint ⟨f, h.map_ωSup_of_orderHom⟩ ⊥ bot_le h_a bot_le
 
-theorem gfp_eq_sInf_iterate (h : ωScottContinuous f.dual) :
+theorem gfp_eq_sInf_iterate [OrderTop α] (h : ωScottContinuous f.dual) :
     f.gfp = ⨅ n, f^[n] ⊤ :=
   lfp_eq_sSup_iterate f.dual h
 

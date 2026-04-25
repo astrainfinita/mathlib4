@@ -127,25 +127,23 @@ instance : Lattice ℕ :=
   LinearOrder.toLattice
 
 open scoped Classical in
-noncomputable instance : ConditionallyCompleteLinearOrderBot ℕ :=
-  { (inferInstance : OrderBot ℕ), (LinearOrder.toLattice : Lattice ℕ),
-    (inferInstance : LinearOrder ℕ) with
-    isLUB_sSup_of_isLUB s _ h := by
-      rw [sSup_def h.bddAbove]
-      exact Nat.isLeast_find _
-    isGLB_sInf_of_isGLB s _ h := by
-      rw [sInf_def h.nonempty]
-      exact (Nat.isLeast_find _).isGLB
-    exists_isLUB_cond s hn hb := ⟨_, Nat.isLeast_find hb⟩
-    exists_isGLB_cond s hn hb := ⟨_, (Nat.isLeast_find hn).isGLB⟩
-    csSup_of_not_bddAbove := by
-      intro s hs
-      simp only [sSup,
-        mem_empty_iff_false, IsEmpty.forall_iff, forall_const, exists_const, dite_true]
-      rw [dif_neg]
-      · exact le_antisymm (zero_le _) (find_le trivial)
-      · exact hs
-    csInf_of_not_bddBelow := fun s hs ↦ by simp at hs }
+noncomputable instance : ConditionallyCompleteLinearOrder ℕ where
+  isLUB_sSup_of_isLUB s _ h := by
+    rw [sSup_def h.bddAbove]
+    exact Nat.isLeast_find _
+  isGLB_sInf_of_isGLB s _ h := by
+    rw [sInf_def h.nonempty]
+    exact (Nat.isLeast_find _).isGLB
+  exists_isLUB_cond s hn hb := ⟨_, Nat.isLeast_find hb⟩
+  exists_isGLB_cond s hn hb := ⟨_, (Nat.isLeast_find hn).isGLB⟩
+  csSup_of_not_bddAbove := by
+    intro s hs
+    simp only [sSup,
+      mem_empty_iff_false, IsEmpty.forall_iff, forall_const, exists_const, dite_true]
+    rw [dif_neg]
+    · exact le_antisymm (zero_le _) (find_le trivial)
+    · exact hs
+  csInf_of_not_bddBelow := fun s hs ↦ by simp at hs
 
 theorem sSup_mem {s : Set ℕ} (h₁ : s.Nonempty) (h₂ : BddAbove s) : sSup s ∈ s :=
   let ⟨k, hk⟩ := h₂
@@ -182,7 +180,7 @@ theorem sInf_add' {n : ℕ} {p : ℕ → Prop} (h : 0 < sInf { m | p m }) :
 
 section
 
-variable {α : Type*} [CompleteLattice α]
+variable {α : Type*} [PartialOrder α] [CompleteLattice α]
 
 theorem iSup_lt_succ (u : ℕ → α) (n : ℕ) : ⨆ k < n + 1, u k = (⨆ k < n, u k) ⊔ u n := by
   simp_rw [Nat.lt_add_one_iff, biSup_le_eq_sup]

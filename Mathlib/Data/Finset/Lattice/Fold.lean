@@ -279,13 +279,15 @@ theorem le_sup_dite_neg (p : β → Prop) [DecidablePred p]
 end Sup
 
 @[to_dual]
-theorem sup_eq_iSup [CompleteLattice β] (s : Finset α) (f : α → β) : s.sup f = ⨆ a ∈ s, f a :=
+theorem sup_eq_iSup [SemilatticeSup β] [OrderBot β] [CompleteLattice β] (s : Finset α) (f : α → β) :
+    s.sup f = ⨆ a ∈ s, f a :=
   le_antisymm
     (Finset.sup_le (fun a ha => le_iSup_of_le a <| le_iSup (fun _ => f a) ha))
     (iSup_le fun _ => iSup_le fun ha => le_sup ha)
 
 @[to_dual]
-theorem sup_id_eq_sSup [CompleteLattice α] (s : Finset α) : s.sup id = sSup s := by
+theorem sup_id_eq_sSup [SemilatticeSup α] [OrderBot α] [CompleteLattice α] (s : Finset α) :
+    s.sup id = sSup s := by
   simp [sSup_eq_iSup, sup_eq_iSup]
 
 theorem sup_id_set_eq_sUnion (s : Finset (Set α)) : s.sup id = ⋃₀ ↑s :=
@@ -303,7 +305,8 @@ theorem inf_set_eq_iInter (s : Finset α) (f : α → Set β) : s.inf f = ⋂ x 
   inf_eq_iInf _ _
 
 @[to_dual]
-theorem sup_eq_sSup_image [CompleteLattice β] (s : Finset α) (f : α → β) :
+theorem sup_eq_sSup_image [SemilatticeSup β] [OrderBot β] [CompleteLattice β]
+    (s : Finset α) (f : α → β) :
     s.sup f = sSup (f '' s) := by
   classical rw [← Finset.coe_image, ← sup_id_eq_sSup, sup_image, Function.id_comp]
 
@@ -319,7 +322,8 @@ theorem exists_sup_ge [SemilatticeSup β] [OrderBot β] [WellFoundedGT β] (f : 
   rwa [right_lt_sup, not_not] at this
 
 @[to_dual]
-theorem exists_sup_eq_iSup [CompleteLattice β] [WellFoundedGT β] (f : α → β) :
+theorem exists_sup_eq_iSup [SemilatticeSup β] [OrderBot β] [CompleteLattice β] [WellFoundedGT β]
+    (f : α → β) :
     ∃ t : Finset α, t.sup f = ⨆ a, f a :=
   have ⟨t, ht⟩ := exists_sup_ge f
   ⟨t, (Finset.sup_le fun _ _ ↦ le_iSup ..).antisymm <| iSup_le ht⟩

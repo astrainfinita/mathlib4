@@ -50,7 +50,7 @@ variable {F F' F'' : C ⥤ Type w} (G G' : Subfunctor F)
 instance : PartialOrder (Subfunctor F) :=
   PartialOrder.lift Subfunctor.obj (fun _ _ => Subfunctor.ext)
 
-instance : CompleteLattice (Subfunctor F) where
+instance : Lattice (Subfunctor F) where
   sup F G :=
     { obj U := F.obj U ⊔ G.obj U
       map _ _ := by
@@ -69,6 +69,8 @@ instance : CompleteLattice (Subfunctor F) where
   inf_le_left _ _ _ _ h := h.1
   inf_le_right _ _ _ _ h := h.2
   le_inf _ _ _ h₁ h₂ _ _ h := ⟨h₁ _ h, h₂ _ h⟩
+
+instance : CompleteLattice (Subfunctor F) where
   sSup S :=
     { obj U := sSup (Set.image (fun T ↦ T.obj U) S)
       map f x hx := by
@@ -83,6 +85,8 @@ instance : CompleteLattice (Subfunctor F) where
         rintro _ ⟨F, h, rfl⟩
         exact F.map f (hx _ ⟨_, h, rfl⟩) }
   isGLB_sInf _ := ⟨fun _ _ _ _ ↦ by aesop, fun _ _ _ ↦ by aesop⟩
+
+instance : BoundedOrder (Subfunctor F) where
   bot :=
     { obj U := ⊥
       map := by simp }

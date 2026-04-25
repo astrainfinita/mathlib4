@@ -43,9 +43,12 @@ section
 
 variable (C : Type u) [CategoryStruct.{v} C]
 
-instance : CompleteBooleanAlgebra (MorphismProperty C) where
+instance : BooleanAlgebra (MorphismProperty C) where
   le P₁ P₂ := ∀ ⦃X Y : C⦄ (f : X ⟶ Y), P₁ f → P₂ f
-  __ := (inferInstance : CompleteBooleanAlgebra (∀ ⦃X Y : C⦄ (_ : X ⟶ Y), Prop))
+  __ := (inferInstance : BooleanAlgebra (∀ ⦃X Y : C⦄ (_ : X ⟶ Y), Prop))
+
+instance : CompleteLattice (MorphismProperty C) where
+  __ := (inferInstance : CompleteLattice (∀ ⦃X Y : C⦄ (_ : X ⟶ Y), Prop))
 
 lemma le_def {P Q : MorphismProperty C} :
     P ≤ Q ↔ ∀ {X Y : C} (f : X ⟶ Y), P f → Q f := Iff.rfl

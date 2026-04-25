@@ -55,7 +55,8 @@ instance [SupSet R] : SupSet (Tropical R) where sSup s := trop (sSup (untrop '' 
 
 instance [InfSet R] : InfSet (Tropical R) where sInf s := trop (sInf (untrop '' s))
 
-instance instConditionallyCompleteLatticeTropical [ConditionallyCompleteLattice R] :
+instance instConditionallyCompleteLatticeTropical
+    [PartialOrder R] [ConditionallyCompleteLattice R] :
     ConditionallyCompleteLattice (Tropical R) where
   isLUB_sSup_of_isLUB _ _ hx := by
     rw [← tropOrderIso.symm.isLUB_image'] at hx ⊢
@@ -68,8 +69,9 @@ instance instConditionallyCompleteLatticeTropical [ConditionallyCompleteLattice 
   exists_isGLB_cond s hn hb := ⟨sInf s,
     .of_image untrop_le_iff <| isGLB_csInf (hn.image _) (untrop_monotone.map_bddBelow hb)⟩
 
-instance [ConditionallyCompleteLinearOrder R] : ConditionallyCompleteLinearOrder (Tropical R) :=
-  { instConditionallyCompleteLatticeTropical, Tropical.instLinearOrderTropical with
+instance [LinearOrder R] [ConditionallyCompleteLinearOrder R] :
+    ConditionallyCompleteLinearOrder (Tropical R) :=
+  { instConditionallyCompleteLatticeTropical with
     csSup_of_not_bddAbove := by
       intro s hs
       have : Set.range untrop = (Set.univ : Set R) := Equiv.range_eq_univ tropEquiv.symm

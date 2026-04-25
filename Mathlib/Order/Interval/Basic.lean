@@ -599,7 +599,7 @@ namespace Interval
 
 section CompleteLattice
 
-variable [CompleteLattice α]
+variable [PartialOrder α] [CompleteLattice α]
 
 open Classical in
 noncomputable instance completeLattice [DecidableLE α] : CompleteLattice (Interval α) where

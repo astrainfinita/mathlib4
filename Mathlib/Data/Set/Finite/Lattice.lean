@@ -285,7 +285,8 @@ theorem Infinite.sUnion {s : Set (Set α)} (hs : s.Infinite) : (⋃₀ s).Infini
 /-! ### Order properties -/
 
 @[to_dual]
-lemma map_finite_biSup {F ι : Type*} [CompleteLattice α] [CompleteLattice β] [FunLike F α β]
+lemma map_finite_biSup {F ι : Type*} [SemilatticeSup α] [OrderBot α] [CompleteLattice α]
+    [SemilatticeSup β] [OrderBot β] [CompleteLattice β] [FunLike F α β]
     [SupBotHomClass F α β] {s : Set ι} (hs : s.Finite) (f : F) (g : ι → α) :
     f (⨆ x ∈ s, g x) = ⨆ x ∈ s, f (g x) := by
   have := map_finset_sup f hs.toFinset g
@@ -293,7 +294,8 @@ lemma map_finite_biSup {F ι : Type*} [CompleteLattice α] [CompleteLattice β] 
   exact this
 
 @[to_dual]
-lemma map_finite_iSup {F ι : Type*} [CompleteLattice α] [CompleteLattice β] [FunLike F α β]
+lemma map_finite_iSup {F ι : Type*} [SemilatticeSup α] [OrderBot α] [CompleteLattice α]
+    [SemilatticeSup β] [OrderBot β] [CompleteLattice β] [FunLike F α β]
     [SupBotHomClass F α β] [Finite ι] (f : F) (g : ι → α) :
     f (⨆ i, g i) = ⨆ i, f (g i) := by
   rw [← iSup_univ (f := g), ← iSup_univ (f := fun i ↦ f (g i))]
@@ -301,10 +303,11 @@ lemma map_finite_iSup {F ι : Type*} [CompleteLattice α] [CompleteLattice β] [
 
 @[to_dual]
 theorem Finite.iSup_biInf_of_monotone {ι ι' α : Type*} [Preorder ι'] [Nonempty ι']
-    [IsDirectedOrder ι'] [Order.Frame α] {s : Set ι} (hs : s.Finite) {f : ι → ι' → α}
+    [IsDirectedOrder ι'] [Lattice α] [Order.Frame α]
+    {s : Set ι} (hs : s.Finite) {f : ι → ι' → α}
     (hf : ∀ i ∈ s, Monotone (f i)) : ⨆ j, ⨅ i ∈ s, f i j = ⨅ i ∈ s, ⨆ j, f i j := by
   induction s, hs using Set.Finite.induction_on with
-  | empty => simp [iSup_const]
+  | empty => let : OrderTop α := .ofInfSet _; simp [iSup_const]
   | insert _ _ ihs =>
     rw [forall_mem_insert] at hf
     simp only [iInf_insert, ← ihs hf.2]
@@ -312,21 +315,21 @@ theorem Finite.iSup_biInf_of_monotone {ι ι' α : Type*} [Preorder ι'] [Nonemp
 
 @[to_dual]
 theorem Finite.iSup_biInf_of_antitone {ι ι' α : Type*} [Preorder ι'] [Nonempty ι']
-    [IsCodirectedOrder ι'] [Order.Frame α] {s : Set ι} (hs : s.Finite) {f : ι → ι' → α}
+    [IsCodirectedOrder ι'] [Lattice α] [Order.Frame α] {s : Set ι} (hs : s.Finite) {f : ι → ι' → α}
     (hf : ∀ i ∈ s, Antitone (f i)) : ⨆ j, ⨅ i ∈ s, f i j = ⨅ i ∈ s, ⨆ j, f i j :=
-  @Finite.iSup_biInf_of_monotone ι ι'ᵒᵈ α _ _ _ _ _ hs _ fun i hi => (hf i hi).dual_left
+  Finite.iSup_biInf_of_monotone (ι' := ι'ᵒᵈ) hs fun i hi => (hf i hi).dual_left
 
 @[to_dual]
 theorem _root_.iSup_iInf_of_monotone {ι ι' α : Type*} [Finite ι] [Preorder ι'] [Nonempty ι']
-    [IsDirectedOrder ι'] [Order.Frame α] {f : ι → ι' → α} (hf : ∀ i, Monotone (f i)) :
+    [IsDirectedOrder ι'] [Lattice α] [Order.Frame α] {f : ι → ι' → α} (hf : ∀ i, Monotone (f i)) :
     ⨆ j, ⨅ i, f i j = ⨅ i, ⨆ j, f i j := by
   simpa only [iInf_univ] using finite_univ.iSup_biInf_of_monotone fun i _ => hf i
 
 @[to_dual]
 theorem _root_.iSup_iInf_of_antitone {ι ι' α : Type*} [Finite ι] [Preorder ι'] [Nonempty ι']
-    [IsCodirectedOrder ι'] [Order.Frame α] {f : ι → ι' → α} (hf : ∀ i, Antitone (f i)) :
+    [IsCodirectedOrder ι'] [Lattice α] [Order.Frame α] {f : ι → ι' → α} (hf : ∀ i, Antitone (f i)) :
     ⨆ j, ⨅ i, f i j = ⨅ i, ⨆ j, f i j :=
-  @iSup_iInf_of_monotone ι ι'ᵒᵈ α _ _ _ _ _ _ fun i => (hf i).dual_left
+  iSup_iInf_of_monotone (ι' := ι'ᵒᵈ) fun i => (hf i).dual_left
 
 @[deprecated (since := "2026-02-03")] protected alias iSup_iInf_of_monotone := iSup_iInf_of_monotone
 @[deprecated (since := "2026-02-03")] protected alias iSup_iInf_of_antitone := iSup_iInf_of_antitone
@@ -370,7 +373,8 @@ theorem iUnion_univ_pi_of_monotone {ι ι' : Type*} [LinearOrder ι'] [Nonempty 
     ⋃ j : ι', pi univ (fun i => s i j) = pi univ fun i => ⋃ j, s i j :=
   iUnion_pi_of_monotone finite_univ fun i _ => hs i
 
-theorem _root_.iInf_iSup_eq_of_finite {ι : Sort v} {κ : ι → Sort w} [Order.Frame α] [Finite ι]
+theorem _root_.iInf_iSup_eq_of_finite {ι : Sort v} {κ : ι → Sort w}
+    [Lattice α] [Order.Frame α] [Finite ι]
     {f : Π a, κ a → α} : ⨅ a, ⨆ b, f a b = ⨆ g : (Π a, κ a), ⨅ a, f a (g a) := by
   suffices ∀ {ι : Type v} {κ : ι → Type w} [Finite ι] (f : Π a, κ a → α),
       ⨅ a, ⨆ b, f a b = ⨆ g : (Π a, κ a), ⨅ a, f a (g a) by
@@ -380,17 +384,18 @@ theorem _root_.iInf_iSup_eq_of_finite {ι : Sort v} {κ : ι → Sort w} [Order.
   intro ι κ _ f
   induction ι using Finite.induction_empty_option with
   | of_equiv e h => simp [← e.iInf_comp, ← e.piCongrLeft κ |>.iSup_comp, h]
-  | h_empty => simp [iInf_of_empty, iSup_const]
+  | h_empty => let : OrderTop α := .ofInfSet _; simp [iInf_of_empty, iSup_const]
   | h_option h =>
     simp only [iInf_option, h, ← (Equiv.piOptionEquivProd (β := κ)).symm.iSup_comp,
       Equiv.piOptionEquivProd_symm_apply, iSup_prod, ← inf_iSup_eq, ← iSup_inf_eq]
 
-theorem _root_.iSup_iInf_eq_of_finite {ι : Sort v} {κ : ι → Sort w} [Order.Coframe α] [Finite ι]
+theorem _root_.iSup_iInf_eq_of_finite {ι : Sort v} {κ : ι → Sort w}
+    [Lattice α] [Order.Coframe α] [Finite ι]
     {f : ∀ a, κ a → α} : ⨆ a, ⨅ b, f a b = ⨅ g : ∀ a, κ a, ⨆ a, f a (g a) :=
   iInf_iSup_eq_of_finite (α := αᵒᵈ)
 
-theorem Finite.biInf_iSup_eq {ι : Type v} {κ : ι → Sort w} [Nonempty (Π a, κ a)] [Order.Frame α]
-    {s : Set ι} (hs : s.Finite) {f : Π a, κ a → α} :
+theorem Finite.biInf_iSup_eq {ι : Type v} {κ : ι → Sort w} [Nonempty (Π a, κ a)]
+    [Lattice α] [Order.Frame α] {s : Set ι} (hs : s.Finite) {f : Π a, κ a → α} :
     ⨅ a ∈ s, ⨆ b, f a b = ⨆ g : (Π a, κ a), ⨅ a ∈ s, f a (g a) := by
   classical
   suffices h : ∀ {κ : ι → Type w} [Nonempty (Π a, κ a)] (f : Π a, κ a → α),
@@ -404,8 +409,8 @@ theorem Finite.biInf_iSup_eq {ι : Type v} {κ : ι → Sort w} [Nonempty (Π a,
   simp [← iInf_subtype'', iInf_iSup_eq_of_finite (ι := s),
     ← Equiv.piEquivPiSubtypeProd (· ∈ s) _ |>.symm.iSup_comp, iSup_prod, iSup_const]
 
-theorem Finite.biSup_iInf_eq {ι : Type v} {κ : ι → Sort w} [Nonempty (∀ a, κ a)] [Order.Coframe α]
-    {s : Set ι} (hs : s.Finite) {f : ∀ a, κ a → α} :
+theorem Finite.biSup_iInf_eq {ι : Type v} {κ : ι → Sort w} [Nonempty (∀ a, κ a)]
+    [Lattice α] [Order.Coframe α] {s : Set ι} (hs : s.Finite) {f : ∀ a, κ a → α} :
     ⨆ a ∈ s, ⨅ b, f a b = ⨅ g : ∀ a, κ a, ⨆ a ∈ s, f a (g a) :=
   hs.biInf_iSup_eq (α := αᵒᵈ)
 

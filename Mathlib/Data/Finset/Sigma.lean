@@ -104,20 +104,24 @@ theorem inf_sigma [SemilatticeInf β] [OrderTop β] :
     (s.sigma t).inf f = s.inf fun i => (t i).inf fun b => f ⟨i, b⟩ :=
   @sup_sigma _ _ βᵒᵈ _ _ _ _ _
 
-theorem _root_.biSup_finsetSigma [CompleteLattice β] (s : Finset ι) (t : ∀ i, Finset (α i))
-    (f : Sigma α → β) : ⨆ ij ∈ s.sigma t, f ij = ⨆ (i ∈ s) (j ∈ t i), f ⟨i, j⟩ := by
+theorem _root_.biSup_finsetSigma [PartialOrder β] [CompleteLattice β]
+    (s : Finset ι) (t : ∀ i, Finset (α i)) (f : Sigma α → β) :
+    ⨆ ij ∈ s.sigma t, f ij = ⨆ (i ∈ s) (j ∈ t i), f ⟨i, j⟩ := by
   simp_rw [← Finset.iSup_coe, Finset.coe_sigma, biSup_sigma]
 
-theorem _root_.biSup_finsetSigma' [CompleteLattice β] (s : Finset ι) (t : ∀ i, Finset (α i))
-    (f : ∀ i, α i → β) : ⨆ (i ∈ s) (j ∈ t i), f i j = ⨆ ij ∈ s.sigma t, f ij.fst ij.snd :=
+theorem _root_.biSup_finsetSigma' [PartialOrder β] [CompleteLattice β]
+    (s : Finset ι) (t : ∀ i, Finset (α i)) (f : ∀ i, α i → β) :
+    ⨆ (i ∈ s) (j ∈ t i), f i j = ⨆ ij ∈ s.sigma t, f ij.fst ij.snd :=
   Eq.symm (biSup_finsetSigma _ _ _)
 
-theorem _root_.biInf_finsetSigma [CompleteLattice β] (s : Finset ι) (t : ∀ i, Finset (α i))
-    (f : Sigma α → β) : ⨅ ij ∈ s.sigma t, f ij = ⨅ (i ∈ s) (j ∈ t i), f ⟨i, j⟩ :=
+theorem _root_.biInf_finsetSigma [PartialOrder β] [CompleteLattice β]
+    (s : Finset ι) (t : ∀ i, Finset (α i)) (f : Sigma α → β) :
+    ⨅ ij ∈ s.sigma t, f ij = ⨅ (i ∈ s) (j ∈ t i), f ⟨i, j⟩ :=
   biSup_finsetSigma (β := βᵒᵈ) _ _ _
 
-theorem _root_.biInf_finsetSigma' [CompleteLattice β] (s : Finset ι) (t : ∀ i, Finset (α i))
-    (f : ∀ i, α i → β) : ⨅ (i ∈ s) (j ∈ t i), f i j = ⨅ ij ∈ s.sigma t, f ij.fst ij.snd :=
+theorem _root_.biInf_finsetSigma' [PartialOrder β] [CompleteLattice β]
+    (s : Finset ι) (t : ∀ i, Finset (α i)) (f : ∀ i, α i → β) :
+    ⨅ (i ∈ s) (j ∈ t i), f i j = ⨅ ij ∈ s.sigma t, f ij.fst ij.snd :=
   Eq.symm (biInf_finsetSigma _ _ _)
 
 theorem _root_.Set.biUnion_finsetSigma (s : Finset ι) (t : ∀ i, Finset (α i))

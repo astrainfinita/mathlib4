@@ -60,7 +60,9 @@ instance OrderDual.orderSupSet (α) [Preorder α] [OrderInfSet α] : OrderSupSet
 
 Nevertheless it is sometimes a useful intermediate step in constructions.
 -/
-class CompleteSemilatticeSup (α : Type*) extends PartialOrder α, SupSet α where
+@[deprecated "Use `SupSet α` `∀ s, IsLUB s (sSup s)` or `CompleteLattice α` instead"
+  (since := "2026-04-24")]
+structure CompleteSemilatticeSup (α : Type*) extends PartialOrder α, SupSet α where
   /-- Every set has a least upper bound. -/
   isLUB_sSup : ∀ s : Set α, IsLUB s (sSup s)
 
@@ -70,20 +72,34 @@ class CompleteSemilatticeSup (α : Type*) extends PartialOrder α, SupSet α whe
 Nevertheless it is sometimes a useful intermediate step in constructions.
 -/
 @[to_dual]
-class CompleteSemilatticeInf (α : Type*) extends PartialOrder α, InfSet α where
+structure CompleteSemilatticeInf (α : Type*) extends PartialOrder α, InfSet α where
   /-- Every set has a greatest lower bound. -/
   isGLB_sInf : ∀ s : Set α, IsGLB s (sInf s)
 
+attribute [deprecated "Use `InfSet α` `∀ s, IsLUB s (sInf s)` or `CompleteLattice α` instead"
+  (since := "2026-04-24")] CompleteSemilatticeInf
+
+/-- A complete lattice is a bounded lattice which has suprema and infima for every subset. -/
+class CompleteLattice (α : Type*) [PartialOrder α] extends SupSet α, InfSet α where
+  /-- Every set has a least upper bound. -/
+  isLUB_sSup : ∀ s : Set α, IsLUB s (sSup s)
+  /-- Every set has a greatest lower bound. -/
+  isGLB_sInf : ∀ s : Set α, IsGLB s (sInf s)
+
+attribute [to_dual self (reorder := toSupSet toInfSet, isLUB_sSup isGLB_sInf)] CompleteLattice.mk
+attribute [to_dual existing] CompleteLattice.toSupSet
+attribute [to_dual existing] CompleteLattice.isLUB_sSup
+
 section
 
-variable [CompleteSemilatticeSup α] {s t : Set α} {a b : α}
+variable [PartialOrder α] [CompleteLattice α] {s t : Set α} {a b : α}
 
 @[to_dual]
 theorem isLUB_sSup (s : Set α) : IsLUB s (sSup s) :=
-  CompleteSemilatticeSup.isLUB_sSup _
+  CompleteLattice.isLUB_sSup _
 
 @[to_dual]
-instance (priority := 100) CompleteSemilatticeSup.toOrderSupSet [CompleteSemilatticeSup α] :
+instance (priority := 100) CompleteLattice.toOrderSupSet [CompleteLattice α] :
     OrderSupSet α where
   isLUB_sSup_of_isLUB _ _ _ := isLUB_sSup _
 
@@ -121,120 +137,98 @@ theorem le_iSup_iff {s : ι → α} : a ≤ iSup s ↔ ∀ b, (∀ i, s i ≤ b)
 
 end
 
-@[to_dual]
-instance {α : Type*} [CompleteSemilatticeInf α] : CompleteSemilatticeSup αᵒᵈ where
-  isLUB_sSup := isGLB_sInf (α := α)
+/-- Create a `SemilatticeSup` from a `PartialOrder` and `CompleteLattice`.
+Usually this constructor provides poor definitional equalities. -/
+@[to_dual
+/-- Create a `SemilatticeInf` from a `PartialOrder` and `CompleteLattice`.
+Usually this constructor provides poor definitional equalities. -/]
+abbrev SemilatticeSup.ofCompleteLattice (α : Type*) [PartialOrder α] [CompleteLattice α] :
+    SemilatticeSup α :=
+  .ofIsLUB (sSup {·, ·}) (fun _ _ ↦ isLUB_sSup _)
 
-/-- A complete lattice is a bounded lattice which has suprema and infima for every subset. -/
-class CompleteLattice (α : Type*) extends Lattice α, CompleteSemilatticeSup α,
-    CompleteSemilatticeInf α, BoundedOrder α
+/-- Create a `Lattice` from a `PartialOrder` and `CompleteLattice`.
+Usually this constructor provides poor definitional equalities. -/
+abbrev Lattice.ofCompleteLattice (α : Type*) [PartialOrder α] [CompleteLattice α] : Lattice α :=
+  .ofIsLUBofIsGLB (sSup {·, ·}) (sInf {·, ·}) (fun _ _ ↦ isLUB_sSup _) (fun _ _ ↦ isGLB_sInf _)
 
-attribute [to_dual existing] CompleteLattice.toCompleteSemilatticeInf
-attribute [to_dual self (reorder := toSupSet toInfSet, isLUB_sSup isGLB_sInf)] CompleteLattice.mk
+/-- Create a `OrderTop` from a `PartialOrder` and `CompleteLattice`.
 
--- Shortcut instance to ensure that the path
--- `CompleteLattice α → CompletePartialOrder α → PartialOrder α` isn't taken,
--- as it tricks `#min_imports` into believing `Order.CompletePartialOrder` is a necessary import.
--- See note [lower instance priority]
-instance (priority := 100) CompleteLattice.toPartialOrder' [CompleteLattice α] : PartialOrder α :=
-  inferInstance
+This sets `⊤ := sSup univ`. -/
+@[to_dual
+/-- Create a `OrderBot` from a `PartialOrder` and `CompleteLattice`.
+
+This sets `⊥ := sInf univ`. -/]
+abbrev OrderTop.ofSupSet (α : Type*) [PartialOrder α] [CompleteLattice α] : OrderTop α where
+  top := sSup univ
+  le_top _ := (isLUB_sSup univ).1 <| mem_univ _
+
+/-- Create a `OrderBot` from a `PartialOrder` and `CompleteLattice`.
+
+This sets `⊥ := sSup ∅`. -/
+@[to_dual
+/-- Create a `OrderTop` from a `PartialOrder` and `CompleteLattice`.
+
+This sets `⊤ := sInf ∅`. -/]
+abbrev OrderBot.ofSupSet (α : Type*) [PartialOrder α] [CompleteLattice α] : OrderBot α where
+  bot := sSup ∅
+  bot_le _ := (isLUB_sSup ∅).2 <| by simp
 
 /-- Create a `CompleteLattice` from a `PartialOrder` and `InfSet`
-that returns the greatest lower bound of a set. Usually this constructor provides
-poor definitional equalities.  If other fields are known explicitly, they should be
-provided; for example, if `inf` is known explicitly, construct the `CompleteLattice`
-instance as
-```
-instance : CompleteLattice my_T where
-  inf := better_inf
-  le_inf := ...
-  inf_le_right := ...
-  inf_le_left := ...
-  -- don't care to fix sup, sSup, bot, top
-  __ := completeLatticeOfInf my_T _
-```
+that returns the greatest lower bound of a set.
 -/
 @[implicit_reducible]
 def completeLatticeOfInf (α : Type*) [H1 : PartialOrder α] [H2 : InfSet α]
     (isGLB_sInf : ∀ s : Set α, IsGLB s (sInf s)) : CompleteLattice α where
   __ := H1; __ := H2
-  bot := sInf univ
-  bot_le _ := (isGLB_sInf univ).1 trivial
-  top := sInf ∅
-  le_top a := (isGLB_sInf ∅).2 <| by simp
-  sup a b := sInf { x : α | a ≤ x ∧ b ≤ x }
-  inf a b := sInf {a, b}
-  le_inf a b c hab hac := by
-    apply (isGLB_sInf _).2
-    simp [*]
-  inf_le_right _ _ := (isGLB_sInf _).1 <| mem_insert_of_mem _ <| mem_singleton _
-  inf_le_left _ _ := (isGLB_sInf _).1 <| mem_insert _ _
-  sup_le a b c hac hbc := (isGLB_sInf _).1 <| by simp [*]
-  le_sup_left _ _ := (isGLB_sInf _).2 fun _ => And.left
-  le_sup_right _ _ := (isGLB_sInf _).2 fun _ => And.right
   sSup s := sInf (upperBounds s)
   isGLB_sInf := isGLB_sInf
-  isLUB_sSup s := isGLB_upperBounds.mp (isGLB_sInf _)
+  isLUB_sSup _ := isGLB_upperBounds.mp (isGLB_sInf _)
 
+set_option linter.deprecated false in
 /-- Any `CompleteSemilatticeInf` is in fact a `CompleteLattice`.
 
 Note that this construction has bad definitional properties:
 see the doc-string on `completeLatticeOfInf`.
 -/
-@[implicit_reducible]
-def completeLatticeOfCompleteSemilatticeInf (α : Type*) [CompleteSemilatticeInf α] :
+@[implicit_reducible, deprecated completeLatticeOfInf (since := "2026-04-24")]
+def completeLatticeOfCompleteSemilatticeInf (α : Type*) (i : CompleteSemilatticeInf α) :
+    letI := i.toPartialOrder
     CompleteLattice α :=
-  completeLatticeOfInf α fun s => isGLB_sInf s
+  letI := i.toPartialOrder
+  letI := i.toInfSet
+  completeLatticeOfInf α fun s => i.isGLB_sInf s
 
 /-- Create a `CompleteLattice` from a `PartialOrder` and `SupSet`
-that returns the least upper bound of a set. Usually this constructor provides
-poor definitional equalities.  If other fields are known explicitly, they should be
-provided; for example, if `inf` is known explicitly, construct the `CompleteLattice`
-instance as
-```
-instance : CompleteLattice my_T where
-  inf := better_inf
-  le_inf := ...
-  inf_le_right := ...
-  inf_le_left := ...
-  -- don't care to fix sup, sInf, bot, top
-  __ := completeLatticeOfSup my_T _
-```
+that returns the least upper bound of a set.
 -/
 @[implicit_reducible]
 def completeLatticeOfSup (α : Type*) [H1 : PartialOrder α] [H2 : SupSet α]
     (isLUB_sSup : ∀ s : Set α, IsLUB s (sSup s)) : CompleteLattice α where
   __ := H1; __ := H2
-  top := sSup univ
-  le_top _ := (isLUB_sSup univ).1 trivial
-  bot := sSup ∅
-  bot_le x := (isLUB_sSup ∅).2 <| by simp
-  sup a b := sSup {a, b}
-  sup_le a b c hac hbc := (isLUB_sSup _).2 (by simp [*])
-  le_sup_left _ _ := (isLUB_sSup _).1 <| mem_insert _ _
-  le_sup_right _ _ := (isLUB_sSup _).1 <| mem_insert_of_mem _ <| mem_singleton _
-  inf a b := sSup { x | x ≤ a ∧ x ≤ b }
-  le_inf a b c hab hac := (isLUB_sSup _).1 <| by simp [*]
-  inf_le_left _ _ := (isLUB_sSup _).2 fun _ => And.left
-  inf_le_right _ _ := (isLUB_sSup _).2 fun _ => And.right
   sInf s := sSup (lowerBounds s)
   isLUB_sSup := isLUB_sSup
-  isGLB_sInf s := isLUB_lowerBounds.mp (isLUB_sSup _)
+  isGLB_sInf _? := isLUB_lowerBounds.mp (isLUB_sSup _)
 
+set_option linter.deprecated false in
 /-- Any `CompleteSemilatticeSup` is in fact a `CompleteLattice`.
 
 Note that this construction has bad definitional properties:
 see the doc-string on `completeLatticeOfSup`.
 -/
-@[implicit_reducible]
-def completeLatticeOfCompleteSemilatticeSup (α : Type*) [CompleteSemilatticeSup α] :
+@[implicit_reducible, deprecated completeLatticeOfInf (since := "2026-04-24")]
+def completeLatticeOfCompleteSemilatticeSup (α : Type*) (i : CompleteSemilatticeSup α) :
+    letI := i.toPartialOrder
     CompleteLattice α :=
-  completeLatticeOfSup α fun s => isLUB_sSup s
+  letI := i.toPartialOrder
+  letI := i.toSupSet
+  completeLatticeOfSup α fun s => i.isLUB_sSup s
 
 /-- A complete linear order is a linear order whose lattice structure is complete. -/
 -- Note that we do not use `extends LinearOrder α`,
 -- and instead construct the forgetful instance manually.
-class CompleteLinearOrder (α : Type*) extends CompleteLattice α, BiheytingAlgebra α, Ord α where
+@[deprecated "Use `[LinearOrder α] [CompleteLattice α]` instead" (since := "2026-04-24")]
+structure CompleteLinearOrder (α : Type*) extends Lattice α,
+    CompleteLattice α, BiheytingAlgebra α, Ord α where
   /-- A linear order is total. -/
   le_total (a b : α) : a ≤ b ∨ b ≤ a
   /-- In a linearly ordered type, we assume the order relations are all decidable. -/
@@ -248,25 +242,11 @@ class CompleteLinearOrder (α : Type*) extends CompleteLattice α, BiheytingAlge
   compare_eq_compareOfLessAndEq : ∀ a b, compare a b = compareOfLessAndEq a b := by
     compareOfLessAndEq_rfl
 
-instance CompleteLinearOrder.toLinearOrder [i : CompleteLinearOrder α] : LinearOrder α where
-  __ := i
-  min_def a b := by
-    split_ifs with h
-    · simp [h]
-    · simp [(CompleteLinearOrder.le_total a b).resolve_left h]
-  max_def a b := by
-    split_ifs with h
-    · simp [h]
-    · simp [(CompleteLinearOrder.le_total a b).resolve_left h]
-
 namespace OrderDual
 
-instance instCompleteLattice [CompleteLattice α] : CompleteLattice αᵒᵈ where
-
-instance instCompleteLinearOrder [CompleteLinearOrder α] : CompleteLinearOrder αᵒᵈ where
-  __ := instCompleteLattice
-  __ := instBiheytingAlgebra
-  __ := instLinearOrder α
+instance instCompleteLattice [PartialOrder α] [CompleteLattice α] : CompleteLattice αᵒᵈ where
+  isLUB_sSup := isGLB_sInf (α := α)
+  isGLB_sInf := isLUB_sSup (α := α)
 
 end OrderDual
 
@@ -296,14 +276,14 @@ end OrderDual
 
 section CompleteLinearOrder
 
-variable [CompleteLinearOrder α] {s : Set α} {a b : α}
+variable [LinearOrder α] [CompleteLattice α] {s : Set α} {a b : α}
 
 @[to_dual sInf_lt_iff]
 theorem lt_sSup_iff : b < sSup s ↔ ∃ a ∈ s, b < a :=
   lt_isLUB_iff <| isLUB_sSup s
 
 @[to_dual]
-theorem sSup_eq_top : sSup s = ⊤ ↔ ∀ b < ⊤, ∃ a ∈ s, b < a :=
+theorem sSup_eq_top [OrderTop α] : sSup s = ⊤ ↔ ∀ b < ⊤, ∃ a ∈ s, b < a :=
   ⟨fun h _ hb => lt_sSup_iff.1 <| hb.trans_eq h.symm, fun h =>
     top_unique <|
       le_of_not_gt fun h' =>

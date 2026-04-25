@@ -191,7 +191,7 @@ theorem not_tendsto_atBot_of_tendsto_nhds (hf : Tendsto f l (𝓝 a)) : ¬Tendst
 end NoBotOrder
 
 theorem iSup_eq_of_forall_le_of_tendsto {ι : Type*} {F : Filter ι} [Filter.NeBot F]
-    [ConditionallyCompleteLattice α] [TopologicalSpace α] [ClosedIicTopology α]
+    [PartialOrder α] [ConditionallyCompleteLattice α] [TopologicalSpace α] [ClosedIicTopology α]
     {a : α} {f : ι → α} (hle : ∀ i, f i ≤ a) (hlim : Filter.Tendsto f F (𝓝 a)) :
     ⨆ i, f i = a :=
   have := F.nonempty_of_neBot
@@ -403,7 +403,7 @@ section ClosedIciTopology
 
 @[to_dual existing]
 theorem iInf_eq_of_forall_le_of_tendsto {ι : Type*} {F : Filter ι} [F.NeBot]
-    [ConditionallyCompleteLattice α] [TopologicalSpace α] [ClosedIciTopology α]
+    [PartialOrder α] [ConditionallyCompleteLattice α] [TopologicalSpace α] [ClosedIciTopology α]
     {a : α} {f : ι → α} (hle : ∀ i, a ≤ f i) (hlim : Tendsto f F (𝓝 a)) :
     ⨅ i, f i = a :=
   iSup_eq_of_forall_le_of_tendsto (α := αᵒᵈ) hle hlim

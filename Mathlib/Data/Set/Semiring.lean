@@ -173,13 +173,15 @@ instance [Semigroup α] : Semigroup (SetSemiring α) :=
 
 instance [Semigroup α] : NonUnitalSemiring (SetSemiring α) where
 
-instance : CompleteBooleanAlgebra (SetSemiring α) :=
-  inferInstanceAs <| CompleteBooleanAlgebra (Set α)
+instance : BooleanAlgebra (SetSemiring α) :=
+  inferInstanceAs <| BooleanAlgebra (Set α)
+
+instance : CompleteLattice (SetSemiring α) :=
+  inferInstanceAs <| CompleteLattice (Set α)
 
 noncomputable instance [Monoid α] : IdemSemiring (SetSemiring α) :=
   { (inferInstance : NonAssocSemiring (SetSemiring α)),
-    (inferInstance : NonUnitalSemiring (SetSemiring α)),
-    (inferInstance : CompleteBooleanAlgebra (SetSemiring α)) with }
+    (inferInstance : NonUnitalSemiring (SetSemiring α)) with }
 
 instance [CommSemigroup α] : CommSemigroup (SetSemiring α) :=
   inferInstanceAs <| CommSemigroup (Set α)

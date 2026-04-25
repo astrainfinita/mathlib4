@@ -162,7 +162,7 @@ theorem pushout_eq_sup [SemilatticeSup α] [OrderBot α] (x y z : α) (f : z ⟶
 
 end Semilattice
 
-variable {α : Type u} [CompleteLattice α] {J : Type w} [Category.{w'} J]
+variable {α : Type u} [PartialOrder α] [CompleteLattice α] {J : Type w} [Category.{w'} J]
 
 /-- The limit cone over any functor into a complete lattice.
 -/

@@ -201,23 +201,28 @@ theorem IsLUB.biUnion_Iic_eq_Iio (a_lub : IsLUB s a) (a_notMem : a ∉ s) :
 theorem IsLUB.biUnion_Iic_eq_Iic (a_lub : IsLUB s a) (a_mem : a ∈ s) : ⋃ x ∈ s, Iic x = Iic a :=
   a_lub.dual.biUnion_Ici_eq_Ici a_mem
 
-theorem iUnion_Ici_eq_Ioi_iInf {R : Type*} [CompleteLinearOrder R] {f : ι → R}
+section
+variable {R : Type*} [LinearOrder R] [CompleteLattice R] {f : ι → R}
+
+theorem iUnion_Ici_eq_Ioi_iInf
     (no_least_elem : ⨅ i, f i ∉ range f) : ⋃ i : ι, Ici (f i) = Ioi (⨅ i, f i) := by
-  simp only [← IsGLB.biUnion_Ici_eq_Ioi (@isGLB_iInf _ _ _ f) no_least_elem, mem_range,
+  simp only [← IsGLB.biUnion_Ici_eq_Ioi isGLB_iInf no_least_elem, mem_range,
     iUnion_exists, iUnion_iUnion_eq']
 
-theorem iUnion_Iic_eq_Iio_iSup {R : Type*} [CompleteLinearOrder R] {f : ι → R}
+theorem iUnion_Iic_eq_Iio_iSup
     (no_greatest_elem : (⨆ i, f i) ∉ range f) : ⋃ i : ι, Iic (f i) = Iio (⨆ i, f i) :=
-  @iUnion_Ici_eq_Ioi_iInf ι (OrderDual R) _ f no_greatest_elem
+  iUnion_Ici_eq_Ioi_iInf (R := Rᵒᵈ) (f := f) no_greatest_elem
 
-theorem iUnion_Ici_eq_Ici_iInf {R : Type*} [CompleteLinearOrder R] {f : ι → R}
+theorem iUnion_Ici_eq_Ici_iInf
     (has_least_elem : (⨅ i, f i) ∈ range f) : ⋃ i : ι, Ici (f i) = Ici (⨅ i, f i) := by
-  simp only [← IsGLB.biUnion_Ici_eq_Ici (@isGLB_iInf _ _ _ f) has_least_elem, mem_range,
+  simp only [← IsGLB.biUnion_Ici_eq_Ici isGLB_iInf has_least_elem, mem_range,
     iUnion_exists, iUnion_iUnion_eq']
 
-theorem iUnion_Iic_eq_Iic_iSup {R : Type*} [CompleteLinearOrder R] {f : ι → R}
+theorem iUnion_Iic_eq_Iic_iSup
     (has_greatest_elem : (⨆ i, f i) ∈ range f) : ⋃ i : ι, Iic (f i) = Iic (⨆ i, f i) :=
-  @iUnion_Ici_eq_Ici_iInf ι (OrderDual R) _ f has_greatest_elem
+  iUnion_Ici_eq_Ici_iInf (R := Rᵒᵈ) (f := f) has_greatest_elem
+
+end
 
 theorem iUnion_Iio_eq_univ_iff : ⋃ i, Iio (f i) = univ ↔ (¬ BddAbove (range f)) := by
   simp [not_bddAbove_iff, Set.eq_univ_iff_forall]

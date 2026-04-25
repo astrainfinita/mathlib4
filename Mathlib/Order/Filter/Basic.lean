@@ -233,8 +233,7 @@ protected lemma isLUB_sSup (s : Set (Filter α)) : IsLUB s (sSup s) :=
 protected lemma isGLB_sInf (s : Set (Filter α)) : IsGLB s (sInf s) :=
   isLUB_lowerBounds.mp (Filter.sSup_lowerBounds _ ▸ Filter.isLUB_sSup _)
 
-/-- Complete lattice structure on `Filter α`. -/
-instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
+instance : Lattice (Filter α) where
   inf a b := min a b
   sup a b := max a b
   le_sup_left _ _ _ h := h.1
@@ -243,8 +242,13 @@ instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
   inf_le_left _ _ _ := mem_inf_of_left
   inf_le_right _ _ _ := mem_inf_of_right
   le_inf := fun _ _ _ h₁ h₂ _s ⟨_a, ha, _b, hb, hs⟩ => hs.symm ▸ inter_mem (h₁ ha) (h₂ hb)
+
+/-- Complete lattice structure on `Filter α`. -/
+instance instCompleteLatticeFilter : CompleteLattice (Filter α) where
   isLUB_sSup := Filter.isLUB_sSup
   isGLB_sInf := Filter.isGLB_sInf
+
+instance : BoundedOrder (Filter α) where
   le_top _ _ := univ_mem'
   bot_le _ _ _ := trivial
 
@@ -500,9 +504,7 @@ theorem sup_join {f₁ f₂ : Filter (Filter α)} : join f₁ ⊔ join f₂ = jo
 theorem iSup_join {ι : Sort w} {f : ι → Filter (Filter α)} : ⨆ x, join (f x) = join (⨆ x, f x) :=
   Filter.ext fun x => by simp only [mem_iSup, mem_join]
 
-
-/-- The dual version does not hold! `Filter α` is not a `CompleteDistribLattice`. -/
-instance instCoframe : Coframe (Filter α) where
+instance : CoheytingAlgebra (Filter α) where
   sdiff_le_iff a b c :=
     ⟨fun h s hs ↦ h hs.right hs.left (subset_refl s),
       fun h s hsc t htb hst ↦ h ⟨htb, mem_of_superset hsc hst⟩⟩
@@ -511,6 +513,9 @@ instance instCoframe : Coframe (Filter α) where
     simp only [mem_sdiff_iff_union, Filter.hnot_def, mem_principal, compl_subset_iff_union,
       mem_top_iff_forall, eq_univ_iff_forall, ker, mem_union, mem_sInter, Filter.mem_sets]
     grind
+
+/-- The dual version does not hold! `Filter α` is not a `CompleteDistribLattice`. -/
+instance instCoframe : Coframe (Filter α) := inferInstance
 
 /-- If `f : ι → Filter α` is directed, `ι` is not empty, and `∀ i, f i ≠ ⊥`, then `iInf f ≠ ⊥`.
 See also `iInf_neBot_of_directed` for a version assuming `Nonempty α` instead of `Nonempty ι`. -/

@@ -63,7 +63,7 @@ integral, and involutive quantales easier to add on later.
 open Function
 
 /-- An additive quantale is an additive semigroup distributing over a complete lattice. -/
-class IsAddQuantale (α : Type*) [AddSemigroup α] [CompleteLattice α] where
+class IsAddQuantale (α : Type*) [AddSemigroup α] [PartialOrder α] [CompleteLattice α] where
   /-- Addition is distributive over join in a quantale -/
   protected add_sSup_distrib (x : α) (s : Set α) : x + sSup s = ⨆ y ∈ s, x + y
   /-- Addition is distributive over join in a quantale -/
@@ -72,11 +72,11 @@ class IsAddQuantale (α : Type*) [AddSemigroup α] [CompleteLattice α] where
 /-- A quantale is a semigroup distributing over a complete lattice. -/
 @[variable_alias]
 structure AddQuantale (α : Type*)
-  [AddSemigroup α] [CompleteLattice α] [IsAddQuantale α]
+  [AddSemigroup α] [PartialOrder α] [CompleteLattice α] [IsAddQuantale α]
 
 /-- A quantale is a semigroup distributing over a complete lattice. -/
 @[to_additive]
-class IsQuantale (α : Type*) [Semigroup α] [CompleteLattice α] where
+class IsQuantale (α : Type*) [Semigroup α] [PartialOrder α] [CompleteLattice α] where
   /-- Multiplication is distributive over join in a quantale -/
   protected mul_sSup_distrib (x : α) (s : Set α) : x * sSup s = ⨆ y ∈ s, x * y
   /-- Multiplication is distributive over join in a quantale -/
@@ -85,12 +85,12 @@ class IsQuantale (α : Type*) [Semigroup α] [CompleteLattice α] where
 /-- A quantale is a semigroup distributing over a complete lattice. -/
 @[variable_alias, to_additive]
 structure Quantale (α : Type*)
-  [Semigroup α] [CompleteLattice α] [IsQuantale α]
+  [Semigroup α] [PartialOrder α] [CompleteLattice α] [IsQuantale α]
 
 section
 
 variable {α : Type*} {ι : Type*} {x y z : α} {s : Set α} {f : ι → α}
-variable [Semigroup α] [CompleteLattice α] [IsQuantale α]
+variable [Semigroup α] [PartialOrder α] [CompleteLattice α] [IsQuantale α]
 
 @[to_additive]
 theorem mul_sSup_distrib : x * sSup s = ⨆ y ∈ s, x * y := IsQuantale.mul_sSup_distrib _ _
@@ -103,7 +103,7 @@ end
 namespace AddQuantale
 
 variable {α : Type*} {ι : Type*} {x y z : α} {s : Set α} {f : ι → α}
-variable [AddSemigroup α] [CompleteLattice α] [IsAddQuantale α]
+variable [AddSemigroup α] [Lattice α] [CompleteLattice α] [IsAddQuantale α]
 
 /-- Left- and right- residuation operators on an additive quantale are similar
 to the Heyting operator on complete lattices, but for a non-commutative logic.
@@ -126,7 +126,7 @@ end AddQuantale
 namespace Quantale
 
 variable {α : Type*} {ι : Type*} {x y z : α} {s : Set α} {f : ι → α}
-variable [Semigroup α] [CompleteLattice α] [IsQuantale α]
+variable [Semigroup α] [Lattice α] [CompleteLattice α] [IsQuantale α]
 
 /-- Left- and right-residuation operators on a quantale are similar to the Heyting
 operator on complete lattices, but for a non-commutative logic.
@@ -162,7 +162,7 @@ theorem mul_sup_distrib : x * (y ⊔ z) = (x * y) ⊔ (x * z) := by
 
 @[to_additive]
 theorem sup_mul_distrib : (x ⊔ y) * z = (x * z) ⊔ (y * z) := by
-  rw [← (@iSup_pair _ _ _ (fun _? => _? * z) _ _), ← sSup_pair, sSup_mul_distrib]
+  rw [← iSup_pair (f := fun _? => _? * z), ← sSup_pair, sSup_mul_distrib]
 
 @[to_additive]
 instance : MulLeftMono α where
@@ -194,7 +194,7 @@ theorem rightMulResiduation_le_iff_mul_le : x ≤ y ⇨ᵣ z ↔ y * x ≤ z whe
 
 section Zero
 
-variable {α : Type*} [Semigroup α] [CompleteLattice α] [IsQuantale α]
+variable {α : Type*} [Semigroup α] [Lattice α] [CompleteLattice α] [IsQuantale α] [OrderBot α]
 variable {x : α}
 
 @[to_additive (attr := simp)]

@@ -28,12 +28,14 @@ namespace Finset
 variable [Fintype α] {s : Finset α}
 
 /-- A special case of `Finset.sup_eq_iSup` that omits the useless `x ∈ univ` binder. -/
-theorem sup_univ_eq_iSup [CompleteLattice β] (f : α → β) : Finset.univ.sup f = iSup f :=
+theorem sup_univ_eq_iSup [SemilatticeSup β] [OrderBot β] [CompleteLattice β] (f : α → β) :
+    Finset.univ.sup f = iSup f :=
   (sup_eq_iSup _ f).trans <| congr_arg _ <| funext fun _ => iSup_pos (mem_univ _)
 
 /-- A special case of `Finset.inf_eq_iInf` that omits the useless `x ∈ univ` binder. -/
-theorem inf_univ_eq_iInf [CompleteLattice β] (f : α → β) : Finset.univ.inf f = iInf f :=
-  @sup_univ_eq_iSup _ βᵒᵈ _ _ (f : α → βᵒᵈ)
+theorem inf_univ_eq_iInf [SemilatticeInf β] [OrderTop β] [CompleteLattice β] (f : α → β) :
+    Finset.univ.inf f = iInf f :=
+  sup_univ_eq_iSup (β := βᵒᵈ) f
 
 @[simp]
 theorem fold_inf_univ [SemilatticeInf α] [OrderBot α] (a : α) :

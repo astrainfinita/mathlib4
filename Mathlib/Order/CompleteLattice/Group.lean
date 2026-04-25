@@ -14,7 +14,7 @@ public import Mathlib.Order.CompleteLattice.Basic
 public section
 
 variable {α : Type*} {ι : Sort*} {κ : ι → Sort*}
-  [CompleteLattice α] [Mul α] [MulLeftMono α] [MulRightMono α]
+  [PartialOrder α] [CompleteLattice α] [Mul α] [MulLeftMono α] [MulRightMono α]
 
 @[to_additive]
 lemma iSup_mul_le (u v : ι → α) :

@@ -79,7 +79,8 @@ end Lattice
 
 namespace CompleteLattice
 
-variable {T : Type u} [CompleteLattice T] {ι : Type*} (x : T) (u : ι → T) (v : ι → ι → T)
+variable {T : Type u} [Lattice T] [CompleteLattice T]
+  {ι : Type*} (x : T) (u : ι → T) (v : ι → ι → T)
 
 /-- A multicoequalizer diagram in a complete lattice `T` consists of families of elements
 `u : ι → T`, `v : ι → ι → T`, and an element `x : T` such that `x` is the supremum of `u`,
@@ -120,7 +121,7 @@ end MulticoequalizerDiagram
 
 end CompleteLattice
 
-lemma Lattice.BicartSq.multicoequalizerDiagram {T : Type u} [CompleteLattice T]
+lemma Lattice.BicartSq.multicoequalizerDiagram {T : Type u} [Lattice T] [CompleteLattice T]
     {x₁ x₂ x₃ x₄} (sq : BicartSq x₁ x₂ x₃ x₄) :
     CompleteLattice.MulticoequalizerDiagram (T := T) x₄
       (fun i ↦ bif i then x₃ else x₂)

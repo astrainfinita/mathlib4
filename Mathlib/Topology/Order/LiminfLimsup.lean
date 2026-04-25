@@ -410,7 +410,7 @@ theorem liminf_eq_top : f.liminf u = ⊤ ↔ u =ᶠ[f] ⊤ :=
 all `i : ι`, `u i` tends to `c` at infinity, and that furthermore the limsup of `i ↦ u i r` along
 the cofinite filter tends to the same `c` as `r` tends to infinity.
 Then the supremum function `r ↦ ⨆ i, u i r` also tends to `c` at infinity. -/
-lemma tendsto_iSup_of_tendsto_limsup {α β : Type*} [ConditionallyCompleteLattice α]
+lemma tendsto_iSup_of_tendsto_limsup {α β : Type*} [PartialOrder α] [ConditionallyCompleteLattice α]
     [CompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
     {u : ι → α → β} {c : β}
     (h_all : ∀ i, Tendsto (u i) atTop (𝓝 c))
@@ -486,7 +486,7 @@ lemma tendsto_iSup_of_tendsto_limsup {α β : Type*} [ConditionallyCompleteLatti
 all `n : ℕ`, `u n` tends to `c` at infinity, and that furthermore the limsup of `n ↦ u n r`
 tends to the same `c` as `r` tends to infinity.
 Then the supremum function `r ↦ ⨆ n, u n r` also tends to `c` at infinity. -/
-lemma Nat.tendsto_iSup_of_tendsto_limsup {α β : Type*} [ConditionallyCompleteLattice α]
+lemma Nat.tendsto_iSup_of_tendsto_limsup {α β : Type*} [PartialOrder α] [ConditionallyCompleteLattice α]
     [CompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
     {u : ℕ → α → β} {c : β}
     (h_all : ∀ n, Tendsto (u n) atTop (𝓝 c))

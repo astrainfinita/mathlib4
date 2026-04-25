@@ -32,8 +32,12 @@ structure Frm where
   of ::
   /-- The underlying frame. -/
   (carrier : Type*)
+  [toLattice : Lattice carrier]
+  [toBoundedOrder : BoundedOrder carrier]
   [str : Frame carrier]
 
+attribute [instance] Frm.toLattice
+attribute [instance] Frm.toBoundedOrder
 attribute [instance] Frm.str
 
 initialize_simps_projections Frm (carrier → coe, -str)
@@ -71,7 +75,9 @@ abbrev Hom.hom {X Y : Frm.{u}} (f : Hom X Y) :=
   ConcreteCategory.hom (C := Frm) f
 
 /-- Typecheck a `FrameHom` as a morphism in `Frm`. -/
-abbrev ofHom {X Y : Type u} [Frame X] [Frame Y] (f : FrameHom X Y) : of X ⟶ of Y :=
+abbrev ofHom {X Y : Type u} [Lattice X] [BoundedOrder X] [Frame X]
+    [Lattice Y] [BoundedOrder Y] [Frame Y] (f : FrameHom X Y) :
+    of X ⟶ of Y :=
   ConcreteCategory.ofHom (C := Frm) f
 
 variable {R} in
@@ -100,7 +106,7 @@ lemma ext {X Y : Frm} {f g : X ⟶ Y} (w : ∀ x : X, f x = g x) : f = g :=
   ConcreteCategory.hom_ext _ _ w
 
 -- This is not `simp` to avoid rewriting in types of terms.
-theorem coe_of (X : Type u) [Frame X] : (Frm.of X : Type u) = X := rfl
+theorem coe_of (X : Type u) [Lattice X] [BoundedOrder X] [Frame X] : (Frm.of X : Type u) = X := rfl
 
 @[simp]
 lemma hom_id {X : Frm} : (𝟙 X : X ⟶ X).hom = FrameHom.id _ := rfl
@@ -122,22 +128,26 @@ lemma hom_ext {X Y : Frm} {f g : X ⟶ Y} (hf : f.hom = g.hom) : f = g :=
   Hom.ext hf
 
 @[simp]
-lemma hom_ofHom {X Y : Type u} [Frame X] [Frame Y] (f : FrameHom X Y) : (ofHom f).hom = f := rfl
+lemma hom_ofHom {X Y : Type u} [Lattice X] [BoundedOrder X] [Frame X]
+    [Lattice Y] [BoundedOrder Y] [Frame Y] (f : FrameHom X Y) : (ofHom f).hom = f := rfl
 
 @[simp]
 lemma ofHom_hom {X Y : Frm} (f : X ⟶ Y) :
     ofHom (Hom.hom f) = f := rfl
 
 @[simp]
-lemma ofHom_id {X : Type u} [Frame X] : ofHom (FrameHom.id _) = 𝟙 (of X) := rfl
+lemma ofHom_id {X : Type u} [Lattice X] [BoundedOrder X] [Frame X] :
+    ofHom (FrameHom.id _) = 𝟙 (of X) := rfl
 
 @[simp]
-lemma ofHom_comp {X Y Z : Type u} [Frame X] [Frame Y] [Frame Z]
+lemma ofHom_comp {X Y Z : Type u} [Lattice X] [BoundedOrder X] [Frame X]
+    [Lattice Y] [BoundedOrder Y] [Frame Y] [Lattice Z] [BoundedOrder Z] [Frame Z]
     (f : FrameHom X Y) (g : FrameHom Y Z) :
     ofHom (g.comp f) = ofHom f ≫ ofHom g :=
   rfl
 
-lemma ofHom_apply {X Y : Type u} [Frame X] [Frame Y] (f : FrameHom X Y) (x : X) :
+lemma ofHom_apply {X Y : Type u} [Lattice X] [BoundedOrder X] [Frame X]
+    [Lattice Y] [BoundedOrder Y] [Frame Y] (f : FrameHom X Y) (x : X) :
     (ofHom f) x = f x := rfl
 
 lemma inv_hom_apply {X Y : Frm} (e : X ≅ Y) (x : X) : e.inv (e.hom x) = x := by

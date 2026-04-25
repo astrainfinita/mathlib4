@@ -74,13 +74,15 @@ theorem antitone_seq_of_seq (s : ℕ → Set α) :
   · refine iInf_le_of_le i (principal_mono.2 <| iInter₂_subset i ?_)
     rfl
 
-theorem countable_biInf_eq_iInf_seq [CompleteLattice α] {B : Set ι} (Bcbl : B.Countable)
-    (Bne : B.Nonempty) (f : ι → α) : ∃ x : ℕ → ι, ⨅ t ∈ B, f t = ⨅ i, f (x i) :=
+theorem countable_biInf_eq_iInf_seq [PartialOrder α] [CompleteLattice α]
+    {B : Set ι} (Bcbl : B.Countable) (Bne : B.Nonempty) (f : ι → α) :
+    ∃ x : ℕ → ι, ⨅ t ∈ B, f t = ⨅ i, f (x i) :=
   let ⟨g, hg⟩ := Bcbl.exists_eq_range Bne
   ⟨g, hg.symm ▸ iInf_range⟩
 
-theorem countable_biInf_eq_iInf_seq' [CompleteLattice α] {B : Set ι} (Bcbl : B.Countable)
-    (f : ι → α) {i₀ : ι} (h : f i₀ = ⊤) : ∃ x : ℕ → ι, ⨅ t ∈ B, f t = ⨅ i, f (x i) := by
+theorem countable_biInf_eq_iInf_seq' [PartialOrder α] [OrderTop α] [CompleteLattice α]
+    {B : Set ι} (Bcbl : B.Countable) (f : ι → α) {i₀ : ι} (h : f i₀ = ⊤) :
+    ∃ x : ℕ → ι, ⨅ t ∈ B, f t = ⨅ i, f (x i) := by
   rcases B.eq_empty_or_nonempty with hB | Bnonempty
   · rw [hB, iInf_emptyset]
     use fun _ => i₀

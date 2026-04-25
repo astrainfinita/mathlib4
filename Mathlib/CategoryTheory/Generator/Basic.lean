@@ -433,7 +433,9 @@ theorem hasInitial_of_isCoseparating [LocallySmall.{w} C] [WellPowered.{w} C]
   have := hasFiniteLimits_of_hasLimitsOfSize C
   haveI := hasProductsOfShape_of_small C (Subtype P)
   haveI := fun A => hasProductsOfShape_of_small.{w} C (StructuredArrow A P.ι)
-  letI := completeLatticeOfCompleteSemilatticeInf (Subobject (piObj (Subtype.val : Subtype P → C)))
+  letI := completeLatticeOfInf (Subobject (piObj (Subtype.val : Subtype P → C)))
+    Subobject.isGLB_sInf
+  letI := OrderBot.ofInfSet
   suffices ∀ A : C, Unique (((⊥ : Subobject (piObj (Subtype.val : Subtype P → C))) : C) ⟶ A) by
     exact hasInitial_of_unique ((⊥ : Subobject (piObj (Subtype.val : Subtype P → C))) : C)
   have := hP.mono_productTo

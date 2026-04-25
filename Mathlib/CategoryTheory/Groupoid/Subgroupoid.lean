@@ -223,18 +223,23 @@ theorem mem_sInf {s : Set (Subgroupoid C)} {p : Σ c d : C, c ⟶ d} :
     p ∈ sInf s ↔ ∀ S ∈ s, p ∈ S :=
   mem_sInf_arrows
 
+instance : BoundedOrder (Subgroupoid C) where
+  bot := ⊥
+  bot_le := fun _ => empty_subset _
+  top := ⊤
+  le_top := fun _ => subset_univ _
+
 instance : CompleteLattice (Subgroupoid C) :=
-  { completeLatticeOfInf (Subgroupoid C) (by
-      refine fun s => ⟨fun S Ss F => ?_, fun T Tl F fT => ?_⟩ <;> simp only [mem_sInf]
-      exacts [fun hp => hp S Ss, fun S Ss => Tl Ss fT]) with
-    bot := ⊥
-    bot_le := fun _ => empty_subset _
-    top := ⊤
-    le_top := fun _ => subset_univ _
-    inf := (· ⊓ ·)
-    le_inf := fun _ _ _ RS RT _ pR => ⟨RS pR, RT pR⟩
-    inf_le_left := fun _ _ _ => And.left
-    inf_le_right := fun _ _ _ => And.right }
+  completeLatticeOfInf (Subgroupoid C) (by
+    refine fun s => ⟨fun S Ss F => ?_, fun T Tl F fT => ?_⟩ <;> simp only [mem_sInf]
+    exacts [fun hp => hp S Ss, fun S Ss => Tl Ss fT])
+
+instance : Lattice (Subgroupoid C) where
+  inf := (· ⊓ ·)
+  le_inf := fun _ _ _ RS RT _ pR => ⟨RS pR, RT pR⟩
+  inf_le_left := fun _ _ _ => And.left
+  inf_le_right := fun _ _ _ => And.right
+  toSemilatticeSup := .ofCompleteLattice _
 
 theorem le_objs {S T : Subgroupoid C} (h : S ≤ T) : S.objs ⊆ T.objs := fun s ⟨γ, hγ⟩ =>
   ⟨γ, @h ⟨s, s, γ⟩ hγ⟩

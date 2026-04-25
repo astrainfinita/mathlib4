@@ -44,7 +44,7 @@ open OrderDual
 
 section
 
-variable [CompleteLattice α] {f g s : ι → α} {a b : α}
+variable [Lattice α] [CompleteLattice α] {f g s : ι → α} {a b : α}
 
 /-!
 ### `iSup` and `iInf` under `Type`
@@ -54,13 +54,13 @@ theorem iSup_bool_eq {f : Bool → α} : ⨆ b : Bool, f b = f true ⊔ f false 
   rw [iSup, Bool.range_eq, sSup_pair, sup_comm]
 
 theorem iInf_bool_eq {f : Bool → α} : ⨅ b : Bool, f b = f true ⊓ f false :=
-  @iSup_bool_eq αᵒᵈ _ _
+  iSup_bool_eq (α := αᵒᵈ)
 
 theorem sup_eq_iSup (x y : α) : x ⊔ y = ⨆ b : Bool, cond b x y := by
   rw [iSup_bool_eq, Bool.cond_true, Bool.cond_false]
 
 theorem inf_eq_iInf (x y : α) : x ⊓ y = ⨅ b : Bool, cond b x y :=
-  @sup_eq_iSup αᵒᵈ _ _ _
+  sup_eq_iSup (α := αᵒᵈ) _ _
 
 /-!
 ### `iSup` and `iInf` under `ℕ`
@@ -75,7 +75,7 @@ theorem iSup_ge_eq_iSup_nat_add (u : ℕ → α) (n : ℕ) : ⨆ i ≥ n, u i = 
   · exact fun i => le_sSup ⟨i + n, iSup_pos (Nat.le_add_left _ _)⟩
 
 theorem iInf_ge_eq_iInf_nat_add (u : ℕ → α) (n : ℕ) : ⨅ i ≥ n, u i = ⨅ i, u (i + n) :=
-  @iSup_ge_eq_iSup_nat_add αᵒᵈ _ _ _
+  iSup_ge_eq_iSup_nat_add (α := αᵒᵈ) _ _
 
 theorem Monotone.iSup_nat_add {f : ℕ → α} (hf : Monotone f) (k : ℕ) : ⨆ n, f (n + k) = ⨆ n, f n :=
   le_antisymm (iSup_le fun i => le_iSup _ (i + k)) <| iSup_mono fun i => hf <| Nat.le_add_right i k
@@ -97,7 +97,7 @@ theorem iSup_iInf_ge_nat_add (f : ℕ → α) (k : ℕ) :
 -- See: https://leanprover.zulipchat.com/#narrow/stream/287929-mathlib4/topic/complete_lattice.20and.20has_sup/near/316497982
 theorem iInf_iSup_ge_nat_add :
     ∀ (f : ℕ → α) (k : ℕ), ⨅ n, ⨆ i ≥ n, f (i + k) = ⨅ n, ⨆ i ≥ n, f i :=
-  @iSup_iInf_ge_nat_add αᵒᵈ _
+  iSup_iInf_ge_nat_add (α := αᵒᵈ)
 
 theorem sup_iSup_nat_succ (u : ℕ → α) : (u 0 ⊔ ⨆ i, u (i + 1)) = ⨆ i, u i :=
   calc
@@ -106,14 +106,14 @@ theorem sup_iSup_nat_succ (u : ℕ → α) : (u 0 ⊔ ⨆ i, u (i + 1)) = ⨆ i,
     _ = ⨆ i, u i := by rw [Nat.zero_union_range_succ, iSup_univ]
 
 theorem inf_iInf_nat_succ (u : ℕ → α) : (u 0 ⊓ ⨅ i, u (i + 1)) = ⨅ i, u i :=
-  @sup_iSup_nat_succ αᵒᵈ _ u
+  sup_iSup_nat_succ (α := αᵒᵈ) u
 
 theorem iInf_nat_gt_zero_eq (f : ℕ → α) : ⨅ i > 0, f i = ⨅ i, f (i + 1) := by
   rw [← iInf_range, Nat.range_succ]
   simp
 
 theorem iSup_nat_gt_zero_eq (f : ℕ → α) : ⨆ i > 0, f i = ⨆ i, f (i + 1) :=
-  @iInf_nat_gt_zero_eq αᵒᵈ _ f
+  iInf_nat_gt_zero_eq (α := αᵒᵈ) f
 
 end
 
@@ -123,7 +123,7 @@ end
 
 section CompleteLattice
 
-variable [CompleteLattice α] {a : α} {s : Set α}
+variable [Lattice α] [CompleteLattice α] {a : α} {s : Set α}
 
 /-- This is a weaker version of `sup_sInf_eq` -/
 theorem sup_sInf_le_iInf_sup : a ⊔ sInf s ≤ ⨅ b ∈ s, a ⊔ b :=
@@ -131,7 +131,7 @@ theorem sup_sInf_le_iInf_sup : a ⊔ sInf s ≤ ⨅ b ∈ s, a ⊔ b :=
 
 /-- This is a weaker version of `inf_sSup_eq` -/
 theorem iSup_inf_le_inf_sSup : ⨆ b ∈ s, a ⊓ b ≤ a ⊓ sSup s :=
-  @sup_sInf_le_iInf_sup αᵒᵈ _ _ _
+  sup_sInf_le_iInf_sup (α := αᵒᵈ)
 
 /-- This is a weaker version of `sInf_sup_eq` -/
 theorem sInf_sup_le_iInf_sup : sInf s ⊔ a ≤ ⨅ b ∈ s, b ⊔ a :=
@@ -139,7 +139,7 @@ theorem sInf_sup_le_iInf_sup : sInf s ⊔ a ≤ ⨅ b ∈ s, b ⊔ a :=
 
 /-- This is a weaker version of `sSup_inf_eq` -/
 theorem iSup_inf_le_sSup_inf : ⨆ b ∈ s, b ⊓ a ≤ sSup s ⊓ a :=
-  @sInf_sup_le_iInf_sup αᵒᵈ _ _ _
+  sInf_sup_le_iInf_sup (α := αᵒᵈ)
 
 theorem iInf_sup_le_iInf_sup (f : ι → α) (a : α) :
     (⨅ i, f i) ⊔ a ≤ ⨅ i, (f i ⊔ a) :=
@@ -151,11 +151,11 @@ theorem sup_iInf_le_iInf_sup (f : ι → α) (a : α) :
 
 theorem iSup_inf_le_iSup_inf (f : ι → α) (a : α) :
     ⨆ i, (f i ⊓ a) ≤ (⨆ i, f i) ⊓ a :=
-  @iInf_sup_le_iInf_sup αᵒᵈ ι _ f a
+  iInf_sup_le_iInf_sup (α := αᵒᵈ) f a
 
 theorem iSup_inf_le_inf_iSup (f : ι → α) (a : α) :
     ⨆ i, (a ⊓ f i) ≤ a ⊓ (⨆ i, f i) :=
-  @sup_iInf_le_iInf_sup αᵒᵈ ι _ f a
+  sup_iInf_le_iInf_sup (α := αᵒᵈ) f a
 
 lemma biInf_sup_le_biInf_sup (f : β → α) (s : Set β) (a : α) :
     (⨅ i ∈ s, f i) ⊔ a ≤ ⨅ i ∈ s, f i ⊔ a :=
@@ -167,17 +167,19 @@ lemma sup_biInf_le_biInf_sup (f : β → α) (s : Set β) (a : α) :
 
 lemma biSup_inf_le_biSup_inf (f : β → α) (s : Set β) (a : α) :
     ⨆ i ∈ s, (f i ⊓ a) ≤ (⨆ i ∈ s, f i) ⊓ a :=
-  @biInf_sup_le_biInf_sup αᵒᵈ β _ f s a
+  biInf_sup_le_biInf_sup (α := αᵒᵈ) f s a
 
 lemma biSup_inf_le_inf_biSup (f : β → α) (s : Set β) (a : α) :
     ⨆ i ∈ s, (a ⊓ f i) ≤ a ⊓ (⨆ i ∈ s, f i) :=
-  @sup_biInf_le_biInf_sup αᵒᵈ β _ f s a
+  sup_biInf_le_biInf_sup (α := αᵒᵈ) f s a
 
 theorem le_iSup_inf_iSup (f g : ι → α) : ⨆ i, f i ⊓ g i ≤ (⨆ i, f i) ⊓ ⨆ i, g i :=
   le_inf (iSup_mono fun _ => inf_le_left) (iSup_mono fun _ => inf_le_right)
 
 theorem iInf_sup_iInf_le (f g : ι → α) : (⨅ i, f i) ⊔ ⨅ i, g i ≤ ⨅ i, f i ⊔ g i :=
-  @le_iSup_inf_iSup αᵒᵈ ι _ f g
+  le_iSup_inf_iSup (α := αᵒᵈ) f g
+
+variable [OrderBot α]
 
 theorem disjoint_sSup_left {a : Set α} {b : α} (d : Disjoint (sSup a) b) {i} (hi : i ∈ a) :
     Disjoint i b :=
@@ -187,6 +189,7 @@ theorem disjoint_sSup_right {a : Set α} {b : α} (d : Disjoint b (sSup a)) {i} 
     Disjoint b i :=
   disjoint_iff_inf_le.mpr (iSup₂_le_iff.mp (iSup_inf_le_inf_sSup.trans d.le_bot) i hi :)
 
+omit [CompleteLattice α] in
 lemma disjoint_of_sSup_disjoint_of_le_of_le {a b : α} {c d : Set α} (hs : ∀ e ∈ c, e ≤ a)
     (ht : ∀ e ∈ d, e ≤ b) (hd : Disjoint a b) (he : ⊥ ∉ c ∨ ⊥ ∉ d) : Disjoint c d := by
   grind
@@ -223,25 +226,19 @@ theorem down_iInf [InfSet α] (f : ι → ULift.{v} α) : (⨅ i, f i).down = �
 theorem up_iInf [InfSet α] (f : ι → α) : up (⨅ i, f i) = ⨅ i, up (f i) :=
   congr_arg ULift.up <| (down_iInf _).symm
 
-instance instCompleteLattice [CompleteLattice α] : CompleteLattice (ULift.{v} α) :=
-  ULift.down_injective.completeLattice _ .rfl .rfl down_sup down_inf
+instance instCompleteLattice [Lattice α] [CompleteLattice α] : CompleteLattice (ULift.{v} α) :=
+  .lift ULift.down .rfl
     (fun s => by rw [sSup_eq_iSup', down_iSup, iSup_subtype''])
-    (fun s => by rw [sInf_eq_iInf', down_iInf, iInf_subtype'']) down_top down_bot
+    (fun s => by rw [sInf_eq_iInf', down_iInf, iInf_subtype''])
 
 end ULift
 
 namespace PUnit
 
-instance instCompleteLinearOrder : CompleteLinearOrder PUnit where
-  __ := instBooleanAlgebra
-  __ := instLinearOrder
+instance instCompleteLattice : CompleteLattice PUnit where
   sSup := fun _ => unit
   sInf := fun _ => unit
   isLUB_sSup _ := ⟨top_mem_upperBounds _, bot_mem_lowerBounds _⟩
   isGLB_sInf _ := ⟨bot_mem_lowerBounds _, top_mem_upperBounds _⟩
-  le_himp_iff := by intros; trivial
-  himp_bot := by intros; trivial
-  sdiff_le_iff := by intros; trivial
-  top_sdiff := by intros; trivial
 
 end PUnit

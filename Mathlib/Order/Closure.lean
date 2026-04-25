@@ -255,7 +255,7 @@ end SemilatticeSup
 
 section CompleteLattice
 
-variable [CompleteLattice α] (c : ClosureOperator α)
+variable [PartialOrder α] [CompleteLattice α] (c : ClosureOperator α)
 
 /-- Define a closure operator from a predicate that's preserved under infima. -/
 @[simps!]
@@ -441,7 +441,7 @@ end SemilatticeSup
 
 section CompleteLattice
 
-variable [CompleteLattice α] [Preorder β] {u : β → α} (l : LowerAdjoint u)
+variable [PartialOrder α] [CompleteLattice α] [Preorder β] {u : β → α} (l : LowerAdjoint u)
 
 theorem closure_iSup_closure (f : ι → α) : u (l (⨆ i, u (l (f i)))) = u (l (⨆ i, f i)) :=
   l.closureOperator.closure_iSup_closure _

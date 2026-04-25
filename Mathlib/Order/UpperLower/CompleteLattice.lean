@@ -91,28 +91,37 @@ instance : InfSet (UpperSet α) :=
 instance : PartialOrder (UpperSet α) :=
   PartialOrder.lift _ (toDual.injective.comp SetLike.coe_injective)
 
+instance : Lattice (UpperSet α) :=
+  (toDual.injective.comp SetLike.coe_injective).lattice _ .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+instance : BoundedOrder (UpperSet α) :=
+  .lift (toDual ∘ SetLike.coe) (fun _ _ ↦ id) rfl rfl
+
 instance completeLattice : CompleteLattice (UpperSet α) :=
-  (toDual.injective.comp SetLike.coe_injective).completeLattice _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+  .lift (toDual ∘ SetLike.coe) .rfl (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 instance completelyDistribLattice : CompletelyDistribLattice (UpperSet α) :=
-  .ofMinimalAxioms <|
-    (toDual.injective.comp SetLike.coe_injective).completelyDistribLatticeMinimalAxioms .of _
-      .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+  .lift (toDual ∘ SetLike.coe) .rfl (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 @[to_dual existing]
 instance _root_.LowerSet.instPartialOrder : PartialOrder (LowerSet α) :=
   PartialOrder.lift _ SetLike.coe_injective
 
 @[to_dual existing]
+instance _root_.LowerSet.instLattice : Lattice (LowerSet α) :=
+  SetLike.coe_injective.lattice _ .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+
+@[to_dual existing]
+instance _root_.LowerSet.instBoundedOrder : BoundedOrder (LowerSet α) :=
+  .lift SetLike.coe (fun _ _ ↦ id) rfl rfl
+
+@[to_dual existing]
 instance _root_.LowerSet.completeLattice : CompleteLattice (LowerSet α) :=
-  SetLike.coe_injective.completeLattice _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+  .lift SetLike.coe .rfl (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 @[to_dual existing]
 instance _root_.LowerSet.completelyDistribLattice : CompletelyDistribLattice (LowerSet α) :=
-  .ofMinimalAxioms <| SetLike.coe_injective.completelyDistribLatticeMinimalAxioms .of _
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+  .lift SetLike.coe .rfl (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 @[to_dual]
 instance : Inhabited (UpperSet α) :=
@@ -302,9 +311,6 @@ instance total_le : @Std.Total (UpperSet α) (· ≤ ·) := ⟨fun s t => t.uppe
 noncomputable instance instLinearOrder : LinearOrder (UpperSet α) := by
   classical exact Lattice.toLinearOrder _
 
-noncomputable instance instCompleteLinearOrder : CompleteLinearOrder (UpperSet α) :=
-  { completelyDistribLattice, instLinearOrder with }
-
 @[to_dual none]
 instance _root_.LowerSet.total_le : @Std.Total (LowerSet α) (· ≤ ·) :=
   ⟨fun s t => s.lower.total t.lower⟩
@@ -312,10 +318,6 @@ instance _root_.LowerSet.total_le : @Std.Total (LowerSet α) (· ≤ ·) :=
 @[to_dual existing]
 noncomputable instance _root_.LowerSet.instLinearOrder : LinearOrder (LowerSet α) := by
   classical exact Lattice.toLinearOrder _
-
-@[to_dual existing]
-noncomputable instance _root_.LowerSet.instCompleteLinearOrder : CompleteLinearOrder (LowerSet α) :=
-  { LowerSet.completelyDistribLattice, LowerSet.instLinearOrder with }
 
 end LinearOrder
 

@@ -80,8 +80,7 @@ instance : Bot (Precoverage C) where
   bot.coverings _ := ∅
 
 instance : CompleteLattice (Precoverage C) :=
-  Function.Injective.completeLattice Precoverage.coverings (fun _ _ hab ↦ Precoverage.ext hab)
-    .rfl .rfl (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) rfl rfl
+  .lift Precoverage.coverings .rfl (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 /-- A precoverage has isomorphisms if singleton presieves by isomorphisms are covering. -/
 class HasIsos (J : Precoverage C) : Prop where

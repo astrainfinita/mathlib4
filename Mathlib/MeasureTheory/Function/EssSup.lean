@@ -40,7 +40,7 @@ variable {α β : Type*} {m : MeasurableSpace α} {μ ν : Measure α}
 
 section ConditionallyCompleteLattice
 
-variable [ConditionallyCompleteLattice β] {f : α → β}
+variable [PartialOrder β] [ConditionallyCompleteLattice β] {f : α → β}
 
 /-- Essential supremum of `f` with respect to measure `μ`: the smallest `c : β` such that
 `f x ≤ c` a.e. -/

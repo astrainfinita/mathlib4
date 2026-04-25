@@ -302,7 +302,7 @@ instance : PartialOrder (SimpleGraph V) :=
 instance distribLattice : DistribLattice (SimpleGraph V) :=
   adj_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
 
-instance completeAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (SimpleGraph V) where
+instance booleanAlgebra : BooleanAlgebra (SimpleGraph V) where
   top.Adj := Ne
   bot.Adj _ _ := False
   le_top x _ _ h := x.ne_of_adj h
@@ -317,6 +317,8 @@ instance completeAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (SimpleGrap
     by_cases h : G.Adj v w
     · exact Or.inl h
     · exact Or.inr ⟨hvw, h⟩
+
+instance completelyDistribLattice : CompletelyDistribLattice (SimpleGraph V) where
   isLUB_sSup _ := ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
   isGLB_sInf _ := ⟨fun _ hG _ _ hab ↦ hab.1 hG, fun _ hG _ _ hab ↦ ⟨fun _ hH => hG hH hab, hab.ne⟩⟩
   iInf_iSup_eq f := by ext; simp [Classical.skolem]

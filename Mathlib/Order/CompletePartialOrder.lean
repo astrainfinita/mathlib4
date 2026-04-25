@@ -43,7 +43,7 @@ section CompletePartialOrder
 /--
 Complete partial orders are partial orders where every directed set has a least upper bound.
 -/
-class CompletePartialOrder (α : Type*) extends PartialOrder α, OrderSupSet α, OrderBot α where
+class CompletePartialOrder (α : Type*) [PartialOrder α] extends OrderSupSet α where
   /-- For each directed set `d`, `sSup d` is the least upper bound of `d`. -/
   lubOfDirected : ∀ d, DirectedOn (· ≤ ·) d → IsLUB d (sSup d)
 
@@ -57,26 +57,33 @@ def CompletePartialOrder.ofLubOfDirected (α : Type*) [H1 : PartialOrder α] [H2
     (lub_of_directed : ∀ d : Set α, DirectedOn (· ≤ ·) d → IsLUB d (sSup d)) :
     CompletePartialOrder α where
   __ := H1; __ := H2
-  bot := sSup ∅
-  bot_le := isLUB_empty_iff.mp <| lub_of_directed ∅ IsChain.empty.directedOn
   lubOfDirected := lub_of_directed
 
-variable [CompletePartialOrder α] [Preorder β] {f : ι → α} {d : Set α} {a : α}
+variable [PartialOrder α] [CompletePartialOrder α] [Preorder β] {f : ι → α} {d : Set α} {a : α}
 
 protected lemma DirectedOn.isLUB_sSup : DirectedOn (· ≤ ·) d → IsLUB d (sSup d) :=
-CompletePartialOrder.lubOfDirected _
+  CompletePartialOrder.lubOfDirected _
 
 protected lemma DirectedOn.le_sSup (hd : DirectedOn (· ≤ ·) d) (ha : a ∈ d) : a ≤ sSup d :=
-hd.isLUB_sSup.1 ha
+  hd.isLUB_sSup.1 ha
 
 protected lemma DirectedOn.sSup_le (hd : DirectedOn (· ≤ ·) d) (ha : ∀ b ∈ d, b ≤ a) : sSup d ≤ a :=
-hd.isLUB_sSup.2 ha
+  hd.isLUB_sSup.2 ha
 
 protected lemma Directed.le_iSup (hf : Directed (· ≤ ·) f) (i : ι) : f i ≤ ⨆ j, f j :=
-hf.directedOn_range.le_sSup <| Set.mem_range_self _
+  hf.directedOn_range.le_sSup <| Set.mem_range_self _
 
 protected lemma Directed.iSup_le (hf : Directed (· ≤ ·) f) (ha : ∀ i, f i ≤ a) : ⨆ i, f i ≤ a :=
-hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
+  hf.directedOn_range.sSup_le <| Set.forall_mem_range.2 ha
+
+-- TODO: replace `OrderBot.ofSupSet` with this
+--   after we have the infimum version of `CompletePartialOrder`
+/-- Create a `OrderBot` from a `PartialOrder` and `CompleteLattice`.
+
+This sets `⊥ := sSup ∅`. -/
+abbrev OrderBot.ofSupSet' (α : Type*) [PartialOrder α] [CompletePartialOrder α] : OrderBot α where
+  bot := sSup ∅
+  bot_le := isLUB_empty_iff.mp <| IsChain.empty.directedOn.isLUB_sSup
 
 --TODO: We could mimic more `sSup`/`iSup` lemmas
 
@@ -104,6 +111,7 @@ instance (priority := 100) : ConditionallyCompletePartialOrderSup α where
 end CompletePartialOrder
 
 /-- A complete lattice is a complete partial order. -/
-instance (priority := 100) CompleteLattice.toCompletePartialOrder [CompleteLattice α] :
+instance (priority := 100) CompleteLattice.toCompletePartialOrder
+    [PartialOrder α] [CompleteLattice α] :
     CompletePartialOrder α where
   lubOfDirected _ _ := isLUB_sSup _

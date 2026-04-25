@@ -130,7 +130,7 @@ def principalEmbedding : α ↪o DedekindCut α where
 end PartialOrder
 
 section CompleteLattice
-variable [CompleteLattice α] [PartialOrder β]
+variable [PartialOrder α] [CompleteLattice α] [PartialOrder β]
 
 @[simp]
 theorem principal_sSup_left (A : DedekindCut α) : principal (sSup A.left) = A := by
@@ -205,10 +205,8 @@ noncomputable instance : LinearOrder (DedekindCut α) where
   le_total := total_of _
   toDecidableLE := inferInstance
 
-noncomputable instance : CompleteLinearOrder (DedekindCut α) where
-  __ := (inferInstance : LinearOrder _)
+noncomputable instance : CompleteLattice (DedekindCut α) where
   __ := (inferInstance : CompleteLattice _)
-  __ := LinearOrder.toBiheytingAlgebra _
 
 end LinearOrder
 end DedekindCut

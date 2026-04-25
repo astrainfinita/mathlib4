@@ -303,7 +303,7 @@ lemma _root_.Finsupp.logHeight_eq_log_mulHeight (x : α →₀ K) :
 ### First properties of heights
 -/
 
-private lemma max_eq_iSup {α : Type*} [ConditionallyCompleteLattice α] (a b : α) :
+private lemma max_eq_iSup {α : Type*} [PartialOrder α] [ConditionallyCompleteLattice α] (a b : α) :
     max a b = iSup ![a, b] :=
   eq_of_forall_ge_iff <| by simp [ciSup_le_iff, Fin.forall_fin_two]
 

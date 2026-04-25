@@ -175,19 +175,23 @@ instance : PartialOrder (Setoid α) where
   lt_iff_le_not_ge _ _ := Iff.rfl
   le_antisymm _ _ h1 h2 := Setoid.ext fun _ _ => ⟨fun h => h1 h, fun h => h2 h⟩
 
-/-- The complete lattice of equivalence relations on a type, with bottom element `=`
-and top element the trivial equivalence relation. -/
+instance : BoundedOrder (Setoid α) where
+  top := ⟨fun _ _ => True, ⟨fun _ => trivial, fun h => h, fun h1 _ => h1⟩⟩
+  le_top := fun _ _ _ _ => trivial
+  bot := ⟨(· = ·), ⟨fun _ => rfl, fun h => h.symm, fun h1 h2 => h1.trans h2⟩⟩
+  bot_le := fun r x _ h => h ▸ r.2.1 x
+
+/-- The complete lattice of equivalence relations on a type. -/
 instance completeLattice : CompleteLattice (Setoid α) :=
-  { (completeLatticeOfInf (Setoid α)) fun _ =>
-      ⟨fun _ hr _ _ h => h _ hr, fun _ hr _ _ h _ hr' => hr hr' h⟩ with
-    inf := Min.min
-    inf_le_left := fun _ _ _ _ h => h.1
-    inf_le_right := fun _ _ _ _ h => h.2
-    le_inf := fun _ _ _ h1 h2 _ _ h => ⟨h1 h, h2 h⟩
-    top := ⟨fun _ _ => True, ⟨fun _ => trivial, fun h => h, fun h1 _ => h1⟩⟩
-    le_top := fun _ _ _ _ => trivial
-    bot := ⟨(· = ·), ⟨fun _ => rfl, fun h => h.symm, fun h1 h2 => h1.trans h2⟩⟩
-    bot_le := fun r x _ h => h ▸ r.2.1 x }
+  (completeLatticeOfInf (Setoid α)) fun _ =>
+    ⟨fun _ hr _ _ h => h _ hr, fun _ hr _ _ h _ hr' => hr hr' h⟩
+
+instance : Lattice (Setoid α) where
+  inf := Min.min
+  inf_le_left := fun _ _ _ _ h => h.1
+  inf_le_right := fun _ _ _ _ h => h.2
+  le_inf := fun _ _ _ h1 h2 _ _ h => ⟨h1 h, h2 h⟩
+  toSemilatticeSup := .ofCompleteLattice _
 
 @[simp]
 theorem top_def : ⇑(⊤ : Setoid α) = ⊤ :=
@@ -248,7 +252,7 @@ theorem sup_eq_eqvGen (r s : Setoid α) :
     r ⊔ s = EqvGen.setoid fun x y => r x y ∨ s x y := by
   rw [eqvGen_eq]
   apply congr_arg sInf
-  simp only [le_def, or_imp, ← forall_and]
+  ext; simp [le_def, or_imp, ← forall_and]
 
 /-- The supremum of 2 equivalence relations r and s is the equivalence closure of the
 supremum of the underlying binary operations. -/

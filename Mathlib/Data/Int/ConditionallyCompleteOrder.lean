@@ -27,8 +27,6 @@ instance : NoTopOrder ℤ := ⟨fun x ↦ ⟨x + 1, (Int.lt_add_one_of_le le_rfl
 
 open scoped Classical in
 instance instConditionallyCompleteLinearOrder : ConditionallyCompleteLinearOrder ℤ where
-  __ := instLinearOrder
-  __ := LinearOrder.toLattice
   sSup s :=
     if h : s.Nonempty ∧ BddAbove s then
       greatestOfBdd (Classical.choose h.2) (Classical.choose_spec h.2) h.1

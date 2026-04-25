@@ -172,13 +172,15 @@ instance : PartialOrder (Digraph V) := fast_instance% PartialOrder.lift _ adj_in
 instance distribLattice : DistribLattice (Digraph V) := fast_instance%
   adj_injective.distribLattice _ .rfl .rfl (fun _ _ ↦ rfl) fun _ _ ↦ rfl
 
-instance completeAtomicBooleanAlgebra : CompleteAtomicBooleanAlgebra (Digraph V) where
+instance booleanAlgebra : BooleanAlgebra (Digraph V) where
   top := Digraph.completeDigraph V
   bot := Digraph.emptyDigraph V
   le_top _ _ _ _ := trivial
   bot_le _ _ _ h := h.elim
   inf_compl_le_bot _ _ _ h := absurd h.1 h.2
   top_le_sup_compl G v w _ := by tauto
+
+instance completelyDistribLattice : CompletelyDistribLattice (Digraph V) where
   isLUB_sSup _ := ⟨fun G hG _ _ hab ↦ ⟨G, hG, hab⟩, fun _ hG _ _ ⟨_, hH, hab⟩ ↦ hG hH hab⟩
   isGLB_sInf _ := ⟨fun _ hG _ _ hab ↦ hab hG, fun _ hG _ _ hab _ hH ↦ hG hH hab⟩
   iInf_iSup_eq f := by ext; simp [Classical.skolem]
