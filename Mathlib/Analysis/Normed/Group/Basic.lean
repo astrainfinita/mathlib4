@@ -608,11 +608,11 @@ end NNNorm
 section ENorm
 
 @[to_additive (attr := simp) enorm_zero]
-lemma enorm_one' {E : Type*} [TopologicalSpace E] [ESeminormedMonoid E] : ‖(1 : E)‖ₑ = 0 := by
+lemma enorm_one' {E : Type*} [TopologicalSpace E] [ContinuousENorm E] [Monoid E] [IsESeminormedMonoid E] : ‖(1 : E)‖ₑ = 0 := by
   rw [IsESeminormedMonoid.enorm_zero]
 
 @[to_additive exists_enorm_lt]
-lemma exists_enorm_lt' (E : Type*) [TopologicalSpace E] [ESeminormedMonoid E]
+lemma exists_enorm_lt' (E : Type*) [TopologicalSpace E] [ContinuousENorm E] [Monoid E] [IsESeminormedMonoid E]
     [hbot : NeBot (𝓝[≠] (1 : E))] {c : ℝ≥0∞} (hc : c ≠ 0) : ∃ x ≠ (1 : E), ‖x‖ₑ < c :=
   frequently_iff_neBot.mpr hbot |>.and_eventually
     (ContinuousENorm.continuous_enorm.tendsto' 1 0 (by simp) |>.eventually_lt_const hc.bot_lt)
@@ -650,7 +650,7 @@ end ENorm
 
 section ESeminormedMonoid
 
-variable {E : Type*} [TopologicalSpace E] [ESeminormedMonoid E]
+variable {E : Type*} [TopologicalSpace E] [ContinuousENorm E] [Monoid E] [IsESeminormedMonoid E]
 
 @[to_additive enorm_add_le]
 lemma enorm_mul_le' (a b : E) : ‖a * b‖ₑ ≤ ‖a‖ₑ + ‖b‖ₑ := IsESeminormedMonoid.enorm_mul_le a b
@@ -672,7 +672,7 @@ end ESeminormedMonoid
 
 section ENormedMonoid
 
-variable {E : Type*} [TopologicalSpace E] [ENormedMonoid E]
+variable {E : Type*} [TopologicalSpace E] [ContinuousENorm E] [Monoid E] [IsENormedMonoid E]
 
 @[to_additive (attr := simp) enorm_eq_zero]
 lemma enorm_eq_zero' {a : E} : ‖a‖ₑ = 0 ↔ a = 1 := by

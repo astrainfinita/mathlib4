@@ -116,17 +116,6 @@ class IsESeminormedAddMonoid (E : Type*)
   enorm_zero : ‖(0 : E)‖ₑ = 0
   protected enorm_add_le : ∀ x y : E, ‖x + y‖ₑ ≤ ‖x‖ₑ + ‖y‖ₑ
 
-/-- missing doc -/
-@[class_abbrev]
-structure ESeminormedAddMonoid (E : Type*) [TopologicalSpace E] where
-  /-- missing doc -/
-  [toContinuousENorm : ContinuousENorm E]
-  /-- missing doc -/
-  [toAddMonoid : AddMonoid E]
-  [toIsESeminormedAddMonoid : IsESeminormedAddMonoid E]
-
-attribute [instance] ESeminormedAddMonoid.mk
-
 /-- An enormed monoid is an additive monoid endowed with a continuous enorm,
 which is positive definite: in other words, this is an `ESeminormedAddMonoid` with a positive
 definiteness condition added. -/

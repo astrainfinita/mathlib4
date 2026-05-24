@@ -58,7 +58,7 @@ open MeasureTheory Set Filter Function TopologicalSpace
 open scoped Topology Filter ENNReal Interval NNReal
 
 variable {ι 𝕜 ε ε' E F A : Type*} [NormedAddCommGroup E]
-  [TopologicalSpace ε] [ENormedAddMonoid ε] [TopologicalSpace ε'] [ENormedAddMonoid ε']
+  [TopologicalSpace ε] [ContinuousENorm ε] [AddMonoid ε] [IsENormedAddMonoid ε] [TopologicalSpace ε'] [ContinuousENorm ε'] [AddMonoid ε'] [IsENormedAddMonoid ε']
 
 /-!
 ### Integrability on an interval
